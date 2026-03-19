@@ -68,7 +68,12 @@
       const [filterField, setFilterField] = useState("Tümü");
       const [scrolled, setScrolled] = useState(false);
       const [loginF, setLoginF] = useState({ email:"", password:"" });
-      const [regF, setRegF] = useState({ name:"", email:"", institution:"", orcid:"", role:"yazar", password:"" });
+      const [regName, setRegName] = useState("");
+      const [regEmail, setRegEmail] = useState("");
+      const [regInst, setRegInst] = useState("");
+      const [regOrcid, setRegOrcid] = useState("");
+      const [regRole, setRegRole] = useState("yazar");
+      const [regPass, setRegPass] = useState("");
       const [artF, setArtF] = useState({ title:"", abstract:"", keywords:"", field:"", coauthors:"" });
       const [msgF, setMsgF] = useState({ to:"", subject:"", content:"" });
 
@@ -87,10 +92,12 @@
       };
 
       const register = () => {
-        if (!regF.name || !regF.email) { toast_("Ad ve e-posta zorunludur.", "err"); return; }
-        const nu = { id:Date.now(), ...regF, subscription:"açık" };
+        if (!regName || !regEmail) { toast_("Ad ve e-posta zorunludur.", "err"); return; }
+        const nu = { id:Date.now(), name:regName, email:regEmail, institution:regInst, orcid:regOrcid, role:regRole, password:regPass, subscription:"açık" };
         setDb(p => ({ ...p, users:[...p.users, nu] }));
-        setUser(nu); setModal(null); toast_("ARSİS'e hoş geldiniz!");
+        setUser(nu); setModal(null);
+        setRegName(""); setRegEmail(""); setRegInst(""); setRegOrcid(""); setRegRole("yazar"); setRegPass("");
+        toast_("ARSİS'e hoş geldiniz!");
       };
 
       const submitArticle = () => {
@@ -132,7 +139,7 @@
               </div>
             </div>
             <div style={{ display:"flex", gap:2 }}>
-              {[["anasayfa","Ana Sayfa"],["arsiv","Arşiv"],["hakkinda","Hakkında"],["acik-erisim","Açık Erişim"]].map(([id,label]) => (
+              {[["anasayfa","Ana Sayfa"],["arsiv","Arşiv"],["komisyonlar","Komisyonlar"],["hakkinda","Hakkında"],["acik-erisim","Açık Erişim"]].map(([id,label]) => (
                 <button key={id} className={`nav-link${page===id?" active":""}`} onClick={()=>setPage(id)}>{label}</button>
               ))}
               <button className="nav-link" onClick={()=>user?setModal("makale"):setModal("login")} style={{ color:C.goldL, border:`1px solid ${C.gold}55`, marginLeft:4 }}>Makale Gönder</button>
@@ -478,8 +485,8 @@
 
           {modal==="login" && (
             <ModalWrap title="ARSİS'E GİRİŞ" onClose={()=>setModal(null)}>
-              <input autoFocus style={inp} placeholder="E-posta" value={loginF.email} onChange={e=>setLoginF({...loginF,email:e.target.value})} onKeyDown={e=>e.key==="Enter"&&document.getElementById("login-pass").focus()} />
-              <input id="login-pass" style={inp} type="password" placeholder="Şifre" value={loginF.password} onChange={e=>setLoginF({...loginF,password:e.target.value})} onKeyDown={e=>e.key==="Enter"&&login()} />
+              <input style={inp} placeholder="E-posta" value={loginF.email} onChange={e=>setLoginF({...loginF,email:e.target.value})} />
+              <input style={inp} type="password" placeholder="Şifre" value={loginF.password} onChange={e=>setLoginF({...loginF,password:e.target.value})} />
               <button style={btn1} onClick={login}>GİRİŞ YAP</button>
               <p style={{ textAlign:"center", marginTop:16, fontSize:13.5, color:C.muted }}>Hesabınız yok mu? <span style={{ color:C.rust, cursor:"pointer", fontWeight:600 }} onClick={()=>setModal("register")}>Kayıt olun</span></p>
             </ModalWrap>
@@ -487,31 +494,53 @@
 
           {modal==="register" && (
             <ModalWrap title="KAYIT OL" sub="ARSİS — Tamamen Ücretsiz" onClose={()=>setModal(null)}>
-              <input autoFocus style={inp} placeholder="Ad Soyad *" value={regF.name} onChange={e=>setRegF({...regF,name:e.target.value})} onKeyDown={e=>e.key==="Enter"&&document.getElementById("reg-email").focus()} />
-              <input id="reg-email" style={inp} placeholder="E-posta *" value={regF.email} onChange={e=>setRegF({...regF,email:e.target.value})} onKeyDown={e=>e.key==="Enter"&&document.getElementById("reg-inst").focus()} />
-              <input id="reg-inst" style={inp} placeholder="Kurum / Üniversite" value={regF.institution} onChange={e=>setRegF({...regF,institution:e.target.value})} onKeyDown={e=>e.key==="Enter"&&document.getElementById("reg-orcid").focus()} />
-              <input id="reg-orcid" style={inp} placeholder="ORCID ID (isteğe bağlı)" value={regF.orcid} onChange={e=>setRegF({...regF,orcid:e.target.value})} onKeyDown={e=>e.key==="Enter"&&document.getElementById("reg-pass").focus()} />
-              <select style={inp} value={regF.role} onChange={e=>setRegF({...regF,role:e.target.value})}>
+              <input style={inp} id="f-name" placeholder="Ad Soyad *" defaultValue="" />
+              <input style={inp} id="f-email" placeholder="E-posta *" defaultValue="" />
+              <input style={inp} id="f-inst" placeholder="Kurum / Üniversite" defaultValue="" />
+              <input style={inp} id="f-orcid" placeholder="ORCID ID (isteğe bağlı)" defaultValue="" />
+              <select style={inp} id="f-role">
                 <option value="yazar">Yazar / Araştırmacı</option>
                 <option value="hakem">Hakem</option>
                 <option value="editor">Editör</option>
               </select>
-              <input id="reg-pass" style={inp} type="password" placeholder="Şifre *" value={regF.password} onChange={e=>setRegF({...regF,password:e.target.value})} onKeyDown={e=>e.key==="Enter"&&register()} />
-              <button style={btn1} onClick={register}>KAYIT OL — ÜCRETSİZ</button>
+              <input style={inp} id="f-pass" type="password" placeholder="Şifre *" defaultValue="" />
+              <button style={btn1} onClick={()=>{
+                const name = document.getElementById("f-name").value;
+                const email = document.getElementById("f-email").value;
+                const institution = document.getElementById("f-inst").value;
+                const orcid = document.getElementById("f-orcid").value;
+                const role = document.getElementById("f-role").value;
+                const password = document.getElementById("f-pass").value;
+                if (!name || !email) { toast_("Ad ve e-posta zorunludur.", "err"); return; }
+                const nu = { id:Date.now(), name, email, institution, orcid, role, password, subscription:"açık" };
+                setDb(p => ({ ...p, users:[...p.users, nu] }));
+                setUser(nu); setModal(null);
+                toast_("ARSİS'e hoş geldiniz!");
+              }}>KAYIT OL — ÜCRETSİZ</button>
             </ModalWrap>
           )}
 
           {modal==="makale" && (
             <ModalWrap title="MAKALENİZİ GÖNDERİN" sub="ARSİS — Açık Erişim Hakemli Dergi" onClose={()=>setModal(null)}>
-              <input style={inp} placeholder="Makale Başlığı *" value={artF.title} onChange={e=>setArtF({...artF,title:e.target.value})} />
-              <select style={inp} value={artF.field} onChange={e=>setArtF({...artF,field:e.target.value})}>
+              <input style={inp} id="a-title" placeholder="Makale Başlığı *" defaultValue="" />
+              <select style={inp} id="a-field">
                 <option value="">Alan Seçin *</option>
                 {FIELDS.map(f=><option key={f} value={f}>{f}</option>)}
               </select>
-              <input style={inp} placeholder="Ortak Yazarlar (isteğe bağlı)" value={artF.coauthors} onChange={e=>setArtF({...artF,coauthors:e.target.value})} />
-              <textarea style={{...inp, height:100, resize:"vertical"}} placeholder="Özet (min. 150 kelime) *" value={artF.abstract} onChange={e=>setArtF({...artF,abstract:e.target.value})} />
-              <input style={inp} placeholder="Anahtar Kelimeler (virgülle ayırın)" value={artF.keywords} onChange={e=>setArtF({...artF,keywords:e.target.value})} />
-              <button style={btn1} onClick={submitArticle}>MAKALEYİ ARSİS'E GÖNDER</button>
+              <input style={inp} id="a-coauth" placeholder="Ortak Yazarlar (isteğe bağlı)" defaultValue="" />
+              <textarea style={{...inp, height:100, resize:"vertical"}} id="a-abstract" placeholder="Özet (min. 150 kelime) *" defaultValue="" />
+              <input style={inp} id="a-kw" placeholder="Anahtar Kelimeler (virgülle ayırın)" defaultValue="" />
+              <button style={btn1} onClick={()=>{
+                const title = document.getElementById("a-title").value;
+                const field = document.getElementById("a-field").value;
+                const abstract = document.getElementById("a-abstract").value;
+                const keywords = document.getElementById("a-kw").value;
+                const coauthors = document.getElementById("a-coauth").value;
+                if (!title || !abstract || !field) { toast_("Başlık, özet ve alan zorunludur.", "err"); return; }
+                const na = { id:Date.now(), title, field, abstract, coauthors, keywords:keywords.split(",").map(k=>k.trim()).filter(Boolean), author:user.name, authorId:user.id, status:"beklemede", date:new Date().toISOString().split("T")[0], reviewers:[], doi:null };
+                setDb(p => ({ ...p, articles:[...p.articles, na] }));
+                setModal(null); toast_("Makaleniz ARSİS'e iletildi!");
+              }}>MAKALEYİ ARSİS'E GÖNDER</button>
             </ModalWrap>
           )}
         </div>
