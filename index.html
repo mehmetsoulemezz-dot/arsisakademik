@@ -478,8 +478,8 @@
 
           {modal==="login" && (
             <ModalWrap title="ARSİS'E GİRİŞ" onClose={()=>setModal(null)}>
-              <input style={inp} placeholder="E-posta" value={loginF.email} onChange={e=>setLoginF({...loginF,email:e.target.value})} />
-              <input style={inp} type="password" placeholder="Şifre" value={loginF.password} onChange={e=>setLoginF({...loginF,password:e.target.value})} />
+              <input autoFocus style={inp} placeholder="E-posta" value={loginF.email} onChange={e=>setLoginF({...loginF,email:e.target.value})} onKeyDown={e=>e.key==="Enter"&&document.getElementById("login-pass").focus()} />
+              <input id="login-pass" style={inp} type="password" placeholder="Şifre" value={loginF.password} onChange={e=>setLoginF({...loginF,password:e.target.value})} onKeyDown={e=>e.key==="Enter"&&login()} />
               <button style={btn1} onClick={login}>GİRİŞ YAP</button>
               <p style={{ textAlign:"center", marginTop:16, fontSize:13.5, color:C.muted }}>Hesabınız yok mu? <span style={{ color:C.rust, cursor:"pointer", fontWeight:600 }} onClick={()=>setModal("register")}>Kayıt olun</span></p>
             </ModalWrap>
@@ -487,16 +487,16 @@
 
           {modal==="register" && (
             <ModalWrap title="KAYIT OL" sub="ARSİS — Tamamen Ücretsiz" onClose={()=>setModal(null)}>
-              <input style={inp} placeholder="Ad Soyad *" value={regF.name} onChange={e=>setRegF({...regF,name:e.target.value})} />
-              <input style={inp} placeholder="E-posta *" value={regF.email} onChange={e=>setRegF({...regF,email:e.target.value})} />
-              <input style={inp} placeholder="Kurum / Üniversite" value={regF.institution} onChange={e=>setRegF({...regF,institution:e.target.value})} />
-              <input style={inp} placeholder="ORCID ID (isteğe bağlı)" value={regF.orcid} onChange={e=>setRegF({...regF,orcid:e.target.value})} />
+              <input autoFocus style={inp} placeholder="Ad Soyad *" value={regF.name} onChange={e=>setRegF({...regF,name:e.target.value})} onKeyDown={e=>e.key==="Enter"&&document.getElementById("reg-email").focus()} />
+              <input id="reg-email" style={inp} placeholder="E-posta *" value={regF.email} onChange={e=>setRegF({...regF,email:e.target.value})} onKeyDown={e=>e.key==="Enter"&&document.getElementById("reg-inst").focus()} />
+              <input id="reg-inst" style={inp} placeholder="Kurum / Üniversite" value={regF.institution} onChange={e=>setRegF({...regF,institution:e.target.value})} onKeyDown={e=>e.key==="Enter"&&document.getElementById("reg-orcid").focus()} />
+              <input id="reg-orcid" style={inp} placeholder="ORCID ID (isteğe bağlı)" value={regF.orcid} onChange={e=>setRegF({...regF,orcid:e.target.value})} onKeyDown={e=>e.key==="Enter"&&document.getElementById("reg-pass").focus()} />
               <select style={inp} value={regF.role} onChange={e=>setRegF({...regF,role:e.target.value})}>
                 <option value="yazar">Yazar / Araştırmacı</option>
                 <option value="hakem">Hakem</option>
                 <option value="editor">Editör</option>
               </select>
-              <input style={inp} type="password" placeholder="Şifre *" value={regF.password} onChange={e=>setRegF({...regF,password:e.target.value})} />
+              <input id="reg-pass" style={inp} type="password" placeholder="Şifre *" value={regF.password} onChange={e=>setRegF({...regF,password:e.target.value})} onKeyDown={e=>e.key==="Enter"&&register()} />
               <button style={btn1} onClick={register}>KAYIT OL — ÜCRETSİZ</button>
             </ModalWrap>
           )}
