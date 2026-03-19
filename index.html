@@ -9,6 +9,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #f5f0e8; font-family: 'Crimson Pro', serif; }
@@ -30,7 +31,10 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    const DB = { users: [], articles: [], messages: [] };
+    // Supabase bağlantısı
+    const SUPA_URL = "https://nivablklgvgykwauzbeo.supabase.co";
+    const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU";
+    const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
     const FIELDS = ["Etnomüzikoloji","Müzikoloji","Antropoloji","Müzik Antropolojisi","Kültürel Müzik Çalışmaları","Müzik Tarihi","Müzik Sosyolojisi","Diğer"];
 
@@ -57,7 +61,8 @@
     );
 
     function App() {
-      const [db, setDb] = useState(DB);
+      const [articles, setArticles] = useState([]);
+      const [users, setUsers] = useState([]);
       const [page, setPage] = useState("anasayfa");
       const [user, setUser] = useState(null);
       const [modal, setModal] = useState(null);
@@ -68,58 +73,43 @@
       const [filterField, setFilterField] = useState("Tümü");
       const [scrolled, setScrolled] = useState(false);
       const [loginF, setLoginF] = useState({ email:"", password:"" });
-      const [regName, setRegName] = useState("");
-      const [regEmail, setRegEmail] = useState("");
-      const [regInst, setRegInst] = useState("");
-      const [regOrcid, setRegOrcid] = useState("");
-      const [regRole, setRegRole] = useState("yazar");
-      const [regPass, setRegPass] = useState("");
-      const [artF, setArtF] = useState({ title:"", abstract:"", keywords:"", field:"", coauthors:"" });
-      const [msgF, setMsgF] = useState({ to:"", subject:"", content:"" });
 
       useEffect(() => {
+        loadArticles();
+        loadUsers();
         const onScroll = () => setScrolled(window.scrollY > 40);
         window.addEventListener("scroll", onScroll);
         return () => window.removeEventListener("scroll", onScroll);
       }, []);
 
+      const loadArticles = async () => {
+        const { data } = await supa.from("articles").select("*").order("created_at", { ascending: false });
+        if (data) setArticles(data);
+      };
+
+      const loadUsers = async () => {
+        const { data } = await supa.from("users").select("*");
+        if (data) setUsers(data);
+      };
+
       const toast_ = (msg, type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3400); };
 
-      const login = () => {
-        const found = db.users.find(u => u.email === loginF.email);
-        if (found) { setUser(found); setModal(null); toast_(`Hoş geldiniz, ${found.name.split(" ").slice(-1)[0]}!`); }
-        else toast_("E-posta bulunamadı.", "err");
+      const login = async () => {
+        const { data } = await supa.from("users").select("*").eq("email", loginF.email).maybeSingle();
+        if (data && data.password === loginF.password) {
+          setUser(data); setModal(null);
+          toast_(`Hoş geldiniz, ${data.name.split(" ").slice(-1)[0]}!`);
+        } else {
+          toast_("E-posta veya şifre hatalı.", "err");
+        }
       };
 
-      const register = () => {
-        if (!regName || !regEmail) { toast_("Ad ve e-posta zorunludur.", "err"); return; }
-        const nu = { id:Date.now(), name:regName, email:regEmail, institution:regInst, orcid:regOrcid, role:regRole, password:regPass, subscription:"açık" };
-        setDb(p => ({ ...p, users:[...p.users, nu] }));
-        setUser(nu); setModal(null);
-        setRegName(""); setRegEmail(""); setRegInst(""); setRegOrcid(""); setRegRole("yazar"); setRegPass("");
-        toast_("ARSİS'e hoş geldiniz!");
-      };
+      const myArticles = articles.filter(a => a.author_email === user?.email);
+      const unread = 0;
 
-      const submitArticle = () => {
-        if (!artF.title || !artF.abstract || !artF.field) { toast_("Başlık, özet ve alan zorunludur.", "err"); return; }
-        const na = { id:Date.now(), ...artF, keywords:artF.keywords.split(",").map(k=>k.trim()).filter(Boolean), author:user.name, authorId:user.id, status:"beklemede", date:new Date().toISOString().split("T")[0], reviewers:[], doi:null };
-        setDb(p => ({ ...p, articles:[...p.articles, na] }));
-        setModal(null); setArtF({ title:"", abstract:"", keywords:"", field:"", coauthors:"" });
-        toast_("Makaleniz ARSİS'e iletildi!");
-      };
-
-      const sendMsg = () => {
-        if (!msgF.to || !msgF.content) { toast_("Alıcı ve içerik zorunludur.", "err"); return; }
-        setDb(p => ({ ...p, messages:[...p.messages, { id:Date.now(), from:user.name, ...msgF, date:new Date().toISOString().split("T")[0], read:false }] }));
-        setModal(null); setMsgF({ to:"", subject:"", content:"" }); toast_("Mesajınız gönderildi.");
-      };
-
-      const myArticles = db.articles.filter(a => a.authorId === user?.id);
-      const myMsgs = db.messages.filter(m => m.to === user?.name || m.from === user?.name);
-      const unread = myMsgs.filter(m => !m.read && m.to === user?.name).length;
-      const filtered = db.articles.filter(a => {
+      const filtered = articles.filter(a => {
         const q = search.toLowerCase();
-        const matchQ = !q || a.title.toLowerCase().includes(q) || a.author.toLowerCase().includes(q);
+        const matchQ = !q || a.title?.toLowerCase().includes(q) || a.author?.toLowerCase().includes(q);
         const matchF = filterField === "Tümü" || a.field === filterField;
         return matchQ && matchF;
       });
@@ -356,7 +346,9 @@
                 <div style={{ fontSize:12, color:"#8a7d60", marginTop:3, fontStyle:"italic" }}>{user?.institution}</div>
               </div>
               <div style={{ background:"#fff", borderRadius:12, border:`1px solid ${C.border}`, overflow:"hidden" }}>
-                {[{ id:"makalelerim", icon:"♩", label:"Makalelerim" },{ id:"mesajlar", icon:"✉", label:"Mesajlar", badge:unread },{ id:"profil", icon:"◎", label:"Profilim" }].map(item=>(
+                {[{ id:"makalelerim", icon:"♩", label:"Makalelerim" },{ id:"mesajlar", icon:"✉", label:"Mesajlar", badge:unread },{ id:"profil", icon:"◎", label:"Profilim" },
+                ...(user?.role==="editor"?[{ id:"yonetim", icon:"⚙", label:"Yönetim Paneli" }]:[])
+              ].map(item=>(
                   <button key={item.id} onClick={()=>setTab(item.id)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"13px 18px", background:tab===item.id?`${C.gold}12`:"transparent", border:"none", cursor:"pointer", fontSize:13.5, fontWeight:tab===item.id?700:500, color:tab===item.id?C.rust:C.ink, borderLeft:tab===item.id?`3px solid ${C.gold}`:"3px solid transparent", fontFamily:"'Crimson Pro', serif" }}>
                     <span style={{ color:C.gold }}>{item.icon}</span> {item.label}
                     {item.badge>0 && <span style={{ marginLeft:"auto", background:C.rust, color:"#fff", borderRadius:"50%", width:18, height:18, display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:800 }}>{item.badge}</span>}
@@ -385,7 +377,7 @@
                           <h4 style={{ fontFamily:"'Cinzel', serif", margin:"0 0 6px", fontSize:13.5, color:C.ink, flex:1, paddingRight:14 }}>{a.title}</h4>
                           <span style={{ background:sc.bg, color:sc.color, fontSize:10, padding:"4px 10px", borderRadius:20, fontWeight:700, whiteSpace:"nowrap" }}>{sc.label}</span>
                         </div>
-                        <p style={{ margin:0, fontSize:12.5, color:C.muted, fontStyle:"italic" }}>Gönderim: {a.date} · {a.field}</p>
+                        <p style={{ margin:0, fontSize:12.5, color:C.muted, fontStyle:"italic" }}>Gönderim: {a.created_at?.split("T")[0]} · {a.field}</p>
                       </div>
                     );
                   })}
@@ -417,6 +409,68 @@
                         <div style={{ fontSize:14.5, color:C.ink, fontWeight:600 }}>{v}</div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {tab==="yonetim" && user?.role==="editor" && (
+                <div>
+                  <h3 style={{ fontFamily:"'Cinzel', serif", margin:"0 0 24px", fontSize:17, letterSpacing:1, color:C.ink }}>YÖNETİM PANELİ</h3>
+
+                  {/* İstatistikler */}
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:32 }}>
+                    {[
+                      ["Toplam Makale", articles.length, C.gold],
+                      ["Beklemede", articles.filter(a=>a.status==="beklemede").length, "#1e40af"],
+                      ["Hakemde", articles.filter(a=>a.status==="hakemde").length, C.rust],
+                      ["Toplam Üye", users.length, C.teal],
+                    ].map(([l,n,c])=>(
+                      <div key={l} style={{ background:`${c}12`, borderRadius:9, padding:"16px 12px", textAlign:"center", border:`1px solid ${c}30` }}>
+                        <div style={{ fontFamily:"'Cinzel', serif", fontSize:26, fontWeight:700, color:c }}>{n}</div>
+                        <div style={{ fontFamily:"'Crimson Pro', serif", fontSize:11, color:C.muted, marginTop:3 }}>{l}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Makaleler */}
+                  <div style={{ marginBottom:32 }}>
+                    <div style={{ fontFamily:"'Cinzel', serif", fontSize:12, color:C.ink, letterSpacing:1, marginBottom:14, fontWeight:700 }}>GÖNDERILEN MAKALELER</div>
+                    {articles.length===0 ? <p style={{ color:C.muted, fontStyle:"italic", fontSize:14 }}>Henüz makale gönderilmemiş.</p> :
+                      articles.map(a=>{
+                        const sc=STATUS_CFG[a.status]||{};
+                        return (
+                          <div key={a.id} style={{ border:`1px solid ${C.border}`, borderRadius:9, padding:"14px 18px", marginBottom:10 }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
+                              <div style={{ fontFamily:"'Cinzel', serif", fontSize:13, color:C.ink, flex:1, paddingRight:12 }}>{a.title}</div>
+                              <select value={a.status} onChange={async e=>{
+                                await supa.from("articles").update({ status: e.target.value }).eq("id", a.id);
+                                await loadArticles();
+                                toast_("Durum güncellendi.");
+                              }} style={{ fontSize:11, padding:"3px 8px", borderRadius:6, border:`1px solid ${C.border}`, background:sc.bg, color:sc.color, fontWeight:700, cursor:"pointer" }}>
+                                {Object.entries(STATUS_CFG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+                              </select>
+                            </div>
+                            <div style={{ fontSize:12, color:C.muted, fontStyle:"italic" }}>{a.author} · {a.author_email} · {a.field} · {a.created_at?.split("T")[0]}</div>
+                          </div>
+                        );
+                      })
+                    }
+                  </div>
+
+                  {/* Üyeler */}
+                  <div>
+                    <div style={{ fontFamily:"'Cinzel', serif", fontSize:12, color:C.ink, letterSpacing:1, marginBottom:14, fontWeight:700 }}>KAYITLI ÜYELER</div>
+                    {users.length===0 ? <p style={{ color:C.muted, fontStyle:"italic", fontSize:14 }}>Henüz üye yok.</p> :
+                      users.map(u=>(
+                        <div key={u.id} style={{ border:`1px solid ${C.border}`, borderRadius:9, padding:"12px 18px", marginBottom:8, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                          <div>
+                            <div style={{ fontFamily:"'Cinzel', serif", fontSize:13, color:C.ink }}>{u.name}</div>
+                            <div style={{ fontSize:12, color:C.muted, fontStyle:"italic" }}>{u.email} · {u.institution||"—"}</div>
+                          </div>
+                          <span style={{ fontSize:10, padding:"3px 10px", borderRadius:20, background:`${C.gold}20`, color:C.rust, fontWeight:700, fontFamily:"'Cinzel', serif" }}>{u.role?.toUpperCase()}</span>
+                        </div>
+                      ))
+                    }
                   </div>
                 </div>
               )}
@@ -504,7 +558,7 @@
                 <option value="editor">Editör</option>
               </select>
               <input style={inp} id="f-pass" type="password" placeholder="Şifre *" defaultValue="" />
-              <button style={btn1} onClick={()=>{
+              <button style={btn1} onClick={async ()=>{
                 const name = document.getElementById("f-name").value;
                 const email = document.getElementById("f-email").value;
                 const institution = document.getElementById("f-inst").value;
@@ -512,9 +566,12 @@
                 const role = document.getElementById("f-role").value;
                 const password = document.getElementById("f-pass").value;
                 if (!name || !email) { toast_("Ad ve e-posta zorunludur.", "err"); return; }
-                const nu = { id:Date.now(), name, email, institution, orcid, role, password, subscription:"açık" };
-                setDb(p => ({ ...p, users:[...p.users, nu] }));
-                setUser(nu); setModal(null);
+                if (!password) { toast_("Şifre zorunludur.", "err"); return; }
+                const { data, error } = await supa.from("users").insert([{ name, email, institution, orcid, role, password }]).select().single();
+                if (error) { toast_("Bu e-posta zaten kayıtlı olabilir.", "err"); return; }
+                setUser(data);
+                await loadUsers();
+                setModal(null);
                 toast_("ARSİS'e hoş geldiniz!");
               }}>KAYIT OL — ÜCRETSİZ</button>
             </ModalWrap>
@@ -530,16 +587,22 @@
               <input style={inp} id="a-coauth" placeholder="Ortak Yazarlar (isteğe bağlı)" defaultValue="" />
               <textarea style={{...inp, height:100, resize:"vertical"}} id="a-abstract" placeholder="Özet (min. 150 kelime) *" defaultValue="" />
               <input style={inp} id="a-kw" placeholder="Anahtar Kelimeler (virgülle ayırın)" defaultValue="" />
-              <button style={btn1} onClick={()=>{
+              <button style={btn1} onClick={async ()=>{
                 const title = document.getElementById("a-title").value;
                 const field = document.getElementById("a-field").value;
                 const abstract = document.getElementById("a-abstract").value;
                 const keywords = document.getElementById("a-kw").value;
                 const coauthors = document.getElementById("a-coauth").value;
                 if (!title || !abstract || !field) { toast_("Başlık, özet ve alan zorunludur.", "err"); return; }
-                const na = { id:Date.now(), title, field, abstract, coauthors, keywords:keywords.split(",").map(k=>k.trim()).filter(Boolean), author:user.name, authorId:user.id, status:"beklemede", date:new Date().toISOString().split("T")[0], reviewers:[], doi:null };
-                setDb(p => ({ ...p, articles:[...p.articles, na] }));
-                setModal(null); toast_("Makaleniz ARSİS'e iletildi!");
+                const { error } = await supa.from("articles").insert([{
+                  title, field, abstract, keywords, coauthors,
+                  author: user.name, author_email: user.email,
+                  status: "beklemede"
+                }]);
+                if (error) { toast_("Bir hata oluştu, tekrar deneyin.", "err"); return; }
+                await loadArticles();
+                setModal(null);
+                toast_("Makaleniz ARSİS'e iletildi!");
               }}>MAKALEYİ ARSİS'E GÖNDER</button>
             </ModalWrap>
           )}
