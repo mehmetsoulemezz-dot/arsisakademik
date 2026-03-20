@@ -573,6 +573,18 @@
                 await loadUsers();
                 setModal(null);
                 toast_("ARSİS'e hoş geldiniz!");
+                // Hoş geldin maili gönder
+                fetch("https://nivablklgvgykwauzbeo.supabase.co/functions/v1/send-welcome-email", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU` },
+                  body: JSON.stringify({ name, email, type: "welcome" })
+                });
+                // Editöre bildirim maili gönder
+                fetch("https://nivablklgvgykwauzbeo.supabase.co/functions/v1/send-welcome-email", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU` },
+                  body: JSON.stringify({ name, email, type: "notify" })
+                });
               }}>KAYIT OL — ÜCRETSİZ</button>
             </ModalWrap>
           )}
