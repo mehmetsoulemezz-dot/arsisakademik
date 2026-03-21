@@ -604,7 +604,13 @@
                 <div style={{ fontFamily:"'Cinzel', serif", fontSize:10, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>MAKALE DOSYASI (PDF veya DOCX)</div>
                 <input type="file" id="a-file" accept=".pdf,.doc,.docx" style={{ width:"100%", padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:13, background:C.paper, color:C.ink, cursor:"pointer" }} />
               </div>
-              <button style={btn1} onClick={async ()=>{
+              <div id="upload-progress" style={{ display:"none", marginBottom:13 }}>
+                <div style={{ background:C.cream, borderRadius:6, height:8, overflow:"hidden" }}>
+                  <div id="upload-bar" style={{ height:"100%", background:C.gold, width:"0%", transition:"width 0.3s", borderRadius:6 }} />
+                </div>
+                <div id="upload-text" style={{ fontFamily:"'Crimson Pro', serif", fontSize:12, color:C.muted, marginTop:5, textAlign:"center", fontStyle:"italic" }}>Dosya yükleniyor...</div>
+              </div>
+              <button id="submit-btn" style={btn1} onClick={async ()=>{
                 const title = document.getElementById("a-title").value;
                 const field = document.getElementById("a-field").value;
                 const abstract = document.getElementById("a-abstract").value;
@@ -613,19 +619,56 @@
                 const fileInput = document.getElementById("a-file");
                 const file = fileInput?.files?.[0];
                 if (!title || !abstract || !field) { toast_("Başlık, özet ve alan zorunludur.", "err"); return; }
+
+                const btn = document.getElementById("submit-btn");
+                btn.disabled = true;
+                btn.innerText = "Gönderiliyor...";
+
                 let file_url = null;
                 if (file) {
-                  const fileName = `${Date.now()}_${file.name}`;
-                  const { data: uploadData, error: uploadError } = await supa.storage.from("makaleler").upload(fileName, file);
-                  if (uploadError) { toast_("Dosya yüklenemedi, tekrar deneyin.", "err"); return; }
+                  const progress = document.getElementById("upload-progress");
+                  const bar = document.getElementById("upload-bar");
+                  const text = document.getElementById("upload-text");
+                  progress.style.display = "block";
+
+                  // Sahte ilerleme animasyonu
+                  let pct = 0;
+                  const interval = setInterval(() => {
+                    pct = Math.min(pct + 10, 85);
+                    bar.style.width = pct + "%";
+                  }, 200);
+
+                  const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+                  const { data: uploadData, error: uploadError } = await supa.storage
+                    .from("makaleler")
+                    .upload(fileName, file, { upsert: true });
+
+                  clearInterval(interval);
+
+                  if (uploadError) {
+                    bar.style.width = "100%";
+                    bar.style.background = "#ef4444";
+                    text.innerText = "Dosya yüklenemedi: " + uploadError.message;
+                    btn.disabled = false;
+                    btn.innerText = "MAKALEYİ ARSİS'E GÖNDER";
+                    return;
+                  }
+
+                  bar.style.width = "100%";
+                  text.innerText = "Dosya yüklendi ✓";
                   const { data: urlData } = supa.storage.from("makaleler").getPublicUrl(fileName);
                   file_url = urlData?.publicUrl;
                 }
+
                 const { error } = await supa.from("articles").insert([{
                   title, field, abstract, keywords, coauthors,
                   author: user.name, author_email: user.email,
                   status: "beklemede", file_url
                 }]);
+
+                btn.disabled = false;
+                btn.innerText = "MAKALEYİ ARSİS'E GÖNDER";
+
                 if (error) { toast_("Bir hata oluştu, tekrar deneyin.", "err"); return; }
                 await loadArticles();
                 setModal(null);
