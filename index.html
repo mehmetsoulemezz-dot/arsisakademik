@@ -50,11 +50,6 @@
       beklemede:  { label: "Ön İnceleme",          color: "#1e40af", bg: "#dbeafe" },
     };
 
-    const C = {
-      ink:"#1a1208", paper:"#f5f0e8", cream:"#ede8dc", gold:"#c9a84c", goldL:"#e8d080",
-      rust:"#8b3a2a", teal:"#1d6a5e", muted:"#7a6e5f", border:"#d4c9b4", white:"#ffffff",
-    };
-
     const WaveLogo = ({ size = 28, color = "#c9a84c" }) => (
       <div style={{ display:"flex", alignItems:"center", gap:2, color, height:size }}>
         {[0.6,1,0.7,1,0.5,0.9,0.6].map((h,i) => (
@@ -63,7 +58,15 @@
       </div>
     );
 
-    function NewMessageModal({ users, user, supa, loadMessages, toast_, setModal, inp, btn1, C }) {
+    const C = {
+      ink:"#1a1208", paper:"#f5f0e8", cream:"#ede8dc", gold:"#c9a84c", goldL:"#e8d080",
+      rust:"#8b3a2a", teal:"#1d6a5e", muted:"#7a6e5f", border:"#d4c9b4", white:"#ffffff",
+    };
+
+    const inp = { width:"100%", padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:14, outline:"none", background:C.paper, color:C.ink, marginBottom:13, boxSizing:"border-box", fontFamily:"'Crimson Pro', serif" };
+    const btn1 = { background:C.gold, color:C.ink, border:"none", padding:"12px 0", borderRadius:7, cursor:"pointer", fontWeight:800, fontSize:14, width:"100%", marginTop:4, fontFamily:"'Crimson Pro', serif", letterSpacing:0.5 };
+
+    function NewMessageModal({ users, user, supa, loadMessages, toast_, setModal }) {
       const [to, setTo] = React.useState("");
       const [subject, setSubject] = React.useState("");
       const [content, setContent] = React.useState("");
@@ -90,18 +93,20 @@
         </div>
       );
     }
+
+    function ReplyBox({ m, user, supa, loadMessages, toast_ }) {
       const [text, setText] = React.useState("");
       return (
-        <div>
+        <div style={{ marginTop:10 }}>
           <textarea
             value={text}
             onChange={e => setText(e.target.value)}
             placeholder="Cevabınızı yazın..."
-            style={{ width:"100%", padding:"8px 12px", border:`1px solid ${C.border}`, borderRadius:6, fontSize:13, fontFamily:"'Crimson Pro', serif", resize:"vertical", height:70, background:C.cream, boxSizing:"border-box" }}
+            style={{ width:"100%", padding:"8px 12px", border:`1px solid ${C.border}`, borderRadius:6, fontSize:13, fontFamily:"'Crimson Pro', serif", resize:"vertical", height:70, background:C.cream, boxSizing:"border-box", outline:"none" }}
           />
           <button onClick={async e=>{ e.stopPropagation();
             if (!text.trim()) return;
-            await supa.from("messages").insert([{ from_name: user.name, from_email: user.email, to_email: m.from_email, subject: "Re: "+m.subject, content: text }]);
+            await supa.from("messages").insert([{ from_name: user.name, from_email: user.email, to_email: m.from_email, subject: "Re: "+(m.subject||""), content: text }]);
             setText("");
             await loadMessages();
             toast_("Cevabınız gönderildi.");
@@ -109,6 +114,8 @@
         </div>
       );
     }
+
+    function App() {
       const [articles, setArticles] = useState([]);
       const [users, setUsers] = useState([]);
       const [messages, setMessages] = useState([]);
@@ -172,8 +179,6 @@
         return matchQ && matchF;
       });
 
-      const inp = { width:"100%", padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:14, outline:"none", background:C.paper, color:C.ink, marginBottom:13, boxSizing:"border-box", fontFamily:"'Crimson Pro', serif" };
-      const btn1 = { background:C.gold, color:C.ink, border:"none", padding:"12px 0", borderRadius:7, cursor:"pointer", fontWeight:800, fontSize:14, width:"100%", marginTop:4, fontFamily:"'Crimson Pro', serif", letterSpacing:0.5 };
 
       /* ── NAV ── */
       const Nav = () => (
@@ -465,7 +470,7 @@
                       </div>
                       <p style={{ margin:"0 0 12px", fontSize:14, color:"#444", lineHeight:1.7 }}>{m.content}</p>
                       {m.to_email===user?.email && (
-                        <ReplyBox m={m} user={user} supa={supa} loadMessages={loadMessages} toast_={toast_} C={C} />
+                        <ReplyBox m={m} user={user} supa={supa} loadMessages={loadMessages} toast_={toast_} />
                       )}
                     </div>
                   ))}
@@ -773,7 +778,7 @@
 
           {modal==="message" && user?.role==="editor" && (
             <ModalWrap title="YENİ MESAJ GÖNDER" sub="Üyeye mesaj gönder" onClose={()=>setModal(null)}>
-              <NewMessageModal users={users} user={user} supa={supa} loadMessages={loadMessages} toast_={toast_} setModal={setModal} inp={inp} btn1={btn1} C={C} />
+              <NewMessageModal users={users} user={user} supa={supa} loadMessages={loadMessages} toast_={toast_} setModal={setModal} />
             </ModalWrap>
           )}
         </div>
