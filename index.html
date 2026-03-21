@@ -4,789 +4,601 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ARSİS — Journal of Music, Musicology & Anthropology</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #f5f0e8; font-family: 'Crimson Pro', serif; }
-    @keyframes wave { from { transform: scaleY(0.4); } to { transform: scaleY(1); } }
-    @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
-    .nav-link { background: transparent; border: none; color: #c4b896; cursor: pointer; font-size: 12.5px; font-weight: 600; padding: 8px 13px; border-radius: 5px; transition: all 0.2s; letter-spacing: 1.2px; text-transform: uppercase; font-family: 'Crimson Pro', serif; }
-    .nav-link:hover { color: #e8d080; background: rgba(201,168,76,0.1); }
-    .nav-link.active { color: #c9a84c; background: rgba(201,168,76,0.12); border-bottom: 2px solid #c9a84c; }
-    .art-card { background: #fff; border: 1px solid #d4c9b4; border-radius: 12px; padding: 24px; cursor: pointer; transition: all 0.22s; }
-    .art-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(201,168,76,0.15); border-color: #c9a84c; }
-    .field-pill { display:inline-block; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
-    ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:#f5f0e8; } ::-webkit-scrollbar-thumb { background:#c9a84c; border-radius:3px; }
-    select, input, textarea { font-family: 'Crimson Pro', serif; }
-    @keyframes uploadPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
-    .upload-spinner { display:inline-block; width:14px; height:14px; border:2px solid #c9a84c44; border-top:2px solid #c9a84c; border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle; }
-    @keyframes spin { to { transform:rotate(360deg); } }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#f5f0e8;font-family:'Crimson Pro',serif}
+    @keyframes wave{from{transform:scaleY(0.4)}to{transform:scaleY(1)}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    .nav-link{background:transparent;border:none;color:#c4b896;cursor:pointer;font-size:12.5px;font-weight:600;padding:8px 13px;border-radius:5px;transition:all 0.2s;letter-spacing:1.2px;text-transform:uppercase;font-family:'Crimson Pro',serif}
+    .nav-link:hover{color:#e8d080;background:rgba(201,168,76,0.1)}
+    .nav-link.active{color:#c9a84c;background:rgba(201,168,76,0.12);border-bottom:2px solid #c9a84c}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#f5f0e8}::-webkit-scrollbar-thumb{background:#c9a84c;border-radius:3px}
+    select,input,textarea{font-family:'Crimson Pro',serif}
   </style>
 </head>
 <body>
-  <div id="root"></div>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
 
-  <script type="text/babel">
-    const { useState, useEffect } = React;
+const supa = supabase.createClient(
+  "https://nivablklgvgykwauzbeo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU"
+);
 
-    // Supabase bağlantısı
-    const SUPA_URL = "https://nivablklgvgykwauzbeo.supabase.co";
-    const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU";
-    const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+const EDGE_URL = "https://nivablklgvgykwauzbeo.supabase.co/functions/v1/swift-handler";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU";
+const sendMail = (name, email, type) => fetch(EDGE_URL, {method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${ANON_KEY}`},body:JSON.stringify({name,email,type})});
 
-    const FIELDS = ["Etnomüzikoloji","Müzikoloji","Antropoloji","Müzik Antropolojisi","Kültürel Müzik Çalışmaları","Müzik Tarihi","Müzik Sosyolojisi","Diğer"];
+const FIELDS = ["Etnomuzikoloji","Muzikoloji","Antropoloji","Muzik Antropolojisi","Kulturel Muzik Calismalari","Muzik Tarihi","Muzik Sosyolojisi","Diger"];
 
-    const STATUS_CFG = {
-      hakemde:    { label: "Hakem İncelemesinde", color: "#b45309", bg: "#fef3c7" },
-      revizyon:   { label: "Revizyon Bekleniyor",  color: "#6d28d9", bg: "#ede9fe" },
-      baskida:    { label: "Baskıya Hazır · Haz. 2026", color: "#065f46", bg: "#d1fae5" },
-      yayında:    { label: "Yayınlandı",           color: "#065f46", bg: "#d1fae5" },
-      reddedildi: { label: "Reddedildi",           color: "#991b1b", bg: "#fee2e2" },
-      beklemede:  { label: "Ön İnceleme",          color: "#1e40af", bg: "#dbeafe" },
-    };
+const STATUS = {
+  beklemede:{label:"On Inceleme",color:"#1e40af",bg:"#dbeafe"},
+  hakemde:{label:"Hakem Incelemesinde",color:"#b45309",bg:"#fef3c7"},
+  revizyon:{label:"Revizyon Bekleniyor",color:"#6d28d9",bg:"#ede9fe"},
+  baskida:{label:"Baskiya Hazir - Haz. 2026",color:"#065f46",bg:"#d1fae5"},
+  yayinda:{label:"Yayinlandi",color:"#065f46",bg:"#d1fae5"},
+  reddedildi:{label:"Reddedildi",color:"#991b1b",bg:"#fee2e2"},
+};
 
-    const WaveLogo = ({ size = 28, color = "#c9a84c" }) => (
-      <div style={{ display:"flex", alignItems:"center", gap:2, color, height:size }}>
-        {[0.6,1,0.7,1,0.5,0.9,0.6].map((h,i) => (
-          <div key={i} style={{ width:3, background:"currentColor", borderRadius:2, height:h*size, animation:`wave 1.4s ease-in-out ${i*0.12}s infinite alternate` }} />
+const C = {
+  ink:"#1a1208",paper:"#f5f0e8",cream:"#ede8dc",
+  gold:"#c9a84c",goldL:"#e8d080",rust:"#8b3a2a",
+  teal:"#1d6a5e",muted:"#7a6e5f",border:"#d4c9b4",
+};
+
+const INP = {width:"100%",padding:"10px 14px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:14,outline:"none",background:"#fff",color:C.ink,marginBottom:12,boxSizing:"border-box"};
+const BTN = {background:C.gold,color:C.ink,border:"none",padding:"12px 0",borderRadius:7,cursor:"pointer",fontWeight:800,fontSize:14,width:"100%",marginTop:4};
+
+const WaveLogo = ({size=28,color=C.gold}) => (
+  <div style={{display:"flex",alignItems:"center",gap:2,color,height:size}}>
+    {[0.6,1,0.7,1,0.5,0.9,0.6].map((h,i)=>(
+      <div key={i} style={{width:3,background:"currentColor",borderRadius:2,height:h*size,animation:`wave 1.4s ease-in-out ${i*0.12}s infinite alternate`}}/>
+    ))}
+  </div>
+);
+
+function MesajlarTab({user, toast_}) {
+  const [posts, setPosts] = useState([]);
+  const [konu, setKonu] = useState("");
+  const [icerik, setIcerik] = useState("");
+  const [yanitlar, setYanitlar] = useState({});
+
+  useEffect(()=>{ yukle(); },[]);
+
+  const yukle = async () => {
+    const {data} = await supa.from("messages").select("*").order("created_at",{ascending:false});
+    if(data) setPosts(data);
+  };
+
+  const gonder = async () => {
+    if(!konu.trim()||!icerik.trim()){toast_("Konu ve mesaj zorunludur.","err");return;}
+    await supa.from("messages").insert([{from_name:user.name,from_email:user.email,to_email:"forum",subject:konu,content:icerik,read:true}]);
+    setKonu(""); setIcerik(""); yukle();
+    toast_("Mesajiniz gonderildi!");
+  };
+
+  const yanitGonder = async (postId) => {
+    const text = yanitlar[postId]||"";
+    if(!text.trim()) return;
+    await supa.from("messages").insert([{from_name:user.name,from_email:user.email,to_email:`reply_${postId}`,subject:"Yanit",content:text,read:true}]);
+    setYanitlar(prev=>({...prev,[postId]:""}));
+    yukle();
+    toast_("Yanitiniz eklendi!");
+  };
+
+  const anaPostlar = posts.filter(p=>p.to_email==="forum");
+  const yanit = (id) => posts.filter(p=>p.to_email===`reply_${id}`).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+
+  return (
+    <div>
+      <h3 style={{fontFamily:"'Cinzel',serif",margin:"0 0 24px",fontSize:17,letterSpacing:1,color:C.ink}}>MESAJLAR</h3>
+      <div style={{background:C.cream,borderRadius:12,padding:"20px 24px",marginBottom:28,border:`1px solid ${C.border}`}}>
+        <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.rust,letterSpacing:1.5,marginBottom:14}}>YENI MESAJ</div>
+        <input value={konu} onChange={e=>setKonu(e.target.value)} placeholder="Konu *" style={{...INP,marginBottom:10}}/>
+        <textarea value={icerik} onChange={e=>setIcerik(e.target.value)} placeholder="Mesajiniz *" style={{...INP,height:90,resize:"vertical",marginBottom:10}}/>
+        <button onClick={gonder} style={{background:C.ink,color:C.gold,border:"none",padding:"10px 24px",borderRadius:7,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:12,fontWeight:700,letterSpacing:1}}>GONDER</button>
+      </div>
+      {anaPostlar.length===0
+        ? <div style={{textAlign:"center",padding:"40px",color:C.muted,fontStyle:"italic"}}>Henuz mesaj yok.</div>
+        : anaPostlar.map(p=>(
+          <div key={p.id} style={{border:`1px solid ${C.border}`,borderRadius:12,marginBottom:16,overflow:"hidden"}}>
+            <div style={{background:"#fff",padding:"18px 22px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{fontFamily:"'Cinzel',serif",fontSize:14,fontWeight:700,color:C.ink}}>{p.subject}</span>
+                <span style={{fontSize:11,color:C.muted}}>{p.created_at?.split("T")[0]}</span>
+              </div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:10,fontStyle:"italic"}}>— {p.from_name}</div>
+              <p style={{margin:0,fontSize:14,color:"#444",lineHeight:1.75}}>{p.content}</p>
+            </div>
+            {yanit(p.id).length>0&&(
+              <div style={{background:C.cream,borderTop:`1px solid ${C.border}`}}>
+                {yanit(p.id).map(r=>(
+                  <div key={r.id} style={{padding:"12px 22px",borderBottom:`1px solid ${C.border}44`}}>
+                    <div style={{fontSize:12,color:C.muted,marginBottom:4,fontStyle:"italic"}}>— {r.from_name} · {r.created_at?.split("T")[0]}</div>
+                    <p style={{margin:0,fontSize:13.5,color:"#444",lineHeight:1.7}}>{r.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{background:C.paper,borderTop:`1px solid ${C.border}`,padding:"12px 22px",display:"flex",gap:10}}>
+              <input
+                value={yanitlar[p.id]||""}
+                onChange={e=>setYanitlar(prev=>({...prev,[p.id]:e.target.value}))}
+                placeholder="Yanitinizi yazin..."
+                style={{flex:1,padding:"8px 14px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:13,outline:"none",background:"#fff",color:C.ink}}
+              />
+              <button onClick={()=>yanitGonder(p.id)} style={{background:C.gold,color:C.ink,border:"none",padding:"8px 18px",borderRadius:6,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>YANIT GONDER</button>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  );
+}
+
+function App() {
+  const [articles, setArticles] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [page, setPage] = useState("anasayfa");
+  const [user, setUser] = useState(null);
+  const [modal, setModal] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [tab, setTab] = useState("makalelerim");
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(()=>{
+    loadArticles(); loadUsers();
+    const onScroll=()=>setScrolled(window.scrollY>40);
+    window.addEventListener("scroll",onScroll);
+    return()=>window.removeEventListener("scroll",onScroll);
+  },[]);
+
+  const loadArticles = async()=>{const{data}=await supa.from("articles").select("*").order("created_at",{ascending:false});if(data)setArticles(data);};
+  const loadUsers = async()=>{const{data}=await supa.from("users").select("*");if(data)setUsers(data);};
+  const toast_ = (msg,type="ok")=>{setToast({msg,type});setTimeout(()=>setToast(null),3400);};
+  const myArticles = articles.filter(a=>a.author_email===user?.email);
+
+  const Modal = ({title,sub,children,onClose})=>(
+    <div style={{position:"fixed",inset:0,background:"rgba(10,8,4,0.75)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.paper,borderRadius:16,padding:"40px 44px",width:"100%",maxWidth:500,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 24px 80px rgba(0,0,0,0.5)",border:`1px solid ${C.gold}44`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:24}}>
+          <div>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:16,fontWeight:700,color:C.ink,letterSpacing:1.5}}>{title}</div>
+            {sub&&<div style={{fontSize:13,color:C.muted,marginTop:3,fontStyle:"italic"}}>{sub}</div>}
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:C.muted}}>x</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+
+  const Nav = ()=>(
+    <nav style={{position:"sticky",top:0,zIndex:200,background:scrolled?"rgba(26,18,8,0.97)":"#1a1208",backdropFilter:"blur(12px)",borderBottom:`1px solid ${C.gold}33`,transition:"all 0.3s"}}>
+      <div style={{maxWidth:1200,margin:"0 auto",padding:"0 28px",display:"flex",alignItems:"center",justifyContent:"space-between",height:66}}>
+        <div style={{display:"flex",alignItems:"center",gap:14,cursor:"pointer"}} onClick={()=>setPage("anasayfa")}>
+          <WaveLogo size={30}/>
+          <div>
+            <div style={{fontFamily:"'Cinzel',serif",fontWeight:900,fontSize:22,color:C.gold,letterSpacing:3,lineHeight:1}}>ARSiS</div>
+            <div style={{fontSize:9.5,color:"#8a7d60",letterSpacing:2.5,marginTop:1}}>JOURNAL OF MUSIC, MUSICOLOGY and ANTHROPOLOGY</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:2}}>
+          {[["anasayfa","Ana Sayfa"],["arsiv","Arsiv"],["hakkinda","Hakkinda"],["acik-erisim","Acik Erisim"]].map(([id,label])=>(
+            <button key={id} className={`nav-link${page===id?" active":""}`} onClick={()=>setPage(id)}>{label}</button>
+          ))}
+          <button className="nav-link" onClick={()=>user?setModal("makale"):setModal("login")} style={{color:C.goldL,border:`1px solid ${C.gold}55`,marginLeft:4}}>Makale Gonder</button>
+        </div>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          {user?(
+            <>
+              <button onClick={()=>{setPage("panel");setTab("makalelerim");}} style={{background:"rgba(201,168,76,0.12)",color:C.goldL,border:`1px solid ${C.gold}44`,padding:"7px 14px",borderRadius:6,cursor:"pointer",fontSize:12.5}}>
+                {user.name.split(" ").slice(-2).join(" ")}
+              </button>
+              <button onClick={()=>{setUser(null);setPage("anasayfa");toast_("Cikis yapildi.");}} style={{background:"none",border:"none",color:"#6a5d46",cursor:"pointer",fontSize:11}}>Cikis</button>
+            </>
+          ):(
+            <>
+              <button onClick={()=>setModal("login")} style={{background:"none",color:"#c4b896",border:`1px solid #c4b89644`,padding:"7px 14px",borderRadius:6,cursor:"pointer",fontSize:12}}>Giris</button>
+              <button onClick={()=>setModal("register")} style={{background:C.gold,color:C.ink,border:"none",padding:"7px 16px",borderRadius:6,cursor:"pointer",fontSize:12,fontWeight:700,letterSpacing:1}}>Kayit</button>
+            </>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+
+  const Home = ()=>(
+    <div>
+      <div style={{background:"#1a1208",position:"relative",overflow:"hidden",padding:"90px 48px 80px"}}>
+        <div style={{position:"absolute",top:-80,right:-80,width:320,height:320,borderRadius:"50%",border:`1px solid ${C.gold}22`,pointerEvents:"none"}}/>
+        <div style={{position:"absolute",bottom:-60,left:-60,width:260,height:260,borderRadius:"50%",border:`1px solid ${C.gold}15`,pointerEvents:"none"}}/>
+        <div style={{position:"relative",maxWidth:820,margin:"0 auto",textAlign:"center",animation:"fadeUp 0.8s ease both"}}>
+          <div style={{display:"flex",justifyContent:"center",marginBottom:28}}><WaveLogo size={42}/></div>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.gold,letterSpacing:5,marginBottom:16,opacity:0.8}}>arsIs - YUKSELIS</div>
+          <h1 style={{fontFamily:"'Cinzel',serif",fontSize:58,fontWeight:900,color:"#f0e6cc",margin:"0 0 8px",letterSpacing:6,lineHeight:1.05}}>ARSiS</h1>
+          <p style={{fontSize:16,color:"#a09070",letterSpacing:3,margin:"0 0 28px"}}>Journal of Music, Musicology and Anthropology</p>
+          <p style={{fontSize:19,color:"#c4b896",maxWidth:560,margin:"0 auto 40px",lineHeight:1.75,fontStyle:"italic"}}>"Muzigi kulturle, sesi insanla, ritmi zamanla bulusturan hakemli akademik dergi"</p>
+          <div style={{display:"flex",gap:14,justifyContent:"center",flexWrap:"wrap"}}>
+            <button onClick={()=>setPage("arsiv")} style={{background:C.gold,color:C.ink,border:"none",padding:"14px 32px",borderRadius:7,cursor:"pointer",fontSize:14,fontWeight:800,fontFamily:"'Cinzel',serif",letterSpacing:1.5}}>ARSIVi INCELE</button>
+            <button onClick={()=>user?setModal("makale"):setModal("login")} style={{background:"transparent",color:C.goldL,border:`1.5px solid ${C.gold}`,padding:"14px 32px",borderRadius:7,cursor:"pointer",fontSize:14,fontWeight:600}}>Makale Gonder</button>
+          </div>
+        </div>
+      </div>
+      <div style={{background:C.ink,borderBottom:`1px solid ${C.gold}33`,display:"grid",gridTemplateColumns:"repeat(4,1fr)"}}>
+        {[["Haziran 2026","Ilk Sayi Yayin Tarihi"],["4","Kapsam Alani"],["Acik Erisim","Ucretsiz ve Reklamsiz"],["Cift Kor","Hakem Sureci"]].map(([n,l],i)=>(
+          <div key={i} style={{padding:"22px 20px",textAlign:"center",borderRight:i<3?`1px solid ${C.gold}22`:"none"}}>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:20,fontWeight:700,color:C.gold}}>{n}</div>
+            <div style={{fontSize:12,color:"#7a6e5f",marginTop:3,letterSpacing:1}}>{l}</div>
+          </div>
         ))}
       </div>
-    );
-
-    const C = {
-      ink:"#1a1208", paper:"#f5f0e8", cream:"#ede8dc", gold:"#c9a84c", goldL:"#e8d080",
-      rust:"#8b3a2a", teal:"#1d6a5e", muted:"#7a6e5f", border:"#d4c9b4", white:"#ffffff",
-    };
-
-    const inp = { width:"100%", padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:14, outline:"none", background:C.paper, color:C.ink, marginBottom:13, boxSizing:"border-box", fontFamily:"'Crimson Pro', serif" };
-    const btn1 = { background:C.gold, color:C.ink, border:"none", padding:"12px 0", borderRadius:7, cursor:"pointer", fontWeight:800, fontSize:14, width:"100%", marginTop:4, fontFamily:"'Crimson Pro', serif", letterSpacing:0.5 };
-
-    function NewMessageModal({ users, user, supa, loadMessages, toast_, setModal }) {
-      const [to, setTo] = React.useState("");
-      const [subject, setSubject] = React.useState("");
-      const [content, setContent] = React.useState("");
-      return (
-        <div>
-          <div style={{ marginBottom:13 }}>
-            <div style={{ fontFamily:"'Cinzel', serif", fontSize:10, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>ALICI</div>
-            <select style={inp} value={to} onChange={e=>setTo(e.target.value)}>
-              <option value="">Üye seçin *</option>
-              {users.filter(u=>u.email!==user.email).map(u=>(
-                <option key={u.id} value={u.email}>{u.name} — {u.email}</option>
-              ))}
-            </select>
+      <div style={{background:C.paper,padding:"72px 28px"}}>
+        <div style={{maxWidth:780,margin:"0 auto",textAlign:"center"}}>
+          <div style={{display:"flex",justifyContent:"center",gap:6,marginBottom:36}}>
+            {[0.4,0.8,1,0.7,1,0.5,0.9,0.6,0.8,0.4].map((h,i)=>(
+              <div key={i} style={{width:4,background:C.gold,borderRadius:2,height:h*52,opacity:0.5+h*0.5,animation:`wave 1.4s ease-in-out ${i*0.1}s infinite alternate`}}/>
+            ))}
           </div>
-          <input style={inp} value={subject} onChange={e=>setSubject(e.target.value)} placeholder="Konu" />
-          <textarea style={{...inp, height:120, resize:"vertical"}} value={content} onChange={e=>setContent(e.target.value)} placeholder="Mesajınız..." />
-          <button style={btn1} onClick={async ()=>{
-            if (!to || !content) { toast_("Alıcı ve mesaj zorunludur.", "err"); return; }
-            await supa.from("messages").insert([{ from_name: user.name, from_email: user.email, to_email: to, subject, content }]);
-            await loadMessages();
-            setModal(null);
-            toast_("Mesajınız gönderildi.");
-          }}>GÖNDER</button>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.gold,letterSpacing:5,marginBottom:18}}>HAZIRAN 2026</div>
+          <h2 style={{fontFamily:"'Cinzel',serif",fontSize:34,fontWeight:900,color:C.ink,margin:"0 0 28px",letterSpacing:2,lineHeight:1.2}}>Ilk Ses Yukseliyor</h2>
+          <div style={{width:60,height:2,background:C.gold,margin:"0 auto 32px"}}/>
+          <p style={{fontSize:19,color:"#5a4e3a",lineHeight:1.85,margin:"0 0 16px",fontStyle:"italic"}}>
+            "Muzik sinir tanimaz; ses, duvarlari asar. ARSiS bu inancla yola cikiyor."
+          </p>
+          <p style={{fontSize:15,color:C.muted,lineHeight:1.75,margin:"0 0 44px"}}>
+            Muzik, muzikoloji, antropoloji ve etnomuzikoloji alanlarinda ozgun arastirmalari bir arada sunacak olan ARSiS, ilk sayisiyla Haziran 2026'da okurlarla bulusuyor.
+          </p>
+          <button onClick={()=>user?setModal("makale"):setModal("login")} style={{background:C.ink,color:C.gold,border:`1.5px solid ${C.gold}`,padding:"14px 36px",borderRadius:8,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:13,fontWeight:700,letterSpacing:2}}>MAKALE GONDER</button>
+          <p style={{fontSize:12,color:C.muted,marginTop:12,fontStyle:"italic"}}>Son gonderim: 30 Nisan 2026</p>
         </div>
-      );
-    }
-
-    function ReplyBox({ m, user, supa, loadMessages, toast_ }) {
-      const [text, setText] = React.useState("");
-      return (
-        <div style={{ marginTop:10 }}>
-          <textarea
-            value={text}
-            onChange={e => setText(e.target.value)}
-            placeholder="Cevabınızı yazın..."
-            style={{ width:"100%", padding:"8px 12px", border:`1px solid ${C.border}`, borderRadius:6, fontSize:13, fontFamily:"'Crimson Pro', serif", resize:"vertical", height:70, background:C.cream, boxSizing:"border-box", outline:"none" }}
-          />
-          <button onClick={async e=>{ e.stopPropagation();
-            if (!text.trim()) return;
-            await supa.from("messages").insert([{ from_name: user.name, from_email: user.email, to_email: m.from_email, subject: "Re: "+(m.subject||""), content: text }]);
-            setText("");
-            await loadMessages();
-            toast_("Cevabınız gönderildi.");
-          }} style={{ marginTop:6, background:C.ink, color:C.gold, border:"none", padding:"7px 16px", borderRadius:6, cursor:"pointer", fontFamily:"'Cinzel', serif", fontSize:11, fontWeight:700 }}>↩ CEVAPLA</button>
-        </div>
-      );
-    }
-
-    function App() {
-      const [articles, setArticles] = useState([]);
-      const [users, setUsers] = useState([]);
-      const [messages, setMessages] = useState([]);
-      const [page, setPage] = useState("anasayfa");
-      const [user, setUser] = useState(null);
-      const [modal, setModal] = useState(null);
-      const [toast, setToast] = useState(null);
-      const [tab, setTab] = useState("makalelerim");
-      const [search, setSearch] = useState("");
-      const [selArticle, setSelArticle] = useState(null);
-      const [filterField, setFilterField] = useState("Tümü");
-      const [scrolled, setScrolled] = useState(false);
-      const [loginF, setLoginF] = useState({ email:"", password:"" });
-
-      useEffect(() => {
-        loadArticles();
-        loadUsers();
-        loadMessages();
-        const onScroll = () => setScrolled(window.scrollY > 40);
-        window.addEventListener("scroll", onScroll);
-        return () => window.removeEventListener("scroll", onScroll);
-      }, []);
-
-      const loadArticles = async () => {
-        const { data } = await supa.from("articles").select("*").order("created_at", { ascending: false });
-        if (data) setArticles(data);
-      };
-
-      const loadMessages = async () => {
-        const { data } = await supa.from("messages").select("*").order("created_at", { ascending: false });
-        if (data) setMessages(data);
-      };
-
-      const loadUsers = async () => {
-        const { data } = await supa.from("users").select("*");
-        if (data) setUsers(data);
-      };
-
-      const toast_ = (msg, type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3400); };
-
-      const login = async () => {
-        const email = document.getElementById("l-email")?.value || loginF.email;
-        const password = document.getElementById("l-pass")?.value || loginF.password;
-        const { data } = await supa.from("users").select("*").eq("email", email).maybeSingle();
-        if (data && data.password === password) {
-          setUser(data); setModal(null);
-          toast_(`Hoş geldiniz, ${data.name.split(" ").slice(-1)[0]}!`);
-        } else {
-          toast_("E-posta veya şifre hatalı.", "err");
-        }
-      };
-
-      const myArticles = articles.filter(a => a.author_email === user?.email);
-      const myMessages = messages.filter(m => m.to_email === user?.email || m.from_email === user?.email);
-      const unread = messages.filter(m => m.to_email === user?.email && !m.read).length;
-
-      const filtered = articles.filter(a => {
-        const q = search.toLowerCase();
-        const matchQ = !q || a.title?.toLowerCase().includes(q) || a.author?.toLowerCase().includes(q);
-        const matchF = filterField === "Tümü" || a.field === filterField;
-        return matchQ && matchF;
-      });
-
-
-      /* ── NAV ── */
-      const Nav = () => (
-        <nav style={{ position:"sticky", top:0, zIndex:200, background:scrolled?"rgba(26,18,8,0.97)":"#1a1208", backdropFilter:"blur(12px)", borderBottom:`1px solid ${C.gold}33`, transition:"all 0.3s" }}>
-          <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 28px", display:"flex", alignItems:"center", justifyContent:"space-between", height:66 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:14, cursor:"pointer" }} onClick={()=>setPage("anasayfa")}>
-              <WaveLogo size={30} color={C.gold} />
-              <div>
-                <div style={{ fontFamily:"'Cinzel', serif", fontWeight:900, fontSize:22, color:C.gold, letterSpacing:3, lineHeight:1 }}>ARSİS</div>
-                <div style={{ fontFamily:"'Crimson Pro', serif", fontSize:9.5, color:"#8a7d60", letterSpacing:2.5, marginTop:1 }}>JOURNAL OF MUSIC, MUSICOLOGY & ANTHROPOLOGY</div>
-              </div>
-            </div>
-            <div style={{ display:"flex", gap:2 }}>
-              {[["anasayfa","Ana Sayfa"],["arsiv","Arşiv"],["komisyonlar","Komisyonlar"],["hakkinda","Hakkında"],["acik-erisim","Açık Erişim"]].map(([id,label]) => (
-                <button key={id} className={`nav-link${page===id?" active":""}`} onClick={()=>setPage(id)}>{label}</button>
-              ))}
-              <button className="nav-link" onClick={()=>user?setModal("makale"):setModal("login")} style={{ color:C.goldL, border:`1px solid ${C.gold}55`, marginLeft:4 }}>Makale Gönder</button>
-            </div>
-            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-              {user ? (
-                <>
-                  <button onClick={()=>{setPage("panel");setTab("makalelerim");}} style={{ background:"rgba(201,168,76,0.12)", color:C.goldL, border:`1px solid ${C.gold}44`, padding:"7px 14px", borderRadius:6, cursor:"pointer", fontSize:12.5, fontFamily:"'Crimson Pro', serif", display:"flex", alignItems:"center", gap:7 }}>
-                    ♩ {user.name.split(" ").slice(-2).join(" ")}
-                    {unread>0 && <span style={{ background:C.rust, color:"#fff", borderRadius:"50%", width:17, height:17, display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:800 }}>{unread}</span>}
-                  </button>
-                  <button onClick={()=>{setUser(null);setPage("anasayfa");toast_("Çıkış yapıldı.");}} style={{ background:"none", border:"none", color:"#6a5d46", cursor:"pointer", fontSize:11 }}>Çıkış</button>
-                </>
-              ) : (
-                <>
-                  <button onClick={()=>setModal("login")} style={{ background:"none", color:"#c4b896", border:`1px solid #c4b89644`, padding:"7px 14px", borderRadius:6, cursor:"pointer", fontSize:12, fontFamily:"'Crimson Pro', serif" }}>Giriş</button>
-                  <button onClick={()=>setModal("register")} style={{ background:C.gold, color:C.ink, border:"none", padding:"7px 16px", borderRadius:6, cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:"'Cinzel', serif", letterSpacing:1 }}>Kayıt</button>
-                </>
-              )}
-            </div>
-          </div>
-        </nav>
-      );
-
-      /* ── ANASAYFA ── */
-      const Home = () => (
-        <div>
-          <div style={{ background:"#1a1208", position:"relative", overflow:"hidden", padding:"90px 48px 80px" }}>
-            <div style={{ position:"absolute", top:-80, right:-80, width:320, height:320, borderRadius:"50%", border:`1px solid ${C.gold}22`, pointerEvents:"none" }} />
-            <div style={{ position:"absolute", bottom:-60, left:-60, width:260, height:260, borderRadius:"50%", border:`1px solid ${C.gold}15`, pointerEvents:"none" }} />
-            <div style={{ position:"absolute", inset:0, pointerEvents:"none", opacity:0.04 }}>
-              {[20,35,50,65,80].map(p=><div key={p} style={{ position:"absolute", top:`${p}%`, left:0, right:0, height:1, background:C.gold }} />)}
-            </div>
-            <div style={{ position:"relative", maxWidth:820, margin:"0 auto", textAlign:"center", animation:"fadeUp 0.8s ease both" }}>
-              <div style={{ display:"flex", justifyContent:"center", marginBottom:28 }}><WaveLogo size={42} color={C.gold} /></div>
-              <div style={{ fontFamily:"'Cinzel', serif", fontSize:11, color:C.gold, letterSpacing:5, marginBottom:16, opacity:0.8 }}>ἄρσις — YÜKSELIŞ</div>
-              <h1 style={{ fontFamily:"'Cinzel', serif", fontSize:58, fontWeight:900, color:"#f0e6cc", margin:"0 0 8px", letterSpacing:6, lineHeight:1.05 }}>ARSİS</h1>
-              <p style={{ fontFamily:"'Crimson Pro', serif", fontSize:16, color:"#a09070", letterSpacing:3, margin:"0 0 28px" }}>Journal of Music, Musicology & Anthropology</p>
-              <p style={{ fontFamily:"'Crimson Pro', serif", fontSize:19, color:"#c4b896", maxWidth:560, margin:"0 auto 40px", lineHeight:1.75, fontStyle:"italic" }}>"Müziği kültürle, sesi insanla, ritmi zamanla buluşturan hakemli akademik dergi"</p>
-              <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap" }}>
-                <button onClick={()=>setPage("arsiv")} style={{ background:C.gold, color:C.ink, border:"none", padding:"14px 32px", borderRadius:7, cursor:"pointer", fontSize:14, fontWeight:800, fontFamily:"'Cinzel', serif", letterSpacing:1.5 }}>ARŞİVİ İNCELE</button>
-                <button onClick={()=>user?setModal("makale"):setModal("login")} style={{ background:"transparent", color:C.goldL, border:`1.5px solid ${C.gold}`, padding:"14px 32px", borderRadius:7, cursor:"pointer", fontSize:14, fontFamily:"'Crimson Pro', serif", fontWeight:600 }}>Makale Gönder</button>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ background:C.ink, borderBottom:`1px solid ${C.gold}33`, display:"grid", gridTemplateColumns:"repeat(4,1fr)" }}>
-            {[["Haziran 2026","İlk Sayı Yayın Tarihi"],["4","Kapsam Alanı"],["Açık Erişim","Ücretsiz & Reklamsız"],["Çift Kör","Hakem Süreci"]].map(([n,l],i)=>(
-              <div key={i} style={{ padding:"22px 20px", textAlign:"center", borderRight:i<3?`1px solid ${C.gold}22`:"none" }}>
-                <div style={{ fontFamily:"'Cinzel', serif", fontSize:20, fontWeight:700, color:C.gold }}>{n}</div>
-                <div style={{ fontFamily:"'Crimson Pro', serif", fontSize:12, color:"#7a6e5f", marginTop:3, letterSpacing:1 }}>{l}</div>
+      </div>
+      <div style={{background:C.cream,borderTop:`1px solid ${C.border}`,padding:"52px 28px"}}>
+        <div style={{maxWidth:1100,margin:"0 auto"}}>
+          <h2 style={{fontFamily:"'Cinzel',serif",fontSize:22,fontWeight:700,color:C.ink,margin:"0 0 36px",letterSpacing:2}}>KAPSAM ALANLARI</h2>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:18}}>
+            {[{icon:"G",alan:"Etnomuzikoloji",desc:"Kulturel baglamda muzigin incelenmesi, saha arastirmalari"},{icon:"M",alan:"Muzikoloji",desc:"Muzik teorisi, tarihi ve analizi uzerine akademik calismalar"},{icon:"A",alan:"Antropoloji",desc:"Kulturler arasi muzik pratikleri ve toplumsal baglamlar"},{icon:"K",alan:"Muzik Antropolojisi",desc:"Muzigin insanlik tarihi ve kulturel evrimle iliskisi"}].map(f=>(
+              <div key={f.alan} style={{background:"#fff",borderRadius:10,padding:"24px 20px",border:`1px solid ${C.border}`,textAlign:"center"}}>
+                <div style={{fontFamily:"serif",fontSize:32,color:C.gold,marginBottom:10}}>{f.icon}</div>
+                <div style={{fontFamily:"'Cinzel',serif",fontSize:12,fontWeight:700,color:C.ink,letterSpacing:1,marginBottom:8}}>{f.alan.toUpperCase()}</div>
+                <p style={{fontSize:13,color:C.muted,margin:0,lineHeight:1.6}}>{f.desc}</p>
               </div>
             ))}
           </div>
+        </div>
+      </div>
+    </div>
+  );
 
-          <div style={{ background:C.paper, padding:"72px 28px" }}>
-            <div style={{ maxWidth:780, margin:"0 auto", textAlign:"center" }}>
-              <div style={{ display:"flex", justifyContent:"center", gap:6, marginBottom:36 }}>
-                {[0.4,0.8,1,0.7,1,0.5,0.9,0.6,0.8,0.4].map((h,i)=>(
-                  <div key={i} style={{ width:4, background:C.gold, borderRadius:2, height:h*52, opacity:0.5+h*0.5, animation:`wave 1.4s ease-in-out ${i*0.1}s infinite alternate` }} />
-                ))}
+  const Archive = ()=>(
+    <div style={{background:C.paper,minHeight:"80vh"}}>
+      <div style={{background:C.ink,padding:"52px 48px",textAlign:"center"}}>
+        <h2 style={{fontFamily:"'Cinzel',serif",fontSize:28,color:"#f0e6cc",margin:"0 0 12px",letterSpacing:3}}>Cilt 1, Sayi 1 - Haziran 2026</h2>
+        <p style={{fontSize:15,color:"#a09070",fontStyle:"italic"}}>Ilk sayi hazirlik asamasindadir.</p>
+      </div>
+      <div style={{maxWidth:700,margin:"0 auto",padding:"80px 28px",textAlign:"center"}}>
+        <h3 style={{fontFamily:"'Cinzel',serif",fontSize:26,color:C.ink,margin:"0 0 20px",letterSpacing:1}}>Ilk Ses Yukseliyor</h3>
+        <p style={{fontSize:17,color:"#5a4e3a",fontStyle:"italic",lineHeight:1.85,margin:"0 0 14px"}}>"Muzik sinir tanimaz; ses, duvarlari asar."</p>
+        <p style={{fontSize:14,color:C.muted,lineHeight:1.75,margin:"0 0 36px"}}>ARSiS'in ilk sayisi Haziran 2026'da yayimlanacaktir.</p>
+        <button onClick={()=>user?setModal("makale"):setModal("login")} style={{background:C.gold,color:C.ink,border:"none",padding:"13px 32px",borderRadius:7,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:12,fontWeight:700,letterSpacing:2}}>MAKALE GONDER</button>
+      </div>
+    </div>
+  );
+
+  const About = ()=>(
+    <div style={{background:C.paper}}>
+      <div style={{background:C.ink,padding:"52px 48px",textAlign:"center"}}>
+        <h2 style={{fontFamily:"'Cinzel',serif",fontSize:32,color:"#f0e6cc",margin:"0 0 14px",letterSpacing:3}}>ARSiS Hakkinda</h2>
+        <p style={{fontSize:17,color:"#a09070",maxWidth:600,margin:"0 auto",lineHeight:1.75,fontStyle:"italic"}}>Antik Yunanca'da "arsIs" - yukselen ses, ritmin guclu vurusu.</p>
+      </div>
+      <div style={{maxWidth:960,margin:"0 auto",padding:"60px 28px",display:"grid",gridTemplateColumns:"2fr 1fr",gap:52}}>
+        <div>
+          {[{t:"Amac ve Kapsam",c:"ARSiS, muzik, muzikoloji, antropoloji ve etnomuzikoloji alanlarinda ozgun arastirmalari yayimlayan cift kor hakemli acik erisim bir dergidir. Disiplinlerarasi yaklasimi benimseyen dergi, sahadan teoriye uzanan genis bir yelpazede calismalara ev sahipligi yapar."},{t:"Hakemlik Sureci",c:"Cift kor hakem degerlendirmesi uygulanmaktadir. Her makale alaninda uzman en az iki hakeme gonderilir. Degerlendirme suresi ortalama 45 gundur. COPE ilkeleri benimsenmiştir."},{t:"Yazim Kurallari",c:"Makaleler Chicago veya APA 7. Baski formatinda hazirlanabilir. Turkce ve Ingilizce ozet ile anahtar kelimeler zorunludur. Makale uzunlugu 5.000-12.000 kelime araliginda olmalidir."},{t:"Acik Erisim Politikasi",c:"ARSiS tamamen acik erisimli bir dergidir. Yazarlardan makale islem ucreti alinmaz. Tum makaleler Creative Commons CC BY 4.0 lisansi altinda yayimlanir."}].map(s=>(
+            <div key={s.t} style={{marginBottom:32}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                <div style={{width:28,height:2,background:C.gold}}/>
+                <h3 style={{fontFamily:"'Cinzel',serif",margin:0,fontSize:14,fontWeight:700,color:C.ink,letterSpacing:1}}>{s.t.toUpperCase()}</h3>
               </div>
-              <div style={{ fontFamily:"'Cinzel', serif", fontSize:11, color:C.gold, letterSpacing:5, marginBottom:18 }}>HAZİRAN 2026</div>
-              <h2 style={{ fontFamily:"'Cinzel', serif", fontSize:34, fontWeight:900, color:C.ink, margin:"0 0 28px", letterSpacing:2, lineHeight:1.2 }}>İlk Ses Yükseliyor</h2>
-              <div style={{ width:60, height:2, background:C.gold, margin:"0 auto 32px" }} />
-              <p style={{ fontFamily:"'Crimson Pro', serif", fontSize:19, color:"#5a4e3a", lineHeight:1.85, margin:"0 0 16px", fontStyle:"italic" }}>
-                "Müzik sınır tanımaz; ses, duvarları aşar. ARSİS bu inançla yola çıkıyor —<br/>müziği kültürle, sesi insanla, ritmi zamanla buluşturmak için."
-              </p>
-              <p style={{ fontFamily:"'Crimson Pro', serif", fontSize:15, color:C.muted, lineHeight:1.75, margin:"0 0 44px" }}>
-                Müzik, müzikoloji, antropoloji ve etnomüzikoloji alanlarında özgün araştırmaları bir arada sunacak olan ARSİS, ilk sayısıyla Haziran 2026'da okurlarıyla buluşuyor.
-              </p>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20, marginBottom:48 }}>
-                {[{ icon:"𝄞", b:"Çift Kör Hakemli", a:"Her makale bağımsız iki uzman tarafından değerlendirilir" },{ icon:"🔓", b:"Açık Erişim", a:"Tüm içerikler ücretsiz ve reklamsız — sonsuza kadar" },{ icon:"✦", b:"Disiplinlerarası", a:"Müzik, antropoloji ve kültür araştırmaları bir arada" }].map(k=>(
-                  <div key={k.b} style={{ background:"#fff", borderRadius:12, padding:"28px 20px", border:`1px solid ${C.border}`, textAlign:"center" }}>
-                    <div style={{ fontFamily:"serif", fontSize:30, color:C.gold, marginBottom:12 }}>{k.icon}</div>
-                    <div style={{ fontFamily:"'Cinzel', serif", fontSize:11, fontWeight:700, color:C.ink, letterSpacing:1, marginBottom:8 }}>{k.b.toUpperCase()}</div>
-                    <p style={{ fontFamily:"'Crimson Pro', serif", fontSize:13, color:C.muted, margin:0, lineHeight:1.65 }}>{k.a}</p>
-                  </div>
-                ))}
-              </div>
-              <button onClick={()=>user?setModal("makale"):setModal("login")} style={{ background:C.ink, color:C.gold, border:`1.5px solid ${C.gold}`, padding:"14px 36px", borderRadius:8, cursor:"pointer", fontFamily:"'Cinzel', serif", fontSize:13, fontWeight:700, letterSpacing:2 }}>MAKALE GÖNDER</button>
-              <p style={{ fontFamily:"'Crimson Pro', serif", fontSize:12, color:C.muted, marginTop:12, fontStyle:"italic" }}>Son gönderim: 30 Nisan 2026</p>
+              <p style={{margin:0,color:"#555",fontSize:15,lineHeight:1.8}}>{s.c}</p>
             </div>
+          ))}
+        </div>
+        <div>
+          <div style={{background:C.ink,borderRadius:12,padding:"28px 24px",marginBottom:20}}>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.gold,letterSpacing:2,marginBottom:16}}>DERGi BiLGiLERi</div>
+            {[["ISSN (Online)","Basvuruda"],["ISSN (Basili)","—"],["Ilk Sayi","Cilt 1, Sayi 1 - Haz. 2026"],["Periyot","Yilda 2 sayi"],["Dil","Turkce / Ingilizce"],["Erisim","Acik Erisim"],["Indeks","TR Dizin (basvuruda)"]].map(([k,v])=>(
+              <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${C.gold}22`,fontSize:13}}>
+                <span style={{color:"#8a7d60"}}>{k}</span>
+                <span style={{color:"#e0d0b0",fontWeight:600}}>{v}</span>
+              </div>
+            ))}
           </div>
-
-          <div style={{ background:C.cream, borderTop:`1px solid ${C.border}`, padding:"52px 28px" }}>
-            <div style={{ maxWidth:1100, margin:"0 auto" }}>
-              <div style={{ display:"flex", alignItems:"baseline", gap:16, marginBottom:36 }}>
-                <h2 style={{ fontFamily:"'Cinzel', serif", fontSize:22, fontWeight:700, color:C.ink, margin:0, letterSpacing:2 }}>KAPSAM ALANLARI</h2>
-                <div style={{ flex:1, height:1, background:`linear-gradient(to right, ${C.gold}88, transparent)` }} />
-              </div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:18 }}>
-                {[{ icon:"𝄞", alan:"Etnomüzikoloji", desc:"Kültürel bağlamda müziğin incelenmesi, saha araştırmaları" },{ icon:"♬", alan:"Müzikoloji", desc:"Müzik teorisi, tarihi ve analizi üzerine akademik çalışmalar" },{ icon:"◉", alan:"Antropoloji", desc:"Kültürler arası müzik pratikleri ve toplumsal bağlamlar" },{ icon:"ψ", alan:"Müzik Antropolojisi", desc:"Müziğin insanlık tarihi ve kültürel evrimle ilişkisi" }].map(f=>(
-                  <div key={f.alan} style={{ background:"#fff", borderRadius:10, padding:"24px 20px", border:`1px solid ${C.border}`, textAlign:"center" }}>
-                    <div style={{ fontFamily:"serif", fontSize:32, color:C.gold, marginBottom:10 }}>{f.icon}</div>
-                    <div style={{ fontFamily:"'Cinzel', serif", fontSize:12, fontWeight:700, color:C.ink, letterSpacing:1, marginBottom:8 }}>{f.alan.toUpperCase()}</div>
-                    <p style={{ fontFamily:"'Crimson Pro', serif", fontSize:13, color:C.muted, margin:0, lineHeight:1.6 }}>{f.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ background:`linear-gradient(135deg, ${C.ink} 0%, #2a1f0a 100%)`, padding:"44px 48px", borderTop:`2px solid ${C.gold}44` }}>
-            <div style={{ maxWidth:800, margin:"0 auto", textAlign:"center" }}>
-              <div style={{ fontFamily:"'Cinzel', serif", fontSize:10, color:C.gold, letterSpacing:4, marginBottom:14 }}>MAKALE ÇAĞRISI</div>
-              <h3 style={{ fontFamily:"'Cinzel', serif", fontSize:20, color:"#f0e6cc", margin:"0 0 12px", letterSpacing:1 }}>ARSİS — Cilt 1, Sayı 1 · Haziran 2026</h3>
-              <p style={{ fontFamily:"'Crimson Pro', serif", fontSize:16, color:"#a09070", margin:"0 0 8px", lineHeight:1.7 }}>Son gönderim tarihi: <strong style={{color:C.goldL}}>30 Nisan 2026</strong></p>
-              <button onClick={()=>user?setModal("makale"):setModal("login")} style={{ background:C.gold, color:C.ink, border:"none", padding:"13px 30px", borderRadius:7, cursor:"pointer", fontSize:13, fontWeight:800, fontFamily:"'Cinzel', serif", letterSpacing:1.5 }}>MAKALE GÖNDER</button>
-            </div>
+          <div style={{background:C.cream,borderRadius:12,padding:"22px 24px",border:`1px solid ${C.border}`}}>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.rust,letterSpacing:2,marginBottom:14}}>iLETiSiM</div>
+            <p style={{margin:"0 0 8px",fontSize:13.5,color:C.muted}}>arsisakademik@gmail.com</p>
+            <p style={{margin:0,fontSize:13.5,color:C.muted}}>Ankara, Turkiye</p>
           </div>
         </div>
-      );
+      </div>
+    </div>
+  );
 
-      /* ── ARŞİV ── */
-      const Archive = () => (
-        <div style={{ background:C.paper, minHeight:"80vh" }}>
-          <div style={{ background:C.ink, padding:"52px 48px", textAlign:"center" }}>
-            <div style={{ fontFamily:"'Cinzel', serif", fontSize:10, color:C.gold, letterSpacing:5, marginBottom:12 }}>ARŞİV</div>
-            <h2 style={{ fontFamily:"'Cinzel', serif", fontSize:28, color:"#f0e6cc", margin:"0 0 12px", letterSpacing:3 }}>Cilt 1, Sayı 1 · Haziran 2026</h2>
-            <p style={{ fontFamily:"'Crimson Pro', serif", fontSize:15, color:"#a09070", fontStyle:"italic" }}>İlk sayı hazırlık aşamasındadır.</p>
-          </div>
-          <div style={{ maxWidth:700, margin:"0 auto", padding:"80px 28px", textAlign:"center" }}>
-            <div style={{ display:"flex", justifyContent:"center", gap:5, marginBottom:32 }}>
-              {[0.5,0.9,0.6,1,0.7,1,0.5,0.8,0.6].map((h,i)=>(
-                <div key={i} style={{ width:4, background:C.gold, borderRadius:2, height:h*44, opacity:0.4+h*0.5, animation:`wave 1.4s ease-in-out ${i*0.12}s infinite alternate` }} />
-              ))}
-            </div>
-            <div style={{ fontFamily:"'Cinzel', serif", fontSize:11, color:C.gold, letterSpacing:4, marginBottom:20 }}>HAZİRAN 2026'DA BULUŞUYORUZ</div>
-            <h3 style={{ fontFamily:"'Cinzel', serif", fontSize:26, color:C.ink, margin:"0 0 20px", letterSpacing:1 }}>İlk Ses Yükseliyor</h3>
-            <p style={{ fontFamily:"'Crimson Pro', serif", fontSize:17, color:"#5a4e3a", fontStyle:"italic", lineHeight:1.85, margin:"0 0 14px" }}>"Müzik sınır tanımaz; ses, duvarları aşar."</p>
-            <p style={{ fontFamily:"'Crimson Pro', serif", fontSize:14, color:C.muted, lineHeight:1.75, margin:"0 0 36px" }}>ARSİS'in ilk sayısı Haziran 2026'da yayımlanacaktır.<br/>Makale göndermek için sisteme kayıt olabilirsiniz.</p>
-            <button onClick={()=>user?setModal("makale"):setModal("login")} style={{ background:C.gold, color:C.ink, border:"none", padding:"13px 32px", borderRadius:7, cursor:"pointer", fontFamily:"'Cinzel', serif", fontSize:12, fontWeight:700, letterSpacing:2 }}>MAKALE GÖNDER</button>
-          </div>
+  const OpenAccess = ()=>(
+    <div style={{background:C.paper,minHeight:"80vh"}}>
+      <div style={{background:C.ink,padding:"56px 48px",textAlign:"center"}}>
+        <div style={{fontSize:44,marginBottom:16}}>🔓</div>
+        <h2 style={{fontFamily:"'Cinzel',serif",fontSize:30,color:"#f0e6cc",margin:"0 0 14px",letterSpacing:3}}>ACIK ERiSiM</h2>
+        <p style={{fontSize:17,color:"#a09070",maxWidth:560,margin:"0 auto",lineHeight:1.75}}>ARSiS, bilginin serbest dolasimina inanan bir dergidir. Tum icerikler tamamen ucretsizdir.</p>
+      </div>
+      <div style={{maxWidth:720,margin:"0 auto",padding:"60px 28px"}}>
+        <div style={{background:"#fff",borderRadius:16,padding:"44px 48px",border:`2px solid ${C.gold}`,textAlign:"center"}}>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:44,fontWeight:900,color:C.gold,marginBottom:6}}>Ucretsiz</div>
+          <div style={{fontStyle:"italic",color:C.muted,fontSize:15,marginBottom:28}}>Reklam yok - Odeme duvari yok - Sonsuza kadar acik</div>
+          <button onClick={()=>user?toast_("Tum ozelliklere zaten erisiyorsunuz!"):setModal("register")} style={{background:C.gold,color:C.ink,border:"none",padding:"16px 52px",borderRadius:8,cursor:"pointer",fontFamily:"'Cinzel',serif",fontWeight:700,fontSize:15,letterSpacing:1.5}}>
+            {user?"Tum Ozelliklere Erisiyorsunuz":"KAYIT OL - UCRETSiZ"}
+          </button>
         </div>
-      );
+      </div>
+    </div>
+  );
 
-      /* ── HAKKINDA ── */
-      const About = () => (
-        <div style={{ background:C.paper }}>
-          <div style={{ background:C.ink, padding:"52px 48px", textAlign:"center" }}>
-            <div style={{ fontFamily:"'Cinzel', serif", fontSize:10, color:C.gold, letterSpacing:5, marginBottom:12 }}>ἄρσις</div>
-            <h2 style={{ fontFamily:"'Cinzel', serif", fontSize:32, color:"#f0e6cc", margin:"0 0 14px", letterSpacing:3 }}>ARSİS Hakkında</h2>
-            <p style={{ fontFamily:"'Crimson Pro', serif", fontSize:17, color:"#a09070", maxWidth:600, margin:"0 auto", lineHeight:1.75, fontStyle:"italic" }}>Antik Yunanca'da "ἄρσις" — yükselen ses, ritmin güçlü vuruşu.</p>
+  const Panel = ()=>(
+    <div style={{background:C.paper,minHeight:"80vh",padding:"40px 28px"}}>
+      <div style={{maxWidth:1100,margin:"0 auto",display:"grid",gridTemplateColumns:"230px 1fr",gap:28}}>
+        <div>
+          <div style={{background:C.ink,borderRadius:12,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
+            <div style={{width:56,height:56,background:C.gold,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Cinzel',serif",color:C.ink,fontSize:20,fontWeight:700,margin:"0 auto 14px"}}>{user?.name?.[0]}</div>
+            <div style={{fontFamily:"'Cinzel',serif",fontWeight:700,fontSize:13,color:"#f0e6cc"}}>{user?.name}</div>
+            <div style={{fontSize:12,color:"#8a7d60",marginTop:3,fontStyle:"italic"}}>{user?.institution}</div>
           </div>
-          <div style={{ maxWidth:960, margin:"0 auto", padding:"60px 28px", display:"grid", gridTemplateColumns:"2fr 1fr", gap:52 }}>
-            <div>
-              {[{ t:"Amaç ve Kapsam", c:"ARSİS, müzik, müzikoloji, antropoloji ve etnomüzikoloji alanlarında özgün araştırmaları yayımlayan çift kör hakemli açık erişim bir dergidir. Disiplinlerarası yaklaşımı benimseyen dergi, sahadan teoriye uzanan geniş bir yelpazede çalışmalara ev sahipliği yapar." },{ t:"Hakemlik Süreci", c:"Çift kör hakem değerlendirmesi uygulanmaktadır. Her makale alanında uzman en az iki hakeme gönderilir. Değerlendirme süresi ortalama 45 gündür. COPE ilkeleri benimsenmiştir." },{ t:"Yazım Kuralları", c:"Makaleler Chicago veya APA 7. Baskı formatında hazırlanabilir. Türkçe ve İngilizce özet ile anahtar kelimeler zorunludur. Makale uzunluğu 5.000–12.000 kelime aralığında olmalıdır." },{ t:"Açık Erişim Politikası", c:"ARSİS tamamen açık erişimli bir dergidir. Yazarlardan makale işlem ücreti (APC) alınmaz. Tüm makaleler Creative Commons CC BY 4.0 lisansı altında yayımlanır." }].map(s=>(
-                <div key={s.t} style={{ marginBottom:32 }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
-                    <div style={{ width:28, height:2, background:C.gold }} />
-                    <h3 style={{ fontFamily:"'Cinzel', serif", margin:0, fontSize:14, fontWeight:700, color:C.ink, letterSpacing:1 }}>{s.t.toUpperCase()}</h3>
-                  </div>
-                  <p style={{ margin:0, color:"#555", fontSize:15, lineHeight:1.8 }}>{s.c}</p>
-                </div>
-              ))}
-            </div>
-            <div>
-              <div style={{ background:C.ink, borderRadius:12, padding:"28px 24px", marginBottom:20 }}>
-                <div style={{ fontFamily:"'Cinzel', serif", fontSize:11, color:C.gold, letterSpacing:2, marginBottom:16 }}>DERGİ BİLGİLERİ</div>
-                {[["ISSN (Online)","Başvuruda"],["ISSN (Basılı)","—"],["İlk Sayı","Cilt 1, Sayı 1 · Haz. 2026"],["Periyot","Yılda 2 sayı"],["Dil","Türkçe / İngilizce"],["Erişim","Açık Erişim"],["İndeks","TR Dizin (başvuruda)"]].map(([k,v])=>(
-                  <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"7px 0", borderBottom:`1px solid ${C.gold}22`, fontSize:13 }}>
-                    <span style={{ color:"#8a7d60" }}>{k}</span>
-                    <span style={{ color:"#e0d0b0", fontWeight:600 }}>{v}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ background:C.cream, borderRadius:12, padding:"22px 24px", border:`1px solid ${C.border}` }}>
-                <div style={{ fontFamily:"'Cinzel', serif", fontSize:11, color:C.rust, letterSpacing:2, marginBottom:14 }}>İLETİŞİM</div>
-                <p style={{ margin:"0 0 8px", fontSize:13.5, color:C.muted }}>✉️ editor@arsis-journal.tr</p>
-                <p style={{ margin:0, fontSize:13.5, color:C.muted }}>🏛️ İTÜ TMDK, İstanbul</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-
-      /* ── AÇIK ERİŞİM ── */
-      const OpenAccess = () => (
-        <div style={{ background:C.paper, minHeight:"80vh" }}>
-          <div style={{ background:C.ink, padding:"56px 48px", textAlign:"center" }}>
-            <div style={{ fontSize:44, marginBottom:16 }}>🔓</div>
-            <h2 style={{ fontFamily:"'Cinzel', serif", fontSize:30, color:"#f0e6cc", margin:"0 0 14px", letterSpacing:3 }}>AÇIK ERİŞİM</h2>
-            <p style={{ fontFamily:"'Crimson Pro', serif", fontSize:17, color:"#a09070", maxWidth:560, margin:"0 auto", lineHeight:1.75 }}>ARSİS, bilginin serbest dolaşımına inanan bir dergidir. Tüm içerikler tamamen ücretsizdir.</p>
-          </div>
-          <div style={{ maxWidth:720, margin:"0 auto", padding:"60px 28px" }}>
-            <div style={{ background:"#fff", borderRadius:16, padding:"44px 48px", border:`2px solid ${C.gold}`, textAlign:"center" }}>
-              <div style={{ fontFamily:"'Cinzel', serif", fontSize:44, fontWeight:900, color:C.gold, marginBottom:6 }}>Ücretsiz</div>
-              <div style={{ fontFamily:"'Crimson Pro', serif", fontStyle:"italic", color:C.muted, fontSize:15, marginBottom:28 }}>Reklam yok · Ödeme duvarı yok · Sonsuza kadar açık</div>
-              <div style={{ height:1, background:C.border, marginBottom:28 }} />
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:36, textAlign:"left" }}>
-                {["Tüm makalelere tam erişim","PDF indirme (sınırsız)","Makale gönderim hakkı","Hakem & editör iletişimi","Tam arşiv erişimi","E-posta bildirimleri"].map(f=>(
-                  <div key={f} style={{ display:"flex", gap:9, fontSize:14.5, color:C.ink, alignItems:"center" }}>
-                    <span style={{ color:C.teal, fontWeight:800, fontSize:16 }}>✓</span>{f}
-                  </div>
-                ))}
-              </div>
-              <button onClick={()=>user?toast_("Tüm özelliklere zaten erişiyorsunuz!"):setModal("register")} style={{ background:C.gold, color:C.ink, border:"none", padding:"16px 52px", borderRadius:8, cursor:"pointer", fontFamily:"'Cinzel', serif", fontWeight:700, fontSize:15, letterSpacing:1.5 }}>
-                {user?"✓ Tüm Özelliklere Erişiyorsunuz":"KAYIT OL — ÜCRETSİZ"}
+          <div style={{background:"#fff",borderRadius:12,border:`1px solid ${C.border}`,overflow:"hidden"}}>
+            {[{id:"makalelerim",icon:"M",label:"Makalelerim"},{id:"mesajlar",icon:"E",label:"Mesajlar"},{id:"profil",icon:"P",label:"Profilim"},...(user?.role==="editor"?[{id:"yonetim",icon:"Y",label:"Yonetim Paneli"}]:[])].map(item=>(
+              <button key={item.id} onClick={()=>setTab(item.id)} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"13px 18px",background:tab===item.id?`${C.gold}12`:"transparent",border:"none",cursor:"pointer",fontSize:13.5,fontWeight:tab===item.id?700:500,color:tab===item.id?C.rust:C.ink,borderLeft:tab===item.id?`3px solid ${C.gold}`:"3px solid transparent"}}>
+                <span style={{color:C.gold,fontFamily:"'Cinzel',serif",fontSize:11}}>{item.icon}</span>{item.label}
               </button>
-            </div>
+            ))}
           </div>
         </div>
-      );
-
-      /* ── PANEL ── */
-      const Panel = () => (
-        <div style={{ background:C.paper, minHeight:"80vh", padding:"40px 28px" }}>
-          <div style={{ maxWidth:1100, margin:"0 auto", display:"grid", gridTemplateColumns:"230px 1fr", gap:28 }}>
+        <div style={{background:"#fff",borderRadius:12,border:`1px solid ${C.border}`,padding:"32px 36px"}}>
+          {tab==="makalelerim"&&(
             <div>
-              <div style={{ background:C.ink, borderRadius:12, padding:"24px 20px", marginBottom:16, textAlign:"center" }}>
-                <div style={{ width:56, height:56, background:C.gold, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Cinzel', serif", color:C.ink, fontSize:20, fontWeight:700, margin:"0 auto 14px" }}>{user?.name?.[0]}</div>
-                <div style={{ fontFamily:"'Cinzel', serif", fontWeight:700, fontSize:13, color:"#f0e6cc" }}>{user?.name}</div>
-                <div style={{ fontSize:12, color:"#8a7d60", marginTop:3, fontStyle:"italic" }}>{user?.institution}</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:26}}>
+                <h3 style={{fontFamily:"'Cinzel',serif",margin:0,fontSize:17,letterSpacing:1,color:C.ink}}>MAKALELERiM</h3>
+                <button onClick={()=>setModal("makale")} style={{background:C.gold,color:C.ink,border:"none",padding:"9px 20px",borderRadius:7,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:11,letterSpacing:1,fontWeight:700}}>+ MAKALE GONDER</button>
               </div>
-              <div style={{ background:"#fff", borderRadius:12, border:`1px solid ${C.border}`, overflow:"hidden" }}>
-                {[{ id:"makalelerim", icon:"♩", label:"Makalelerim" },{ id:"mesajlar", icon:"✉", label:"Mesajlar", badge:unread },{ id:"profil", icon:"◎", label:"Profilim" },
-                ...(user?.role==="editor"?[{ id:"yonetim", icon:"⚙", label:"Yönetim Paneli" }]:[])
-              ].map(item=>(
-                  <button key={item.id} onClick={()=>setTab(item.id)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"13px 18px", background:tab===item.id?`${C.gold}12`:"transparent", border:"none", cursor:"pointer", fontSize:13.5, fontWeight:tab===item.id?700:500, color:tab===item.id?C.rust:C.ink, borderLeft:tab===item.id?`3px solid ${C.gold}`:"3px solid transparent", fontFamily:"'Crimson Pro', serif" }}>
-                    <span style={{ color:C.gold }}>{item.icon}</span> {item.label}
-                    {item.badge>0 && <span style={{ marginLeft:"auto", background:C.rust, color:"#fff", borderRadius:"50%", width:18, height:18, display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:800 }}>{item.badge}</span>}
-                  </button>
+              {myArticles.length===0?(
+                <div style={{textAlign:"center",padding:"60px 20px",color:C.muted}}>
+                  <p style={{marginBottom:16,fontStyle:"italic"}}>Henuz makale gondermediniz.</p>
+                  <button onClick={()=>setModal("makale")} style={{background:C.ink,color:C.gold,border:"none",padding:"10px 22px",borderRadius:6,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:11}}>iLK MAKALENiZi GONDERiN</button>
+                </div>
+              ):myArticles.map(a=>{
+                const sc=STATUS[a.status]||{};
+                return(
+                  <div key={a.id} style={{border:`1px solid ${C.border}`,borderRadius:10,padding:"18px 22px",marginBottom:14}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                      <h4 style={{fontFamily:"'Cinzel',serif",margin:"0 0 6px",fontSize:13.5,color:C.ink,flex:1,paddingRight:14}}>{a.title}</h4>
+                      <span style={{background:sc.bg,color:sc.color,fontSize:10,padding:"4px 10px",borderRadius:20,fontWeight:700,whiteSpace:"nowrap"}}>{sc.label}</span>
+                    </div>
+                    <p style={{margin:0,fontSize:12.5,color:C.muted,fontStyle:"italic"}}>Gonderim: {a.created_at?.split("T")[0]} - {a.field}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {tab==="mesajlar"&&<MesajlarTab user={user} toast_={toast_}/>}
+          {tab==="profil"&&(
+            <div>
+              <h3 style={{fontFamily:"'Cinzel',serif",margin:"0 0 26px",fontSize:17,letterSpacing:1,color:C.ink}}>PROFiL BiLGiLERiM</h3>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                {[["Ad Soyad",user?.name],["E-posta",user?.email],["Kurum",user?.institution||"—"],["ORCID",user?.orcid||"Eklenmemis"],["Rol",user?.role],["Erisim","Acik Erisim"]].map(([k,v])=>(
+                  <div key={k} style={{background:C.cream,borderRadius:8,padding:"14px 18px",border:`1px solid ${C.border}`}}>
+                    <div style={{fontFamily:"'Cinzel',serif",fontSize:9,color:C.muted,letterSpacing:1.5,marginBottom:5}}>{k.toUpperCase()}</div>
+                    <div style={{fontSize:14.5,color:C.ink,fontWeight:600}}>{v}</div>
+                  </div>
                 ))}
               </div>
             </div>
-            <div style={{ background:"#fff", borderRadius:12, border:`1px solid ${C.border}`, padding:"32px 36px" }}>
-              {tab==="makalelerim" && (
-                <div>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:26 }}>
-                    <h3 style={{ fontFamily:"'Cinzel', serif", margin:0, fontSize:17, letterSpacing:1, color:C.ink }}>MAKALELERİM</h3>
-                    <button onClick={()=>setModal("makale")} style={{ background:C.gold, color:C.ink, border:"none", padding:"9px 20px", borderRadius:7, cursor:"pointer", fontFamily:"'Cinzel', serif", fontSize:11, letterSpacing:1, fontWeight:700 }}>+ MAKALE GÖNDER</button>
+          )}
+          {tab==="yonetim"&&user?.role==="editor"&&(
+            <div>
+              <h3 style={{fontFamily:"'Cinzel',serif",margin:"0 0 24px",fontSize:17,letterSpacing:1,color:C.ink}}>YONETiM PANELi</h3>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:32}}>
+                {[["Toplam Makale",articles.length,C.gold],["Beklemede",articles.filter(a=>a.status==="beklemede").length,"#1e40af"],["Hakemde",articles.filter(a=>a.status==="hakemde").length,C.rust],["Toplam Uye",users.length,C.teal]].map(([l,n,c])=>(
+                  <div key={l} style={{background:`${c}12`,borderRadius:9,padding:"16px 12px",textAlign:"center",border:`1px solid ${c}30`}}>
+                    <div style={{fontFamily:"'Cinzel',serif",fontSize:26,fontWeight:700,color:c}}>{n}</div>
+                    <div style={{fontSize:11,color:C.muted,marginTop:3}}>{l}</div>
                   </div>
-                  {myArticles.length===0 ? (
-                    <div style={{ textAlign:"center", padding:"60px 20px", color:C.muted }}>
-                      <div style={{ fontFamily:"'Cinzel', serif", fontSize:32, color:C.gold, marginBottom:14 }}>𝄞</div>
-                      <p style={{ marginBottom:16, fontStyle:"italic" }}>Henüz makale göndermediniz.</p>
-                      <button onClick={()=>setModal("makale")} style={{ background:C.ink, color:C.gold, border:"none", padding:"10px 22px", borderRadius:6, cursor:"pointer", fontFamily:"'Cinzel', serif", fontSize:11 }}>İLK MAKALENİZİ GÖNDERİN</button>
-                    </div>
-                  ) : myArticles.map(a=>{
-                    const sc=STATUS_CFG[a.status]||{};
-                    return (
-                      <div key={a.id} style={{ border:`1px solid ${C.border}`, borderRadius:10, padding:"18px 22px", marginBottom:14 }}>
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-                          <h4 style={{ fontFamily:"'Cinzel', serif", margin:"0 0 6px", fontSize:13.5, color:C.ink, flex:1, paddingRight:14 }}>{a.title}</h4>
-                          <span style={{ background:sc.bg, color:sc.color, fontSize:10, padding:"4px 10px", borderRadius:20, fontWeight:700, whiteSpace:"nowrap" }}>{sc.label}</span>
+                ))}
+              </div>
+              <div style={{marginBottom:32}}>
+                <div style={{fontFamily:"'Cinzel',serif",fontSize:12,color:C.ink,letterSpacing:1,marginBottom:14,fontWeight:700}}>GONDERiLEN MAKALELER</div>
+                {articles.length===0?<p style={{color:C.muted,fontStyle:"italic",fontSize:14}}>Henuz makale gonderilmemis.</p>:
+                  articles.map(a=>{
+                    const sc=STATUS[a.status]||{};
+                    return(
+                      <div key={a.id} style={{border:`1px solid ${C.border}`,borderRadius:9,padding:"14px 18px",marginBottom:10}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                          <div style={{fontFamily:"'Cinzel',serif",fontSize:13,color:C.ink,flex:1,paddingRight:12}}>{a.title}</div>
+                          <select value={a.status} onChange={async e=>{await supa.from("articles").update({status:e.target.value}).eq("id",a.id);await loadArticles();toast_("Durum guncellendi.");}} style={{fontSize:11,padding:"3px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:sc.bg,color:sc.color,fontWeight:700,cursor:"pointer"}}>
+                            {Object.entries(STATUS).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+                          </select>
                         </div>
-                        <p style={{ margin:0, fontSize:12.5, color:C.muted, fontStyle:"italic" }}>Gönderim: {a.created_at?.split("T")[0]} · {a.field}</p>
+                        <div style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>{a.author} - {a.author_email} - {a.field} - {a.created_at?.split("T")[0]}</div>
+                        {a.file_url&&<a href={a.file_url} target="_blank" style={{fontSize:12,color:C.teal,marginTop:4,display:"inline-block"}}>Dosyayi Indir</a>}
                       </div>
                     );
-                  })}
-                </div>
-              )}
-              {tab==="mesajlar" && (
-                <div>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:26 }}>
-                    <h3 style={{ fontFamily:"'Cinzel', serif", margin:0, fontSize:17, letterSpacing:1, color:C.ink }}>MESAJLAR</h3>
-                    {user?.role==="editor" && (
-                      <button onClick={()=>setModal("message")} style={{ background:C.ink, color:C.gold, border:"none", padding:"9px 20px", borderRadius:7, cursor:"pointer", fontFamily:"'Cinzel', serif", fontSize:11, letterSpacing:1, fontWeight:700 }}>+ YENİ MESAJ</button>
-                    )}
-                  </div>
-                  {myMessages.length===0 ? (
-                    <div style={{ textAlign:"center", padding:"60px", color:C.muted, fontStyle:"italic" }}>Henüz mesaj yok.</div>
-                  ) : myMessages.map(m=>(
-                    <div key={m.id} style={{ border:`1px solid ${C.border}`, borderRadius:10, padding:"16px 20px", marginBottom:12, background: !m.read && m.to_email===user?.email ? `${C.gold}08` : "#fff" }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
-                        <span style={{ fontFamily:"'Cinzel', serif", fontSize:13, color:C.ink, fontWeight:700 }}>{m.subject || "(Konu yok)"}</span>
-                        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                          {!m.read && m.to_email===user?.email && <span style={{ background:C.rust, color:"#fff", borderRadius:20, padding:"1px 7px", fontSize:9, fontWeight:700 }}>YENİ</span>}
-                          <span style={{ fontSize:11, color:C.muted }}>{m.created_at?.split("T")[0]}</span>
-                        </div>
-                      </div>
-                      <div style={{ fontSize:12, color:C.muted, marginBottom:8, fontStyle:"italic" }}>
-                        {m.from_email===user?.email ? `→ ${m.to_email}` : `← ${m.from_name}`}
-                      </div>
-                      <p style={{ margin:"0 0 12px", fontSize:14, color:"#444", lineHeight:1.7 }}>{m.content}</p>
-                      {m.to_email===user?.email && (
-                        <ReplyBox m={m} user={user} supa={supa} loadMessages={loadMessages} toast_={toast_} />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {tab==="profil" && (
-                <div>
-                  <h3 style={{ fontFamily:"'Cinzel', serif", margin:"0 0 26px", fontSize:17, letterSpacing:1, color:C.ink }}>PROFİL BİLGİLERİM</h3>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
-                    {[["Ad Soyad",user?.name],["E-posta",user?.email],["Kurum",user?.institution||"—"],["ORCID",user?.orcid||"Eklenmemiş"],["Rol",user?.role],["Erişim","Açık Erişim"]].map(([k,v])=>(
-                      <div key={k} style={{ background:C.cream, borderRadius:8, padding:"14px 18px", border:`1px solid ${C.border}` }}>
-                        <div style={{ fontFamily:"'Cinzel', serif", fontSize:9, color:C.muted, letterSpacing:1.5, marginBottom:5 }}>{k.toUpperCase()}</div>
-                        <div style={{ fontSize:14.5, color:C.ink, fontWeight:600 }}>{v}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {tab==="yonetim" && user?.role==="editor" && (
-                <div>
-                  <h3 style={{ fontFamily:"'Cinzel', serif", margin:"0 0 24px", fontSize:17, letterSpacing:1, color:C.ink }}>YÖNETİM PANELİ</h3>
-
-                  {/* İstatistikler */}
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:32 }}>
-                    {[
-                      ["Toplam Makale", articles.length, C.gold],
-                      ["Beklemede", articles.filter(a=>a.status==="beklemede").length, "#1e40af"],
-                      ["Hakemde", articles.filter(a=>a.status==="hakemde").length, C.rust],
-                      ["Toplam Üye", users.length, C.teal],
-                    ].map(([l,n,c])=>(
-                      <div key={l} style={{ background:`${c}12`, borderRadius:9, padding:"16px 12px", textAlign:"center", border:`1px solid ${c}30` }}>
-                        <div style={{ fontFamily:"'Cinzel', serif", fontSize:26, fontWeight:700, color:c }}>{n}</div>
-                        <div style={{ fontFamily:"'Crimson Pro', serif", fontSize:11, color:C.muted, marginTop:3 }}>{l}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Makaleler */}
-                  <div style={{ marginBottom:32 }}>
-                    <div style={{ fontFamily:"'Cinzel', serif", fontSize:12, color:C.ink, letterSpacing:1, marginBottom:14, fontWeight:700 }}>GÖNDERILEN MAKALELER</div>
-                    {articles.length===0 ? <p style={{ color:C.muted, fontStyle:"italic", fontSize:14 }}>Henüz makale gönderilmemiş.</p> :
-                      articles.map(a=>{
-                        const sc=STATUS_CFG[a.status]||{};
-                        return (
-                          <div key={a.id} style={{ border:`1px solid ${C.border}`, borderRadius:9, padding:"14px 18px", marginBottom:10 }}>
-                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
-                              <div style={{ fontFamily:"'Cinzel', serif", fontSize:13, color:C.ink, flex:1, paddingRight:12 }}>{a.title}</div>
-                              <select value={a.status} onChange={async e=>{
-                                await supa.from("articles").update({ status: e.target.value }).eq("id", a.id);
-                                await loadArticles();
-                                toast_("Durum güncellendi.");
-                              }} style={{ fontSize:11, padding:"3px 8px", borderRadius:6, border:`1px solid ${C.border}`, background:sc.bg, color:sc.color, fontWeight:700, cursor:"pointer" }}>
-                                {Object.entries(STATUS_CFG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
-                              </select>
-                            </div>
-                            <div style={{ fontSize:12, color:C.muted, fontStyle:"italic" }}>{a.author} · {a.author_email} · {a.field} · {a.created_at?.split("T")[0]}</div>
-                            {a.file_url && <a href={a.file_url} target="_blank" style={{ fontSize:12, color:C.teal, marginTop:4, display:"inline-block" }}>📄 Dosyayı İndir</a>}
-                          </div>
-                        );
-                      })
-                    }
-                  </div>
-
-                  {/* Üyeler */}
-                  <div>
-                    <div style={{ fontFamily:"'Cinzel', serif", fontSize:12, color:C.ink, letterSpacing:1, marginBottom:14, fontWeight:700 }}>KAYITLI ÜYELER</div>
-                    {users.length===0 ? <p style={{ color:C.muted, fontStyle:"italic", fontSize:14 }}>Henüz üye yok.</p> :
-                      users.map(u=>(
-                        <div key={u.id} style={{ border:`1px solid ${C.border}`, borderRadius:9, padding:"12px 18px", marginBottom:8, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                          <div>
-                            <div style={{ fontFamily:"'Cinzel', serif", fontSize:13, color:C.ink }}>{u.name}</div>
-                            <div style={{ fontSize:12, color:C.muted, fontStyle:"italic" }}>{u.email} · {u.institution||"—"}</div>
-                          </div>
-                          <span style={{ fontSize:10, padding:"3px 10px", borderRadius:20, background:`${C.gold}20`, color:C.rust, fontWeight:700, fontFamily:"'Cinzel', serif" }}>{u.role?.toUpperCase()}</span>
-                        </div>
-                      ))
-                    }
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-
-      /* ── MODAL ── */
-      const ModalWrap = ({ title, sub, children, onClose }) => (
-        <div style={{ position:"fixed", inset:0, background:"rgba(10,8,4,0.75)", zIndex:300, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }} onClick={onClose}>
-          <div onClick={e=>e.stopPropagation()} style={{ background:C.paper, borderRadius:16, padding:"40px 44px", width:"100%", maxWidth:500, maxHeight:"90vh", overflowY:"auto", boxShadow:"0 24px 80px rgba(0,0,0,0.5)", border:`1px solid ${C.gold}44` }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:24 }}>
+                  })
+                }
+              </div>
               <div>
-                <div style={{ fontFamily:"'Cinzel', serif", fontSize:16, fontWeight:700, color:C.ink, letterSpacing:1.5 }}>{title}</div>
-                {sub && <div style={{ fontFamily:"'Crimson Pro', serif", fontSize:13, color:C.muted, marginTop:3, fontStyle:"italic" }}>{sub}</div>}
-              </div>
-              <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", fontSize:22, color:C.muted }}>×</button>
-            </div>
-            {children}
-          </div>
-        </div>
-      );
-
-      /* ── FOOTER ── */
-      const Footer = () => (
-        <footer style={{ background:C.ink, borderTop:`2px solid ${C.gold}44` }}>
-          <div style={{ maxWidth:1100, margin:"0 auto", padding:"44px 28px 28px", display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:36 }}>
-            <div>
-              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-                <WaveLogo size={22} color={C.gold} />
-                <div style={{ fontFamily:"'Cinzel', serif", fontWeight:900, fontSize:18, color:C.gold, letterSpacing:3 }}>ARSİS</div>
-              </div>
-              <p style={{ margin:"0 0 8px", fontSize:12.5, color:"#8a7d60", lineHeight:1.7, fontStyle:"italic" }}>"Müziği kültürle, sesi insanla buluşturan hakemli dergi"</p>
-              <p style={{ margin:0, fontSize:11.5, color:"#5a4e3a" }}>Açık Erişim · CC BY 4.0</p>
-            </div>
-            {[["Dergi",["Ana Sayfa","Arşiv","Makale Gönder","Açık Erişim"]],["Bilgi",["Yazım Kuralları","Etik İlkeler","Hakem Süreci","İletişim"]],["Sosyal",["ResearchGate","Academia.edu","ORCID","Google Scholar"]]].map(([title,items])=>(
-              <div key={title}>
-                <div style={{ fontFamily:"'Cinzel', serif", fontSize:10, color:C.gold, letterSpacing:2, marginBottom:14, fontWeight:700 }}>{title.toUpperCase()}</div>
-                {items.map(item=><div key={item} style={{ fontSize:12.5, color:"#7a6e5f", marginBottom:7, cursor:"pointer" }}>{item}</div>)}
-              </div>
-            ))}
-          </div>
-          <div style={{ borderTop:`1px solid ${C.gold}22`, padding:"18px 28px", display:"flex", justifyContent:"space-between" }}>
-            <div style={{ fontFamily:"'Cinzel', serif", fontSize:10, color:"#5a4e3a", letterSpacing:1.5 }}>© 2026 ARSİS · Journal of Music, Musicology & Anthropology</div>
-            <div style={{ fontFamily:"'Crimson Pro', serif", fontSize:11, color:"#5a4e3a", fontStyle:"italic" }}>ἄρσις — yükseliş</div>
-          </div>
-        </footer>
-      );
-
-      return (
-        <div style={{ fontFamily:"'Crimson Pro', serif", background:C.paper, minHeight:"100vh" }}>
-          <Nav />
-          {page==="anasayfa" && <Home />}
-          {page==="arsiv" && <Archive />}
-          {page==="hakkinda" && <About />}
-          {page==="acik-erisim" && <OpenAccess />}
-          {page==="panel" && user && <Panel />}
-          <Footer />
-
-          {toast && (
-            <div style={{ position:"fixed", bottom:28, right:28, background:toast.type==="err"?"#7f1d1d":C.ink, color:toast.type==="err"?"#fca5a5":C.gold, padding:"14px 24px", borderRadius:10, fontWeight:600, fontSize:14, zIndex:500, boxShadow:"0 8px 24px rgba(0,0,0,0.35)", border:`1px solid ${toast.type==="err"?"#b91c1c":C.gold}55`, maxWidth:360 }}>
-              {toast.type==="err"?"⚠ ":"♩ "}{toast.msg}
-            </div>
-          )}
-
-          {modal==="login" && (
-            <ModalWrap title="ARSİS'E GİRİŞ" onClose={()=>setModal(null)}>
-              <input style={inp} id="l-email" placeholder="E-posta" />
-              <input style={inp} id="l-pass" type="password" placeholder="Şifre" />
-              <button style={btn1} onClick={async ()=>{
-                const email = document.getElementById("l-email").value;
-                const password = document.getElementById("l-pass").value;
-                const { data } = await supa.from("users").select("*").eq("email", email).maybeSingle();
-                if (data && data.password === password) {
-                  setUser(data); setModal(null);
-                  toast_(`Hoş geldiniz, ${data.name.split(" ").slice(-1)[0]}!`);
-                } else {
-                  toast_("E-posta veya şifre hatalı.", "err");
+                <div style={{fontFamily:"'Cinzel',serif",fontSize:12,color:C.ink,letterSpacing:1,marginBottom:14,fontWeight:700}}>KAYITLI UYELER</div>
+                {users.length===0?<p style={{color:C.muted,fontStyle:"italic",fontSize:14}}>Henuz uye yok.</p>:
+                  users.map(u=>(
+                    <div key={u.id} style={{border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 18px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <div>
+                        <div style={{fontFamily:"'Cinzel',serif",fontSize:13,color:C.ink}}>{u.name}</div>
+                        <div style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>{u.email} - {u.institution||"—"}</div>
+                      </div>
+                      <span style={{fontSize:10,padding:"3px 10px",borderRadius:20,background:`${C.gold}20`,color:C.rust,fontWeight:700,fontFamily:"'Cinzel',serif"}}>{u.role?.toUpperCase()}</span>
+                    </div>
+                  ))
                 }
-              }}>GİRİŞ YAP</button>
-              <p style={{ textAlign:"center", marginTop:16, fontSize:13.5, color:C.muted }}>Hesabınız yok mu? <span style={{ color:C.rust, cursor:"pointer", fontWeight:600 }} onClick={()=>setModal("register")}>Kayıt olun</span></p>
-            </ModalWrap>
-          )}
-
-          {modal==="register" && (
-            <ModalWrap title="KAYIT OL" sub="ARSİS — Tamamen Ücretsiz" onClose={()=>setModal(null)}>
-              <input style={inp} id="f-name" placeholder="Ad Soyad *" defaultValue="" />
-              <input style={inp} id="f-email" placeholder="E-posta *" defaultValue="" />
-              <input style={inp} id="f-inst" placeholder="Kurum / Üniversite" defaultValue="" />
-              <input style={inp} id="f-orcid" placeholder="ORCID ID (isteğe bağlı)" defaultValue="" />
-              <select style={inp} id="f-role">
-                <option value="yazar">Yazar / Araştırmacı</option>
-                <option value="hakem">Hakem</option>
-              </select>
-              <input style={inp} id="f-pass" type="password" placeholder="Şifre *" defaultValue="" />
-              <button style={btn1} onClick={async ()=>{
-                const name = document.getElementById("f-name").value;
-                const email = document.getElementById("f-email").value;
-                const institution = document.getElementById("f-inst").value;
-                const orcid = document.getElementById("f-orcid").value;
-                const role = document.getElementById("f-role").value;
-                const password = document.getElementById("f-pass").value;
-                if (!name || !email) { toast_("Ad ve e-posta zorunludur.", "err"); return; }
-                if (!password) { toast_("Şifre zorunludur.", "err"); return; }
-                const { data, error } = await supa.from("users").insert([{ name, email, institution, orcid, role, password }]).select().single();
-                if (error) { toast_("Bu e-posta zaten kayıtlı olabilir.", "err"); return; }
-                setUser(data);
-                await loadUsers();
-                setModal(null);
-                toast_("ARSİS'e hoş geldiniz!");
-                // Hoş geldin maili gönder
-                fetch("https://nivablklgvgykwauzbeo.supabase.co/functions/v1/swift-handler", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json", "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU` },
-                  body: JSON.stringify({ name, email, type: "welcome" })
-                });
-                // Editöre bildirim maili gönder
-                fetch("https://nivablklgvgykwauzbeo.supabase.co/functions/v1/swift-handler", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json", "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU` },
-                  body: JSON.stringify({ name, email, type: "notify" })
-                });
-              }}>KAYIT OL — ÜCRETSİZ</button>
-            </ModalWrap>
-          )}
-
-          {modal==="makale" && (
-            <ModalWrap title="MAKALENİZİ GÖNDERİN" sub="ARSİS — Açık Erişim Hakemli Dergi" onClose={()=>setModal(null)}>
-              <input style={inp} id="a-title" placeholder="Makale Başlığı *" defaultValue="" />
-              <select style={inp} id="a-field">
-                <option value="">Alan Seçin *</option>
-                {FIELDS.map(f=><option key={f} value={f}>{f}</option>)}
-              </select>
-              <input style={inp} id="a-coauth" placeholder="Ortak Yazarlar (isteğe bağlı)" defaultValue="" />
-              <textarea style={{...inp, height:100, resize:"vertical"}} id="a-abstract" placeholder="Özet (min. 150 kelime) *" defaultValue="" />
-              <input style={inp} id="a-kw" placeholder="Anahtar Kelimeler (virgülle ayırın)" defaultValue="" />
-              <div style={{ marginBottom:13 }}>
-                <div style={{ fontFamily:"'Cinzel', serif", fontSize:10, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>MAKALE DOSYASI (PDF veya DOCX)</div>
-                <input type="file" id="a-file" accept=".pdf,.doc,.docx" style={{ width:"100%", padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:13, background:C.paper, color:C.ink, cursor:"pointer" }} />
               </div>
-              <div id="upload-progress" style={{ display:"none", marginBottom:13 }}>
-                <div style={{ background:C.cream, borderRadius:6, height:10, overflow:"hidden", border:`1px solid ${C.border}` }}>
-                  <div id="upload-bar" style={{ height:"100%", background:C.gold, width:"0%", transition:"width 0.3s, background 0.5s", borderRadius:6 }} />
-                </div>
-                <div id="upload-text" style={{ fontFamily:"'Crimson Pro', serif", fontSize:12, color:C.muted, marginTop:5, textAlign:"center", fontStyle:"italic" }}>⏳ Dosya yükleniyor...</div>
-              </div>
-              <button id="submit-btn" style={btn1} onClick={async ()=>{
-                const title = document.getElementById("a-title").value;
-                const field = document.getElementById("a-field").value;
-                const abstract = document.getElementById("a-abstract").value;
-                const keywords = document.getElementById("a-kw").value;
-                const coauthors = document.getElementById("a-coauth").value;
-                const fileInput = document.getElementById("a-file");
-                const file = fileInput?.files?.[0];
-                if (!title || !abstract || !field) { toast_("Başlık, özet ve alan zorunludur.", "err"); return; }
-
-                const btn = document.getElementById("submit-btn");
-                btn.disabled = true;
-                btn.innerText = "Gönderiliyor...";
-
-                let file_url = null;
-                if (file) {
-                  const progress = document.getElementById("upload-progress");
-                  const bar = document.getElementById("upload-bar");
-                  const text = document.getElementById("upload-text");
-                  progress.style.display = "block";
-
-                  // Sahte ilerleme animasyonu
-                  let pct = 0;
-                  const interval = setInterval(() => {
-                    pct = Math.min(pct + 10, 85);
-                    bar.style.width = pct + "%";
-                  }, 200);
-
-                  const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-                  const { data: uploadData, error: uploadError } = await supa.storage
-                    .from("makaleler")
-                    .upload(fileName, file, { upsert: true });
-
-                  clearInterval(interval);
-
-                  if (uploadError) {
-                    bar.style.width = "100%";
-                    bar.style.background = "#ef4444";
-                    text.innerText = "Dosya yüklenemedi: " + uploadError.message;
-                    btn.disabled = false;
-                    btn.innerText = "MAKALEYİ ARSİS'E GÖNDER";
-                    return;
-                  }
-
-                  bar.style.width = "100%";
-                  bar.style.background = "#16a34a";
-                  text.innerText = "✅ Dosya başarıyla yüklendi!";
-                  const { data: urlData } = supa.storage.from("makaleler").getPublicUrl(fileName);
-                  file_url = urlData?.publicUrl;
-                }
-
-                const { error } = await supa.from("articles").insert([{
-                  title, field, abstract, keywords, coauthors,
-                  author: user.name, author_email: user.email,
-                  status: "beklemede", file_url
-                }]);
-
-                btn.disabled = false;
-                btn.innerText = "MAKALEYİ ARSİS'E GÖNDER";
-
-                if (error) { toast_("Bir hata oluştu, tekrar deneyin.", "err"); return; }
-                await loadArticles();
-                // Kullanıcıya bildirim maili
-                fetch("https://nivablklgvgykwauzbeo.supabase.co/functions/v1/swift-handler", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json", "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU` },
-                  body: JSON.stringify({ name: user.name, email: user.email, type: "article_received" })
-                });
-                // Editöre bildirim maili
-                fetch("https://nivablklgvgykwauzbeo.supabase.co/functions/v1/swift-handler", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json", "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU` },
-                  body: JSON.stringify({ name: user.name, email: user.email, type: "article_notify" })
-                });
-                setModal(null);
-                toast_("Makaleniz ARSİS'e iletildi!");
-              }}>MAKALEYİ ARSİS'E GÖNDER</button>
-            </ModalWrap>
-          )}
-
-          {modal==="message" && user?.role==="editor" && (
-            <ModalWrap title="YENİ MESAJ GÖNDER" sub="Üyeye mesaj gönder" onClose={()=>setModal(null)}>
-              <NewMessageModal users={users} user={user} supa={supa} loadMessages={loadMessages} toast_={toast_} setModal={setModal} />
-            </ModalWrap>
+            </div>
           )}
         </div>
-      );
-    }
+      </div>
+    </div>
+  );
 
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<App />);
-  </script>
+  const Footer = ()=>(
+    <footer style={{background:C.ink,borderTop:`2px solid ${C.gold}44`}}>
+      <div style={{maxWidth:1100,margin:"0 auto",padding:"44px 28px 28px",display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:36}}>
+        <div>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+            <WaveLogo size={22}/><div style={{fontFamily:"'Cinzel',serif",fontWeight:900,fontSize:18,color:C.gold,letterSpacing:3}}>ARSiS</div>
+          </div>
+          <p style={{margin:"0 0 8px",fontSize:12.5,color:"#8a7d60",lineHeight:1.7,fontStyle:"italic"}}>"Muzigi kulturle, sesi insanla bulusturan hakemli dergi"</p>
+          <p style={{margin:0,fontSize:11.5,color:"#5a4e3a"}}>Acik Erisim - CC BY 4.0</p>
+        </div>
+        {[["Dergi",["Ana Sayfa","Arsiv","Makale Gonder","Acik Erisim"]],["Bilgi",["Yazim Kurallari","Etik ilkeler","Hakem Sureci","iletisim"]],["Sosyal",["ResearchGate","Academia.edu","ORCID","Google Scholar"]]].map(([title,items])=>(
+          <div key={title}>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.gold,letterSpacing:2,marginBottom:14,fontWeight:700}}>{title.toUpperCase()}</div>
+            {items.map(item=><div key={item} style={{fontSize:12.5,color:"#7a6e5f",marginBottom:7,cursor:"pointer"}}>{item}</div>)}
+          </div>
+        ))}
+      </div>
+      <div style={{borderTop:`1px solid ${C.gold}22`,padding:"18px 28px",display:"flex",justifyContent:"space-between"}}>
+        <div style={{fontFamily:"'Cinzel',serif",fontSize:10,color:"#5a4e3a",letterSpacing:1.5}}>2026 ARSiS - Journal of Music, Musicology and Anthropology</div>
+        <div style={{fontSize:11,color:"#5a4e3a",fontStyle:"italic"}}>arsIs - yukselis</div>
+      </div>
+    </footer>
+  );
+
+  return(
+    <div style={{background:C.paper,minHeight:"100vh"}}>
+      <Nav/>
+      {page==="anasayfa"&&<Home/>}
+      {page==="arsiv"&&<Archive/>}
+      {page==="hakkinda"&&<About/>}
+      {page==="acik-erisim"&&<OpenAccess/>}
+      {page==="panel"&&user&&<Panel/>}
+      <Footer/>
+      {toast&&(
+        <div style={{position:"fixed",bottom:28,right:28,background:toast.type==="err"?"#7f1d1d":C.ink,color:toast.type==="err"?"#fca5a5":C.gold,padding:"14px 24px",borderRadius:10,fontWeight:600,fontSize:14,zIndex:500,boxShadow:"0 8px 24px rgba(0,0,0,0.35)",maxWidth:360}}>
+          {toast.type==="err"?"! ":"- "}{toast.msg}
+        </div>
+      )}
+      {modal==="login"&&(
+        <Modal title="ARSiS'E GiRiS" onClose={()=>setModal(null)}>
+          <input style={INP} id="l-email" placeholder="E-posta"/>
+          <input style={INP} id="l-pass" type="password" placeholder="Sifre"/>
+          <button style={BTN} onClick={async()=>{
+            const email=document.getElementById("l-email").value;
+            const password=document.getElementById("l-pass").value;
+            const{data}=await supa.from("users").select("*").eq("email",email).maybeSingle();
+            if(data&&data.password===password){setUser(data);setModal(null);toast_(`Hos geldiniz, ${data.name.split(" ").slice(-1)[0]}!`);}
+            else toast_("E-posta veya sifre hatali.","err");
+          }}>GiRiS YAP</button>
+          <p style={{textAlign:"center",marginTop:16,fontSize:13.5,color:C.muted}}>Hesabiniz yok mu? <span style={{color:C.rust,cursor:"pointer",fontWeight:600}} onClick={()=>setModal("register")}>Kayit olun</span></p>
+        </Modal>
+      )}
+      {modal==="register"&&(
+        <Modal title="KAYIT OL" sub="ARSiS - Tamamen Ucretsiz" onClose={()=>setModal(null)}>
+          <input style={INP} id="r-name" placeholder="Ad Soyad *"/>
+          <input style={INP} id="r-email" placeholder="E-posta *"/>
+          <input style={INP} id="r-inst" placeholder="Kurum / Universite"/>
+          <input style={INP} id="r-orcid" placeholder="ORCID ID (istege bagli)"/>
+          <select style={INP} id="r-role">
+            <option value="yazar">Yazar / Arastirmaci</option>
+            <option value="hakem">Hakem</option>
+          </select>
+          <input style={INP} id="r-pass" type="password" placeholder="Sifre *"/>
+          <button style={BTN} onClick={async()=>{
+            const name=document.getElementById("r-name").value;
+            const email=document.getElementById("r-email").value;
+            const institution=document.getElementById("r-inst").value;
+            const orcid=document.getElementById("r-orcid").value;
+            const role=document.getElementById("r-role").value;
+            const password=document.getElementById("r-pass").value;
+            if(!name||!email){toast_("Ad ve e-posta zorunludur.","err");return;}
+            if(!password){toast_("Sifre zorunludur.","err");return;}
+            const{data,error}=await supa.from("users").insert([{name,email,institution,orcid,role,password}]).select().single();
+            if(error){toast_("Bu e-posta zaten kayitli olabilir.","err");return;}
+            setUser(data);await loadUsers();setModal(null);
+            toast_("ARSiS'e hos geldiniz!");
+            sendMail(name,email,"notify");
+          }}>KAYIT OL - UCRETSiZ</button>
+        </Modal>
+      )}
+      {modal==="makale"&&(
+        <Modal title="MAKALENiZi GONDERiN" sub="ARSiS - Acik Erisim Hakemli Dergi" onClose={()=>setModal(null)}>
+          <input style={INP} id="a-title" placeholder="Makale Basligi *"/>
+          <select style={INP} id="a-field">
+            <option value="">Alan Secin *</option>
+            {FIELDS.map(f=><option key={f} value={f}>{f}</option>)}
+          </select>
+          <input style={INP} id="a-coauth" placeholder="Ortak Yazarlar (istege bagli)"/>
+          <textarea style={{...INP,height:100,resize:"vertical"}} id="a-abstract" placeholder="Ozet (min. 150 kelime) *"/>
+          <input style={INP} id="a-kw" placeholder="Anahtar Kelimeler (virgullerle ayirin)"/>
+          <div style={{marginBottom:12}}>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.muted,letterSpacing:1.5,marginBottom:6}}>MAKALE DOSYASI (PDF veya DOCX)</div>
+            <input type="file" id="a-file" accept=".pdf,.doc,.docx" style={{width:"100%",padding:"10px 14px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:13,background:C.paper,color:C.ink,cursor:"pointer"}}/>
+          </div>
+          <div id="upload-progress" style={{display:"none",marginBottom:12}}>
+            <div style={{background:C.cream,borderRadius:6,height:10,overflow:"hidden",border:`1px solid ${C.border}`}}>
+              <div id="upload-bar" style={{height:"100%",background:C.gold,width:"0%",transition:"width 0.3s,background 0.5s",borderRadius:6}}/>
+            </div>
+            <div id="upload-text" style={{fontSize:12,color:C.muted,marginTop:5,textAlign:"center",fontStyle:"italic"}}>Dosya yukleniyor...</div>
+          </div>
+          <button id="submit-btn" style={BTN} onClick={async()=>{
+            const title=document.getElementById("a-title").value;
+            const field=document.getElementById("a-field").value;
+            const abstract=document.getElementById("a-abstract").value;
+            const keywords=document.getElementById("a-kw").value;
+            const coauthors=document.getElementById("a-coauth").value;
+            const file=document.getElementById("a-file").files?.[0];
+            if(!title||!abstract||!field){toast_("Baslik, ozet ve alan zorunludur.","err");return;}
+            const btn=document.getElementById("submit-btn");
+            btn.disabled=true;btn.innerText="Gonderiliyor...";
+            let file_url=null;
+            if(file){
+              const prog=document.getElementById("upload-progress");
+              const bar=document.getElementById("upload-bar");
+              const txt=document.getElementById("upload-text");
+              prog.style.display="block";
+              let pct=0;const iv=setInterval(()=>{pct=Math.min(pct+10,85);bar.style.width=pct+"%";},200);
+              const fname=`${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,"_")}`;
+              const{error:ue}=await supa.storage.from("makaleler").upload(fname,file,{upsert:true});
+              clearInterval(iv);
+              if(ue){bar.style.width="100%";bar.style.background="#ef4444";txt.innerText="Dosya yuklenemedi: "+ue.message;btn.disabled=false;btn.innerText="MAKALEYi ARSiS'E GONDER";return;}
+              bar.style.width="100%";bar.style.background="#16a34a";txt.innerText="Dosya basariyla yuklendi!";
+              const{data:ud}=supa.storage.from("makaleler").getPublicUrl(fname);
+              file_url=ud?.publicUrl;
+            }
+            const{error}=await supa.from("articles").insert([{title,field,abstract,keywords,coauthors,author:user.name,author_email:user.email,status:"beklemede",file_url}]);
+            btn.disabled=false;btn.innerText="MAKALEYi ARSiS'E GONDER";
+            if(error){toast_("Bir hata olustu.","err");return;}
+            await loadArticles();
+            sendMail(user.name,user.email,"article_received");
+            sendMail(user.name,user.email,"article_notify");
+            setModal(null);
+            toast_("Makaleniz ARSiS'e iletildi!");
+          }}>MAKALEYi ARSiS'E GONDER</button>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+const root=ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App/>);
+</script>
 </body>
 </html>
