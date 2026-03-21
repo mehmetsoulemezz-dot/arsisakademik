@@ -63,7 +63,26 @@
       </div>
     );
 
-    function App() {
+    function ReplyBox({ m, user, supa, loadMessages, toast_, C }) {
+      const [text, setText] = React.useState("");
+      return (
+        <div>
+          <textarea
+            value={text}
+            onChange={e => setText(e.target.value)}
+            placeholder="Cevabınızı yazın..."
+            style={{ width:"100%", padding:"8px 12px", border:`1px solid ${C.border}`, borderRadius:6, fontSize:13, fontFamily:"'Crimson Pro', serif", resize:"vertical", height:70, background:C.cream, boxSizing:"border-box" }}
+          />
+          <button onClick={async e=>{ e.stopPropagation();
+            if (!text.trim()) return;
+            await supa.from("messages").insert([{ from_name: user.name, from_email: user.email, to_email: m.from_email, subject: "Re: "+m.subject, content: text }]);
+            setText("");
+            await loadMessages();
+            toast_("Cevabınız gönderildi.");
+          }} style={{ marginTop:6, background:C.ink, color:C.gold, border:"none", padding:"7px 16px", borderRadius:6, cursor:"pointer", fontFamily:"'Cinzel', serif", fontSize:11, fontWeight:700 }}>↩ CEVAPLA</button>
+        </div>
+      );
+    }
       const [articles, setArticles] = useState([]);
       const [users, setUsers] = useState([]);
       const [messages, setMessages] = useState([]);
@@ -425,17 +444,7 @@
                       </div>
                       <p style={{ margin:"0 0 10px", fontSize:13.5, color:"#555", lineHeight:1.65 }}>{m.content}</p>
                       {m.to_email===user?.email && (
-                        <div>
-                          <textarea id={`reply-${m.id}`} placeholder="Cevabınızı yazın..." style={{ width:"100%", padding:"8px 12px", border:`1px solid ${C.border}`, borderRadius:6, fontSize:13, fontFamily:"'Crimson Pro', serif", resize:"vertical", height:70, background:C.cream, boxSizing:"border-box" }} />
-                          <button onClick={async e=>{ e.stopPropagation();
-                            const content = document.getElementById(`reply-${m.id}`).value;
-                            if (!content) return;
-                            await supa.from("messages").insert([{ from_name: user.name, from_email: user.email, to_email: m.from_email, subject: "Re: "+m.subject, content }]);
-                            await loadMessages();
-                            document.getElementById(`reply-${m.id}`).value = "";
-                            toast_("Cevabınız gönderildi.");
-                          }} style={{ marginTop:6, background:C.ink, color:C.gold, border:"none", padding:"7px 16px", borderRadius:6, cursor:"pointer", fontFamily:"'Cinzel', serif", fontSize:11, fontWeight:700 }}>↩ CEVAPLA</button>
-                        </div>
+                        <ReplyBox m={m} user={user} supa={supa} loadMessages={loadMessages} toast_={toast_} C={C} />
                       )}
                     </div>
                   ))}
