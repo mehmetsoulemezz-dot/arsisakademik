@@ -23,6 +23,9 @@
     .field-pill { display:inline-block; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
     ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:#f5f0e8; } ::-webkit-scrollbar-thumb { background:#c9a84c; border-radius:3px; }
     select, input, textarea { font-family: 'Crimson Pro', serif; }
+    @keyframes uploadPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    .upload-spinner { display:inline-block; width:14px; height:14px; border:2px solid #c9a84c44; border-top:2px solid #c9a84c; border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle; }
+    @keyframes spin { to { transform:rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -95,8 +98,10 @@
       const toast_ = (msg, type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3400); };
 
       const login = async () => {
-        const { data } = await supa.from("users").select("*").eq("email", loginF.email).maybeSingle();
-        if (data && data.password === loginF.password) {
+        const email = document.getElementById("l-email")?.value || loginF.email;
+        const password = document.getElementById("l-pass")?.value || loginF.password;
+        const { data } = await supa.from("users").select("*").eq("email", email).maybeSingle();
+        if (data && data.password === password) {
           setUser(data); setModal(null);
           toast_(`Hoş geldiniz, ${data.name.split(" ").slice(-1)[0]}!`);
         } else {
@@ -540,9 +545,19 @@
 
           {modal==="login" && (
             <ModalWrap title="ARSİS'E GİRİŞ" onClose={()=>setModal(null)}>
-              <input style={inp} placeholder="E-posta" value={loginF.email} onChange={e=>setLoginF({...loginF,email:e.target.value})} />
-              <input style={inp} type="password" placeholder="Şifre" value={loginF.password} onChange={e=>setLoginF({...loginF,password:e.target.value})} />
-              <button style={btn1} onClick={login}>GİRİŞ YAP</button>
+              <input style={inp} id="l-email" placeholder="E-posta" />
+              <input style={inp} id="l-pass" type="password" placeholder="Şifre" />
+              <button style={btn1} onClick={async ()=>{
+                const email = document.getElementById("l-email").value;
+                const password = document.getElementById("l-pass").value;
+                const { data } = await supa.from("users").select("*").eq("email", email).maybeSingle();
+                if (data && data.password === password) {
+                  setUser(data); setModal(null);
+                  toast_(`Hoş geldiniz, ${data.name.split(" ").slice(-1)[0]}!`);
+                } else {
+                  toast_("E-posta veya şifre hatalı.", "err");
+                }
+              }}>GİRİŞ YAP</button>
               <p style={{ textAlign:"center", marginTop:16, fontSize:13.5, color:C.muted }}>Hesabınız yok mu? <span style={{ color:C.rust, cursor:"pointer", fontWeight:600 }} onClick={()=>setModal("register")}>Kayıt olun</span></p>
             </ModalWrap>
           )}
@@ -605,10 +620,10 @@
                 <input type="file" id="a-file" accept=".pdf,.doc,.docx" style={{ width:"100%", padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:13, background:C.paper, color:C.ink, cursor:"pointer" }} />
               </div>
               <div id="upload-progress" style={{ display:"none", marginBottom:13 }}>
-                <div style={{ background:C.cream, borderRadius:6, height:8, overflow:"hidden" }}>
-                  <div id="upload-bar" style={{ height:"100%", background:C.gold, width:"0%", transition:"width 0.3s", borderRadius:6 }} />
+                <div style={{ background:C.cream, borderRadius:6, height:10, overflow:"hidden", border:`1px solid ${C.border}` }}>
+                  <div id="upload-bar" style={{ height:"100%", background:C.gold, width:"0%", transition:"width 0.3s, background 0.5s", borderRadius:6 }} />
                 </div>
-                <div id="upload-text" style={{ fontFamily:"'Crimson Pro', serif", fontSize:12, color:C.muted, marginTop:5, textAlign:"center", fontStyle:"italic" }}>Dosya yükleniyor...</div>
+                <div id="upload-text" style={{ fontFamily:"'Crimson Pro', serif", fontSize:12, color:C.muted, marginTop:5, textAlign:"center", fontStyle:"italic" }}>⏳ Dosya yükleniyor...</div>
               </div>
               <button id="submit-btn" style={btn1} onClick={async ()=>{
                 const title = document.getElementById("a-title").value;
@@ -655,7 +670,8 @@
                   }
 
                   bar.style.width = "100%";
-                  text.innerText = "Dosya yüklendi ✓";
+                  bar.style.background = "#16a34a";
+                  text.innerText = "✅ Dosya başarıyla yüklendi!";
                   const { data: urlData } = supa.storage.from("makaleler").getPublicUrl(fileName);
                   file_url = urlData?.publicUrl;
                 }
