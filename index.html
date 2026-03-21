@@ -451,6 +451,7 @@
                               </select>
                             </div>
                             <div style={{ fontSize:12, color:C.muted, fontStyle:"italic" }}>{a.author} · {a.author_email} · {a.field} · {a.created_at?.split("T")[0]}</div>
+                            {a.file_url && <a href={a.file_url} target="_blank" style={{ fontSize:12, color:C.teal, marginTop:4, display:"inline-block" }}>📄 Dosyayı İndir</a>}
                           </div>
                         );
                       })
@@ -599,17 +600,31 @@
               <input style={inp} id="a-coauth" placeholder="Ortak Yazarlar (isteğe bağlı)" defaultValue="" />
               <textarea style={{...inp, height:100, resize:"vertical"}} id="a-abstract" placeholder="Özet (min. 150 kelime) *" defaultValue="" />
               <input style={inp} id="a-kw" placeholder="Anahtar Kelimeler (virgülle ayırın)" defaultValue="" />
+              <div style={{ marginBottom:13 }}>
+                <div style={{ fontFamily:"'Cinzel', serif", fontSize:10, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>MAKALE DOSYASI (PDF veya DOCX)</div>
+                <input type="file" id="a-file" accept=".pdf,.doc,.docx" style={{ width:"100%", padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:13, background:C.paper, color:C.ink, cursor:"pointer" }} />
+              </div>
               <button style={btn1} onClick={async ()=>{
                 const title = document.getElementById("a-title").value;
                 const field = document.getElementById("a-field").value;
                 const abstract = document.getElementById("a-abstract").value;
                 const keywords = document.getElementById("a-kw").value;
                 const coauthors = document.getElementById("a-coauth").value;
+                const fileInput = document.getElementById("a-file");
+                const file = fileInput?.files?.[0];
                 if (!title || !abstract || !field) { toast_("Başlık, özet ve alan zorunludur.", "err"); return; }
+                let file_url = null;
+                if (file) {
+                  const fileName = `${Date.now()}_${file.name}`;
+                  const { data: uploadData, error: uploadError } = await supa.storage.from("makaleler").upload(fileName, file);
+                  if (uploadError) { toast_("Dosya yüklenemedi, tekrar deneyin.", "err"); return; }
+                  const { data: urlData } = supa.storage.from("makaleler").getPublicUrl(fileName);
+                  file_url = urlData?.publicUrl;
+                }
                 const { error } = await supa.from("articles").insert([{
                   title, field, abstract, keywords, coauthors,
                   author: user.name, author_email: user.email,
-                  status: "beklemede"
+                  status: "beklemede", file_url
                 }]);
                 if (error) { toast_("Bir hata oluştu, tekrar deneyin.", "err"); return; }
                 await loadArticles();
