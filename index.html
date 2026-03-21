@@ -66,6 +66,7 @@
     function App() {
       const [articles, setArticles] = useState([]);
       const [users, setUsers] = useState([]);
+      const [messages, setMessages] = useState([]);
       const [page, setPage] = useState("anasayfa");
       const [user, setUser] = useState(null);
       const [modal, setModal] = useState(null);
@@ -80,6 +81,7 @@
       useEffect(() => {
         loadArticles();
         loadUsers();
+        loadMessages();
         const onScroll = () => setScrolled(window.scrollY > 40);
         window.addEventListener("scroll", onScroll);
         return () => window.removeEventListener("scroll", onScroll);
@@ -88,6 +90,11 @@
       const loadArticles = async () => {
         const { data } = await supa.from("articles").select("*").order("created_at", { ascending: false });
         if (data) setArticles(data);
+      };
+
+      const loadMessages = async () => {
+        const { data } = await supa.from("messages").select("*").order("created_at", { ascending: false });
+        if (data) setMessages(data);
       };
 
       const loadUsers = async () => {
@@ -109,8 +116,8 @@
         }
       };
 
-      const myArticles = articles.filter(a => a.author_email === user?.email);
-      const unread = 0;
+      const myMessages = messages.filter(m => m.to_email === user?.email || m.from_email === user?.email);
+      const unread = messages.filter(m => m.to_email === user?.email && !m.read).length;
 
       const filtered = articles.filter(a => {
         const q = search.toLowerCase();
@@ -390,18 +397,47 @@
               )}
               {tab==="mesajlar" && (
                 <div>
-                  <h3 style={{ fontFamily:"'Cinzel', serif", margin:"0 0 26px", fontSize:17, letterSpacing:1, color:C.ink }}>MESAJLAR</h3>
-                  {myMsgs.length===0 ? <div style={{ textAlign:"center", padding:"60px", color:C.muted, fontStyle:"italic" }}>Mesaj yok.</div> :
-                    myMsgs.map(m=>(
-                      <div key={m.id} style={{ border:`1px solid ${C.border}`, borderRadius:10, padding:"16px 20px", marginBottom:12 }}>
-                        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
-                          <span style={{ fontFamily:"'Cinzel', serif", fontSize:13, color:C.ink }}>{m.subject}</span>
-                          <span style={{ fontSize:11, color:C.muted }}>{m.date}</span>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:26 }}>
+                    <h3 style={{ fontFamily:"'Cinzel', serif", margin:0, fontSize:17, letterSpacing:1, color:C.ink }}>MESAJLAR</h3>
+                    {user?.role==="editor" && (
+                      <button onClick={()=>setModal("message")} style={{ background:C.ink, color:C.gold, border:"none", padding:"9px 20px", borderRadius:7, cursor:"pointer", fontFamily:"'Cinzel', serif", fontSize:11, letterSpacing:1 }}>+ YENİ MESAJ</button>
+                    )}
+                  </div>
+                  {myMessages.length===0 ? (
+                    <div style={{ textAlign:"center", padding:"60px", color:C.muted, fontStyle:"italic" }}>Henüz mesaj yok.</div>
+                  ) : myMessages.map(m=>(
+                    <div key={m.id} onClick={async ()=>{
+                      if (!m.read && m.to_email===user?.email) {
+                        await supa.from("messages").update({ read:true }).eq("id", m.id);
+                        await loadMessages();
+                      }
+                    }} style={{ border:`1px solid ${C.border}`, borderRadius:10, padding:"16px 20px", marginBottom:12, background: !m.read && m.to_email===user?.email ? `${C.gold}08` : "#fff", cursor:"pointer" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+                        <span style={{ fontFamily:"'Cinzel', serif", fontSize:13, color:C.ink, fontWeight: !m.read && m.to_email===user?.email ? 700 : 400 }}>{m.subject || "(Konu yok)"}</span>
+                        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                          {!m.read && m.to_email===user?.email && <span style={{ background:C.rust, color:"#fff", borderRadius:20, padding:"1px 7px", fontSize:9, fontWeight:700 }}>YENİ</span>}
+                          <span style={{ fontSize:11, color:C.muted, fontStyle:"italic" }}>{m.created_at?.split("T")[0]}</span>
                         </div>
-                        <p style={{ margin:0, fontSize:13.5, color:"#555", lineHeight:1.65 }}>{m.content}</p>
                       </div>
-                    ))
-                  }
+                      <div style={{ fontSize:12, color:C.muted, marginBottom:7, fontStyle:"italic" }}>
+                        {m.from_email===user?.email ? `→ ${m.to_email}` : `← ${m.from_name}`}
+                      </div>
+                      <p style={{ margin:"0 0 10px", fontSize:13.5, color:"#555", lineHeight:1.65 }}>{m.content}</p>
+                      {m.to_email===user?.email && (
+                        <div>
+                          <textarea id={`reply-${m.id}`} placeholder="Cevabınızı yazın..." style={{ width:"100%", padding:"8px 12px", border:`1px solid ${C.border}`, borderRadius:6, fontSize:13, fontFamily:"'Crimson Pro', serif", resize:"vertical", height:70, background:C.cream, boxSizing:"border-box" }} />
+                          <button onClick={async e=>{ e.stopPropagation();
+                            const content = document.getElementById(`reply-${m.id}`).value;
+                            if (!content) return;
+                            await supa.from("messages").insert([{ from_name: user.name, from_email: user.email, to_email: m.from_email, subject: "Re: "+m.subject, content }]);
+                            await loadMessages();
+                            document.getElementById(`reply-${m.id}`).value = "";
+                            toast_("Cevabınız gönderildi.");
+                          }} style={{ marginTop:6, background:C.ink, color:C.gold, border:"none", padding:"7px 16px", borderRadius:6, cursor:"pointer", fontFamily:"'Cinzel', serif", fontSize:11, fontWeight:700 }}>↩ CEVAPLA</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
               {tab==="profil" && (
@@ -702,6 +738,32 @@
                 setModal(null);
                 toast_("Makaleniz ARSİS'e iletildi!");
               }}>MAKALEYİ ARSİS'E GÖNDER</button>
+            </ModalWrap>
+          )}
+
+          {modal==="message" && user?.role==="editor" && (
+            <ModalWrap title="YENİ MESAJ GÖNDER" sub="Üyeye mesaj gönder" onClose={()=>setModal(null)}>
+              <div style={{ marginBottom:13 }}>
+                <div style={{ fontFamily:"'Cinzel', serif", fontSize:10, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>ALICI</div>
+                <select style={inp} id="msg-to">
+                  <option value="">Üye seçin *</option>
+                  {users.filter(u=>u.email!==user.email).map(u=>(
+                    <option key={u.id} value={u.email}>{u.name} — {u.email}</option>
+                  ))}
+                </select>
+              </div>
+              <input style={inp} id="msg-subject" placeholder="Konu" />
+              <textarea style={{...inp, height:120, resize:"vertical"}} id="msg-content" placeholder="Mesajınız..." />
+              <button style={btn1} onClick={async ()=>{
+                const to_email = document.getElementById("msg-to").value;
+                const subject = document.getElementById("msg-subject").value;
+                const content = document.getElementById("msg-content").value;
+                if (!to_email || !content) { toast_("Alıcı ve mesaj zorunludur.", "err"); return; }
+                await supa.from("messages").insert([{ from_name: user.name, from_email: user.email, to_email, subject, content }]);
+                await loadMessages();
+                setModal(null);
+                toast_("Mesajınız gönderildi.");
+              }}>GÖNDER</button>
             </ModalWrap>
           )}
         </div>
