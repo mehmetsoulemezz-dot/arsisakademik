@@ -72,8 +72,27 @@ function MesajlarTab({user, toast_}) {
   useEffect(()=>{ yukle(); },[]);
 
   const yukle = async () => {
-    const {data} = await supa.from("messages").select("*").order("created_at",{ascending:false});
-    if(data) setPosts(data);
+    if(user.role === "editor") {
+      // Editör tüm mesajları görür
+      const {data} = await supa.from("messages").select("*").order("created_at",{ascending:false});
+      if(data) setPosts(data);
+    } else {
+      // Kullanıcı sadece kendi gönderdiği ana mesajları ve onlara gelen yanıtları görür
+      const {data} = await supa.from("messages").select("*")
+        .eq("from_email", user.email)
+        .order("created_at",{ascending:false});
+      if(data) {
+        // Ana mesajların ID'lerini al, yanıtları da çek
+        const anaIds = data.filter(p=>p.to_email==="forum").map(p=>p.id);
+        if(anaIds.length>0) {
+          const {data: yanıtlar} = await supa.from("messages").select("*")
+            .in("to_email", anaIds.map(id=>`reply_${id}`));
+          setPosts([...data, ...(yanıtlar||[])]);
+        } else {
+          setPosts(data);
+        }
+      }
+    }
   };
 
   const gonder = async () => {
