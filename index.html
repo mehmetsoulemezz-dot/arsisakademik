@@ -587,8 +587,10 @@ function MesajlarTab({user,toast_,t}) {
       </div>
       <div style={{background:C.cream,borderRadius:12,padding:"20px 24px",marginBottom:28,border:`1px solid ${C.border}`}}>
         <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.rust,letterSpacing:1.5,marginBottom:14}}>{t.new_msg}</div>
-        <input id="msg-konu" placeholder="Konu / Subject *" style={{...INP,marginBottom:10}}/>
-        <textarea id="msg-icerik" placeholder="Mesaj / Message *" style={{...INP,height:90,resize:"vertical",marginBottom:10}}/>
+        <input id="msg-konu" placeholder="Konu / Subject *"
+          style={{width:"100%",padding:"10px 14px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:14,outline:"none",background:"#fff",color:C.ink,marginBottom:10,boxSizing:"border-box"}}/>
+        <textarea id="msg-icerik" placeholder="Mesaj / Message *"
+          style={{width:"100%",padding:"10px 14px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:14,outline:"none",background:"#fff",color:C.ink,marginBottom:10,boxSizing:"border-box",height:90,resize:"vertical"}}/>
         <button onClick={async()=>{
           const konu = document.getElementById("msg-konu").value;
           const icerik = document.getElementById("msg-icerik").value;
