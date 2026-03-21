@@ -517,24 +517,27 @@ const WaveLogo=({size=28,color=C.gold})=>(
   </div>
 );
 
-function YanitKutusu({postId, postFromEmail, isEditor, t, onYanitGonder}) {
-  const [text, setText] = React.useState("");
+function YanitKutusu({postId, postFromEmail, isEditor, replyLabel, onYanitGonder}) {
+  const inputId = `yanit-${postId}`;
+  const gonder = async () => {
+    const el = document.getElementById(inputId);
+    if(!el || !el.value.trim()) return;
+    const text = el.value;
+    el.value = "";
+    await onYanitGonder(postId, postFromEmail, text);
+  };
   return (
     <div style={{background:C.paper,borderTop:`1px solid ${C.border}`,padding:"12px 22px",display:"flex",gap:10}}>
       <input
-        value={text}
-        onChange={e=>setText(e.target.value)}
-        placeholder={isEditor?t.user_reply:t.editor_reply}
+        id={inputId}
+        placeholder={replyLabel}
         style={{flex:1,padding:"8px 14px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:13,outline:"none",background:"#fff",color:C.ink}}
+        onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();gonder();}}}
       />
       <button
-        onClick={async()=>{
-          if(!text.trim()) return;
-          await onYanitGonder(postId, postFromEmail, text);
-          setText("");
-        }}
+        onClick={gonder}
         style={{background:C.gold,color:C.ink,border:"none",padding:"8px 18px",borderRadius:6,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>
-        {t.reply_send}
+        ↩ GÖNDER
       </button>
     </div>
   );
@@ -542,8 +545,6 @@ function YanitKutusu({postId, postFromEmail, isEditor, t, onYanitGonder}) {
 
 function MesajlarTab({user,toast_,t}) {
   const [posts,setPosts]=useState([]);
-  const [konu,setKonu]=useState("");
-  const [icerik,setIcerik]=useState("");
 
   useEffect(()=>{yukle();},[]);
 
@@ -561,12 +562,6 @@ function MesajlarTab({user,toast_,t}) {
         } else setPosts(data);
       }
     }
-  };
-
-  const gonder=async()=>{
-    if(!konu.trim()||!icerik.trim()){toast_(t.submit_err,"err");return;}
-    await supa.from("messages").insert([{from_name:user.name,from_email:user.email,to_email:"forum",subject:konu,content:icerik,read:false}]);
-    setKonu("");setIcerik("");yukle();toast_(t.send+" ✓");
   };
 
   const yanitGonder=async(postId,postFromEmail,text)=>{
@@ -592,9 +587,17 @@ function MesajlarTab({user,toast_,t}) {
       </div>
       <div style={{background:C.cream,borderRadius:12,padding:"20px 24px",marginBottom:28,border:`1px solid ${C.border}`}}>
         <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.rust,letterSpacing:1.5,marginBottom:14}}>{t.new_msg}</div>
-        <input value={konu} onChange={e=>setKonu(e.target.value)} placeholder="Konu / Subject *" style={{...INP,marginBottom:10}}/>
-        <textarea value={icerik} onChange={e=>setIcerik(e.target.value)} placeholder="Mesaj / Message *" style={{...INP,height:90,resize:"vertical",marginBottom:10}}/>
-        <button onClick={gonder} style={{background:C.ink,color:C.gold,border:"none",padding:"10px 24px",borderRadius:7,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:12,fontWeight:700,letterSpacing:1}}>{t.send}</button>
+        <input id="msg-konu" placeholder="Konu / Subject *" style={{...INP,marginBottom:10}}/>
+        <textarea id="msg-icerik" placeholder="Mesaj / Message *" style={{...INP,height:90,resize:"vertical",marginBottom:10}}/>
+        <button onClick={async()=>{
+          const konu = document.getElementById("msg-konu").value;
+          const icerik = document.getElementById("msg-icerik").value;
+          if(!konu.trim()||!icerik.trim()){toast_(t.submit_err,"err");return;}
+          await supa.from("messages").insert([{from_name:user.name,from_email:user.email,to_email:"forum",subject:konu,content:icerik,read:false}]);
+          document.getElementById("msg-konu").value="";
+          document.getElementById("msg-icerik").value="";
+          yukle();toast_(t.send+" ✓");
+        }} style={{background:C.ink,color:C.gold,border:"none",padding:"10px 24px",borderRadius:7,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:12,fontWeight:700,letterSpacing:1}}>{t.send}</button>
       </div>
       {anaPostlar.length===0
         ?<div style={{textAlign:"center",padding:"40px",color:C.muted,fontStyle:"italic"}}>{t.no_msg}</div>
@@ -625,7 +628,7 @@ function MesajlarTab({user,toast_,t}) {
                 </div>
               )}
               {(isEditor||p.from_email===user.email)&&(
-                <YanitKutusu postId={p.id} postFromEmail={p.from_email} isEditor={isEditor} t={t} onYanitGonder={yanitGonder}/>
+                <YanitKutusu postId={p.id} postFromEmail={p.from_email} isEditor={isEditor} replyLabel={isEditor?t.user_reply:t.editor_reply} onYanitGonder={yanitGonder}/>
               )}
             </div>
           );
