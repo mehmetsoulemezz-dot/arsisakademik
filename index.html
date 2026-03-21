@@ -116,6 +116,7 @@
         }
       };
 
+      const myArticles = articles.filter(a => a.author_email === user?.email);
       const myMessages = messages.filter(m => m.to_email === user?.email || m.from_email === user?.email);
       const unread = messages.filter(m => m.to_email === user?.email && !m.read).length;
 
@@ -607,7 +608,6 @@
               <select style={inp} id="f-role">
                 <option value="yazar">Yazar / Araştırmacı</option>
                 <option value="hakem">Hakem</option>
-                <option value="editor">Editör</option>
               </select>
               <input style={inp} id="f-pass" type="password" placeholder="Şifre *" defaultValue="" />
               <button style={btn1} onClick={async ()=>{
