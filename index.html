@@ -687,6 +687,18 @@
 
                 if (error) { toast_("Bir hata oluştu, tekrar deneyin.", "err"); return; }
                 await loadArticles();
+                // Kullanıcıya bildirim maili
+                fetch("https://nivablklgvgykwauzbeo.supabase.co/functions/v1/swift-handler", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU` },
+                  body: JSON.stringify({ name: user.name, email: user.email, type: "article_received" })
+                });
+                // Editöre bildirim maili
+                fetch("https://nivablklgvgykwauzbeo.supabase.co/functions/v1/swift-handler", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU` },
+                  body: JSON.stringify({ name: user.name, email: user.email, type: "article_notify" })
+                });
                 setModal(null);
                 toast_("Makaleniz ARSİS'e iletildi!");
               }}>MAKALEYİ ARSİS'E GÖNDER</button>
