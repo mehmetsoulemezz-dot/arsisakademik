@@ -108,6 +108,15 @@ const T = {
     status_update:"Durum güncellendi.",download:"Dosyayı İndir",profile_title:"PROFİL BİLGİLERİM",
     profile_fields:[["Ad Soyad"],["E-posta"],["Kurum"],["ORCID"],["Rol"],["Erişim"]],
     access:"Açık Erişim",logout_msg:"Çıkış yapıldı.",
+    editorial_title:"EDİTÖR KURULU",
+    editorial_note:"ARSİS editör kurulu, müzik, müzikoloji, antropoloji ve etnomüzikoloji alanlarında uzman akademisyenlerden oluşmaktadır. Kurul; makale değerlendirme süreçlerinin yürütülmesinde, yayın politikalarının belirlenmesinde ve derginin bilimsel niteliğinin korunmasında sorumludur. Editör kurulu üyeliği daveti, ilgili alanındaki akademik birikimi ve uluslararası yayın geçmişi dikkate alınarak yapılmaktadır. Güncel kurul listesi dergi yönetimi tarafından yürütülmekte olup ilk sayı yayımından itibaren bu sayfada ilan edilecektir.",
+    editorial_contact:"Editör kuruluna katılım ve iş birliği teklifleri için: arsisakademik@gmail.com",
+    ai_title:"YAPAY ZEKA POLİTİKASI",
+    ai_text:"ARSİS, yapay zeka (YZ) araçlarının araştırma ve yazım sürecindeki kullanımına ilişkin şeffaflığı zorunlu kılar. Büyük dil modelleri (ChatGPT, Claude vb.) makale yazımında yardımcı araç olarak kullanılabilir; ancak bu araçlar yazar olarak tanımlanamaz. Yazarlar, YZ araçlarını metin üretiminde, literatür taramasında veya veri analizinde kullandıklarında bunu dipnot ya da teşekkür bölümünde açıkça belirtmekle yükümlüdür. YZ kullanımını beyan etmemek akademik etik ihlali olarak değerlendirilir.",
+    archiving_title:"ARŞİVLEME POLİTİKASI",
+    archiving_text:"ARSİS, yayımladığı tüm içeriklerin uzun vadeli dijital erişilebilirliğini garanti altına almayı taahhüt eder. Dergi içerikleri; LOCKSS ve CLOCKSS sistemleriyle uyumlu arşivleme altyapılarında saklanacak, olası teknik aksaklıklara karşı çoklu yedekleme stratejisi uygulanacaktır. Tüm makaleler kalıcı dijital tanımlayıcılarla (DOI) kayıt altına alınacaktır.",
+    doi_title:"DOI & KALICI ERİŞİM",
+    doi_text:"ARSİS, CrossRef üyeliği aracılığıyla tüm yayımlanan makalelere DOI (Digital Object Identifier) tahsis edecektir. DOI sistemi, makalelere kalıcı ve güvenilir bir web adresi sağlar; atıf bütünlüğünü korur ve uluslararası indeksleme başvurularında zorunlu bir ölçüt olarak kabul edilir. İlk sayı yayımıyla birlikte DOI tahsisi aktif hale gelecektir.",
     guide_page:"YAZIM KURALLARI",ethics_page:"ETİK İLKELER",
     guide_sections:[
       {
@@ -260,6 +269,15 @@ const T = {
     status_update:"Status updated.",download:"Download File",profile_title:"MY PROFILE",
     profile_fields:[["Full Name"],["Email"],["Institution"],["ORCID"],["Role"],["Access"]],
     access:"Open Access",logout_msg:"Logged out.",
+    editorial_title:"EDITORIAL BOARD",
+    editorial_note:"The ARSIS editorial board comprises academic specialists in music, musicology, anthropology and ethnomusicology. The board is responsible for overseeing the manuscript review process, determining publication policies and upholding the scholarly integrity of the journal. Invitations to join the editorial board are extended on the basis of academic expertise and international publication record. The current board list is maintained by the journal management and will be announced on this page from the first issue onwards.",
+    editorial_contact:"For editorial board membership and collaboration enquiries: arsisakademik@gmail.com",
+    ai_title:"ARTIFICIAL INTELLIGENCE POLICY",
+    ai_text:"ARSIS requires transparency regarding the use of artificial intelligence (AI) tools in the research and writing process. Large language models (ChatGPT, Claude, etc.) may be used as assistive tools in manuscript preparation; however, they cannot be listed as authors. Authors who use AI tools for text generation, literature review or data analysis are obliged to disclose this clearly in a footnote or acknowledgements section. Failure to disclose AI use will be treated as an academic ethics violation.",
+    archiving_title:"ARCHIVING POLICY",
+    archiving_text:"ARSIS is committed to guaranteeing long-term digital accessibility of all published content. Journal content will be preserved in archiving infrastructures compatible with LOCKSS and CLOCKSS systems, with a multi-backup strategy applied against potential technical disruptions. All articles will be registered with permanent digital identifiers (DOI).",
+    doi_title:"DOI & PERMANENT ACCESS",
+    doi_text:"ARSIS will assign a DOI (Digital Object Identifier) to all published articles through CrossRef membership. The DOI system provides articles with a permanent and reliable web address, preserves citation integrity and is accepted as a mandatory criterion in international indexing applications. DOI assignment will become active with the publication of the first issue.",
     guide_page:"AUTHOR GUIDELINES",ethics_page:"ETHICS & POLICIES",
     guide_sections:[
       {
@@ -831,7 +849,7 @@ function App() {
       </div>
       <div style={{maxWidth:960,margin:"0 auto",padding:"60px 28px",display:"grid",gridTemplateColumns:"2fr 1fr",gap:52}}>
         <div>
-          {/* Amaç ve Kapsam — uzun metin */}
+          {/* Amaç ve Kapsam */}
           <div style={{marginBottom:40,padding:"28px 32px",background:`${C.gold}08`,borderRadius:12,border:`1px solid ${C.gold}33`,borderLeft:`4px solid ${C.gold}`}}>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
               <div style={{width:28,height:2,background:C.gold}}/>
@@ -841,6 +859,7 @@ function App() {
             <p style={{margin:0,color:"#555",fontSize:14.5,lineHeight:1.9,fontStyle:"italic",borderTop:`1px solid ${C.gold}33`,paddingTop:14}}>{t.scope_long}</p>
           </div>
 
+          {/* Hakemlik, Yazım, Açık Erişim */}
           {[{t:t.peer,c:t.peer_text},{t:t.guide,c:t.guide_text},{t:t.oa_policy,c:t.oa_text}].map(s=>(
             <div key={s.t} style={{marginBottom:32}}>
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
@@ -850,8 +869,37 @@ function App() {
               <p style={{margin:0,color:"#555",fontSize:15,lineHeight:1.8}}>{s.c}</p>
             </div>
           ))}
+
+          {/* Yapay Zeka Politikası */}
+          <div style={{marginBottom:32,padding:"22px 28px",background:"#f0f7ff",borderRadius:10,border:"1px solid #bcd4f0",borderLeft:"4px solid #4a90d9"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+              <span style={{fontSize:18}}>🤖</span>
+              <h3 style={{fontFamily:"'Cinzel',serif",margin:0,fontSize:13,fontWeight:700,color:C.ink,letterSpacing:1}}>{t.ai_title?.toUpperCase()||"YAPAY ZEKA POLİTİKASI"}</h3>
+            </div>
+            <p style={{margin:0,color:"#444",fontSize:14.5,lineHeight:1.85}}>{t.ai_text}</p>
+          </div>
+
+          {/* Arşivleme */}
+          <div style={{marginBottom:32,padding:"22px 28px",background:`${C.teal}08`,borderRadius:10,border:`1px solid ${C.teal}33`,borderLeft:`4px solid ${C.teal}`}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+              <span style={{fontSize:18}}>🗄️</span>
+              <h3 style={{fontFamily:"'Cinzel',serif",margin:0,fontSize:13,fontWeight:700,color:C.ink,letterSpacing:1}}>{t.archiving_title?.toUpperCase()||"ARŞİVLEME POLİTİKASI"}</h3>
+            </div>
+            <p style={{margin:0,color:"#444",fontSize:14.5,lineHeight:1.85}}>{t.archiving_text}</p>
+          </div>
+
+          {/* DOI */}
+          <div style={{marginBottom:32,padding:"22px 28px",background:`${C.rust}06`,borderRadius:10,border:`1px solid ${C.rust}22`,borderLeft:`4px solid ${C.rust}`}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+              <span style={{fontSize:18}}>🔗</span>
+              <h3 style={{fontFamily:"'Cinzel',serif",margin:0,fontSize:13,fontWeight:700,color:C.ink,letterSpacing:1}}>{t.doi_title?.toUpperCase()||"DOI & KALICI ERİŞİM"}</h3>
+            </div>
+            <p style={{margin:0,color:"#444",fontSize:14.5,lineHeight:1.85}}>{t.doi_text}</p>
+          </div>
         </div>
+
         <div>
+          {/* Dergi Bilgileri */}
           <div style={{background:C.ink,borderRadius:12,padding:"28px 24px",marginBottom:20}}>
             <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.gold,letterSpacing:2,marginBottom:16}}>{t.db_title}</div>
             {t.db.map(([k,v])=>(
@@ -861,6 +909,15 @@ function App() {
               </div>
             ))}
           </div>
+
+          {/* Editör Kurulu */}
+          <div style={{background:"#fff",borderRadius:12,padding:"22px 24px",border:`1px solid ${C.border}`,marginBottom:20}}>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.ink,letterSpacing:2,marginBottom:12}}>{t.editorial_title}</div>
+            <p style={{fontSize:13,color:C.muted,lineHeight:1.75,margin:"0 0 12px"}}>{t.editorial_note}</p>
+            <a href="mailto:arsisakademik@gmail.com" style={{fontSize:12.5,color:C.teal,textDecoration:"none",fontStyle:"italic"}}>{t.editorial_contact}</a>
+          </div>
+
+          {/* İletişim */}
           <div style={{background:C.cream,borderRadius:12,padding:"22px 24px",border:`1px solid ${C.border}`}}>
             <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.rust,letterSpacing:2,marginBottom:14}}>{t.contact}</div>
             <p style={{margin:"0 0 8px",fontSize:13.5,color:C.muted}}>✉️ arsisakademik@gmail.com</p>
@@ -900,6 +957,38 @@ function App() {
         <p style={{fontSize:15,color:"#a09070",maxWidth:560,margin:"0 auto",lineHeight:1.75,fontStyle:"italic"}}>{t.guide_text}</p>
       </div>
       <div style={{maxWidth:860,margin:"0 auto",padding:"60px 28px"}}>
+
+        {/* Şablon İndirme Kartı */}
+        <div style={{background:"#fff",borderRadius:14,padding:"28px 32px",marginBottom:44,border:`2px solid ${C.gold}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:24,flexWrap:"wrap"}}>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.gold,letterSpacing:2,marginBottom:8}}>
+              {lang==="tr"?"MAKALE ŞABLONU":lang==="en"?"ARTICLE TEMPLATE":"ΠΡΌΤΥΠΟ ΆΡΘΡΟΥ"}
+            </div>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:15,fontWeight:700,color:C.ink,marginBottom:6}}>
+              ARSİS_Makale_Sablonu_v2.docx
+            </div>
+            <p style={{fontFamily:"'Crimson Pro',serif",fontSize:13.5,color:C.muted,margin:0,lineHeight:1.7}}>
+              {lang==="tr"
+                ?"Times New Roman 12pt · Başlık, özet, atıf ve kaynakça biçimlendirmesi hazır. Doğrudan Word'de düzenleyebilirsiniz."
+                :lang==="en"
+                ?"Times New Roman 12pt · Title, abstract, citation and reference formatting ready. Edit directly in Word."
+                :"Times New Roman 12pt · Έτοιμη μορφοποίηση τίτλου, περίληψης, παραπομπών και βιβλιογραφίας."}
+            </p>
+          </div>
+          <a
+            href="https://mehmetsoulemezz-dot.github.io/arsisakademik/ARSiS_Makale_Sablonu_v2.docx"
+            download="ARSiS_Makale_Sablonu_v2.docx"
+            style={{
+              background:C.gold, color:C.ink, textDecoration:"none",
+              padding:"14px 28px", borderRadius:8, fontFamily:"'Cinzel',serif",
+              fontSize:12, fontWeight:800, letterSpacing:1, whiteSpace:"nowrap",
+              display:"flex", alignItems:"center", gap:8
+            }}>
+            ⬇ {lang==="tr"?"ŞABLONU İNDİR":lang==="en"?"DOWNLOAD TEMPLATE":"ΛΉΨΗ ΠΡΟΤΎΠΟΥ"}
+          </a>
+        </div>
+
+        {/* Bölümler */}
         {t.guide_sections.map((sec,i)=>(
           <div key={i} style={{marginBottom:40}}>
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18}}>
@@ -917,7 +1006,7 @@ function App() {
           </div>
         ))}
         <div style={{background:C.ink,borderRadius:12,padding:"28px 32px",marginTop:20,textAlign:"center"}}>
-          <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.gold,letterSpacing:2,marginBottom:10}}>CONTACT</div>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.gold,letterSpacing:2,marginBottom:10}}>İLETİŞİM</div>
           <p style={{fontSize:14,color:"#a09070",margin:"0 0 16px",lineHeight:1.7}}>
             {lang==="tr"?"Sorularınız için editör ile iletişime geçebilirsiniz.":lang==="en"?"For any questions, please contact the editor.":"Για ερωτήσεις, επικοινωνήστε με τον εκδότη."}
           </p>
