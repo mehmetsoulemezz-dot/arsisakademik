@@ -747,6 +747,9 @@ function App() {
       <div style={{background:"#1a1208",position:"relative",overflow:"hidden",padding:"90px 48px 80px"}}>
         <div style={{position:"absolute",top:-80,right:-80,width:320,height:320,borderRadius:"50%",border:`1px solid ${C.gold}22`,pointerEvents:"none"}}/>
         <div style={{position:"absolute",bottom:-60,left:-60,width:260,height:260,borderRadius:"50%",border:`1px solid ${C.gold}15`,pointerEvents:"none"}}/>
+        <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,pointerEvents:"none",opacity:0.03}}>
+          {[20,35,50,65,80].map(p=><div key={p} style={{position:"absolute",top:`${p}%`,left:0,right:0,height:1,background:C.gold}}/>)}
+        </div>
         <div style={{position:"relative",maxWidth:820,margin:"0 auto",textAlign:"center",animation:"fadeUp 0.8s ease both"}}>
           <div style={{display:"flex",justifyContent:"center",marginBottom:28}}><WaveLogo size={42}/></div>
           <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.gold,letterSpacing:5,marginBottom:16,opacity:0.8}}>{t.tagline}</div>
@@ -770,28 +773,119 @@ function App() {
         ))}
       </div>
 
-      {/* Yakında bölümü */}
-      <div style={{background:C.paper,padding:"72px 28px"}}>
-        <div style={{maxWidth:780,margin:"0 auto",textAlign:"center"}}>
-          <div style={{display:"flex",justifyContent:"center",gap:6,marginBottom:36}}>
-            {[0.4,0.8,1,0.7,1,0.5,0.9,0.6,0.8,0.4].map((h,i)=>(
-              <div key={i} style={{width:4,background:C.gold,borderRadius:2,height:h*52,opacity:0.5+h*0.5,animation:`wave 1.4s ease-in-out ${i*0.1}s infinite alternate`}}/>
-            ))}
+      {/* Öne Çıkan Makale — Supabase'den dinamik */}
+      <div style={{background:C.paper,padding:"64px 28px"}}>
+        <div style={{maxWidth:1200,margin:"0 auto"}}>
+          <div style={{display:"flex",alignItems:"baseline",gap:16,marginBottom:32}}>
+            <h2 style={{fontFamily:"'Cinzel',serif",fontSize:22,fontWeight:700,color:C.ink,margin:0,letterSpacing:2}}>
+              {lang==="tr"?"ÖĞRENMEYE DEĞER":lang==="en"?"WORTH KNOWING":"ΑΞΙΖΕΙ ΝΑ ΓΝΩΡΙΖΕΤΕ"}
+            </h2>
+            <div style={{flex:1,height:1,background:`linear-gradient(to right,${C.gold}88,transparent)`}}/>
           </div>
-          <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.gold,letterSpacing:5,marginBottom:18}}>{t.coming}</div>
-          <h2 style={{fontFamily:"'Cinzel',serif",fontSize:34,fontWeight:900,color:C.ink,margin:"0 0 28px",letterSpacing:2,lineHeight:1.2}}>{t.coming_title}</h2>
-          <div style={{width:60,height:2,background:C.gold,margin:"0 auto 32px"}}/>
-          <p style={{fontSize:19,color:"#5a4e3a",lineHeight:1.85,margin:"0 0 16px",fontStyle:"italic"}}>"{t.coming_motto}"</p>
-          <p style={{fontSize:15,color:C.muted,lineHeight:1.75,margin:"0 0 44px"}}>{t.coming_sub}</p>
-          <button onClick={()=>user?setModal("makale"):setModal("login")} style={{background:C.ink,color:C.gold,border:`1.5px solid ${C.gold}`,padding:"14px 36px",borderRadius:8,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:13,fontWeight:700,letterSpacing:2}}>{t.submit_btn}</button>
-          <p style={{fontSize:12,color:C.muted,marginTop:12,fontStyle:"italic"}}>{t.deadline}</p>
+
+          {/* Ayın Makalesi — Supabase articles tablosundan en son baskıdaki */}
+          {articles.filter(a=>a.status==="baskida"||a.status==="yayında").length>0 && (
+            <div style={{background:`linear-gradient(135deg,${C.ink},#2a1f0a)`,borderRadius:14,padding:"32px 36px",marginBottom:28,border:`1px solid ${C.gold}33`}}>
+              <div style={{fontFamily:"'Cinzel',serif",fontSize:9,color:C.gold,letterSpacing:3,marginBottom:12}}>
+                {lang==="tr"?"YAKINDA YAYINLANACAK":lang==="en"?"COMING SOON":"ΣΎΝΤΟΜΑ"}
+              </div>
+              {articles.filter(a=>a.status==="baskida"||a.status==="yayında").slice(0,1).map(a=>(
+                <div key={a.id}>
+                  <h3 style={{fontFamily:"'Cinzel',serif",fontSize:17,color:"#f0e6cc",margin:"0 0 10px",lineHeight:1.5}}>{a.title}</h3>
+                  <div style={{fontSize:13,color:C.gold,marginBottom:12}}>{a.author} — <span style={{color:"#8a7d60",fontStyle:"italic"}}>{a.field}</span></div>
+                  {a.abstract&&<p style={{fontSize:14,color:"#a09070",margin:0,lineHeight:1.75,fontStyle:"italic"}}>"{a.abstract.substring(0,220)}…"</p>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Makale çağrısı hatırlatıcı */}
+          <div style={{background:C.cream,borderRadius:12,padding:"24px 28px",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,flexWrap:"wrap"}}>
+            <div>
+              <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.rust,letterSpacing:1.5,marginBottom:6}}>{t.call}</div>
+              <p style={{fontSize:14,color:C.ink,margin:0,lineHeight:1.6}}>
+                {lang==="tr"?"Cilt 1, Sayı 1 · Son gönderim:":lang==="en"?"Volume 1, Issue 1 · Submission deadline:":"Τόμος 1, Τεύχος 1 · Προθεσμία:"} <strong style={{color:C.rust}}>30 {lang==="tr"?"Nisan":lang==="en"?"April":"Απριλίου"} 2026</strong>
+              </p>
+            </div>
+            <button onClick={()=>user?setModal("makale"):setModal("login")}
+              style={{background:C.ink,color:C.gold,border:`1px solid ${C.gold}55`,padding:"12px 28px",borderRadius:8,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:12,fontWeight:700,letterSpacing:1,whiteSpace:"nowrap"}}>
+              {t.submit_btn}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Kapsam alanları */}
-      <div style={{background:C.cream,borderTop:`1px solid ${C.border}`,padding:"52px 28px"}}>
+      {/* Alanda Öne Çıkan İsimler */}
+      <div style={{background:`linear-gradient(135deg,#1a1208 0%,#2a1f0a 100%)`,padding:"64px 28px",borderTop:`2px solid ${C.gold}44`}}>
         <div style={{maxWidth:1200,margin:"0 auto"}}>
           <div style={{display:"flex",alignItems:"baseline",gap:16,marginBottom:36}}>
+            <h2 style={{fontFamily:"'Cinzel',serif",fontSize:22,fontWeight:700,color:"#f0e6cc",margin:0,letterSpacing:2}}>
+              {lang==="tr"?"ALANDA ÖNCÜ İSİMLER":lang==="en"?"PIONEERS IN THE FIELD":"ΠΡΩΤΟΠΌΡΟΙ ΣΤΟ ΠΕΔΊΟ"}
+            </h2>
+            <div style={{flex:1,height:1,background:`linear-gradient(to right,${C.gold}66,transparent)`}}/>
+          </div>
+          <p style={{fontSize:14,color:"#8a7d60",marginBottom:32,fontStyle:"italic",maxWidth:600}}>
+            {lang==="tr"?"ARSİS'in yayın kapsamını şekillendiren temel akademik çalışmalar ve yazarları:":lang==="en"?"Key academic works and authors shaping ARSIS's publishing scope:":"Βασικά ακαδημαϊκά έργα που διαμορφώνουν το πεδίο:"}
+          </p>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20}}>
+            {[
+              {isim:"Bruno Nettl",alan:"Etnomüzikoloji",kurum:"University of Illinois",eser:"The Study of Ethnomusicology (1983, 2005)",aciklama:"Etnomüzikolojinin teorik temellerini atan en etkili çalışmalardan biri. Saha yöntemi ve kültürel bağlam tartışmaları hâlâ referans niteliğindedir.",renk:"#1D6A5E"},
+              {isim:"Alan Merriam",alan:"Müzik Antropolojisi",kurum:"Indiana University",eser:"The Anthropology of Music (1964)",aciklama:"Müziği yalnızca ses olarak değil, toplumsal bir davranış olarak inceleyen bu yapıt, müzik antropolojisinin kurucu metni kabul edilir.",renk:"#8B3A2A"},
+              {isim:"Curt Sachs",alan:"Organoloji",kurum:"New York University",eser:"The History of Musical Instruments (1940)",aciklama:"Çalgı biliminin modern temellerini atan Sachs, geliştirdiği Hornbostel-Sachs sınıflandırma sistemiyle hâlâ kullanılmaktadır.",renk:"#4a3a8a"},
+              {isim:"Martin Stokes",alan:"Müzik & Kimlik",kurum:"King's College London",eser:"Ethnicity, Identity and Music (1994)",aciklama:"Müziğin kimlik ve yer inşasındaki rolünü ele alan bu derleme, diaspora ve kimlik araştırmalarına yön vermiştir.",renk:"#1e5a8a"},
+              {isim:"Karl Signell",alan:"Türk Müziği",kurum:"University of Maryland",eser:"Makam: Modal Practice in Turkish Art Music (1977)",aciklama:"Türk makam sistemini Batılı akademik perspektifle inceleyen bu eser, alanın İngilizce başvuru kaynağı olma özelliğini korumaktadır.",renk:"#5a6a1a"},
+              {isim:"Cem Behar",alan:"Osmanlı Müziği",kurum:"Boğaziçi Üniversitesi",eser:"Aşk Olmayınca Meşk Olmaz (1992)",aciklama:"Osmanlı-Türk müziğinde öğretim ve intikal geleneğini inceleyen bu yapıt, müzik sosyolojisi açısından özgün bir katkı sunmaktadır.",renk:"#8a4a1a"},
+            ].map(k=>(
+              <div key={k.isim} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"22px 20px",border:`1px solid ${C.gold}22`,borderTop:`3px solid ${k.renk}`}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                  <div style={{width:40,height:40,borderRadius:"50%",background:k.renk,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Cinzel',serif",color:"#fff",fontSize:15,fontWeight:900,flexShrink:0}}>
+                    {k.isim.split(" ").map(n=>n[0]).join("")}
+                  </div>
+                  <div>
+                    <div style={{fontFamily:"'Cinzel',serif",fontSize:13,fontWeight:700,color:"#f0e6cc"}}>{k.isim}</div>
+                    <div style={{fontSize:11,color:C.gold,fontStyle:"italic"}}>{k.alan}</div>
+                  </div>
+                </div>
+                <div style={{fontSize:11,color:"#8a7d60",marginBottom:8}}>{k.kurum}</div>
+                <div style={{fontFamily:"'Cinzel',serif",fontSize:10.5,color:"#c4b896",marginBottom:8,fontStyle:"italic"}}>"{k.eser}"</div>
+                <p style={{fontSize:12,color:"#7a6e5f",margin:0,lineHeight:1.7}}>{k.aciklama}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Müzik Hakkında Bilgi Kartları */}
+      <div style={{background:C.cream,borderTop:`1px solid ${C.border}`,padding:"64px 28px"}}>
+        <div style={{maxWidth:1200,margin:"0 auto"}}>
+          <div style={{display:"flex",alignItems:"baseline",gap:16,marginBottom:36}}>
+            <h2 style={{fontFamily:"'Cinzel',serif",fontSize:22,fontWeight:700,color:C.ink,margin:0,letterSpacing:2}}>
+              {lang==="tr"?"BİLİYOR MUYDUNUZ?":lang==="en"?"DID YOU KNOW?":"ΓΝΩΡΙΖΑΤΕ ΟΤΙ;"}
+            </h2>
+            <div style={{flex:1,height:1,background:`linear-gradient(to right,${C.gold}88,transparent)`}}/>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20,marginBottom:48}}>
+            {[
+              {icon:"𝄞",renk:C.teal,bg:"#e8f5f2",
+               baslik:lang==="tr"?"Dünyanın En Eski Çalgısı":lang==="en"?"World's Oldest Instrument":"Το Παλαιότερο Όργανο",
+               metin:lang==="tr"?"Slovenya'da bulunan ve yaklaşık 60.000 yıllık olduğu tahmin edilen bir ayı kemiğinden yapılmış flüt, günümüze ulaşan en eski müzik aleti olarak kabul edilmektedir. Bu bulgu, müziğin Homo sapiens'in bilişsel kapasitesiyle eş zamanlı geliştiğine işaret etmektedir.":lang==="en"?"A flute made from a bear bone found in Slovenia, estimated to be approximately 60,000 years old, is accepted as the oldest musical instrument to survive to the present day. This finding suggests that music developed simultaneously with the cognitive capacity of Homo sapiens.":"Ένα φλάουτο από κόκαλο αρκούδας που βρέθηκε στη Σλοβενία, περίπου 60.000 ετών, θεωρείται το παλαιότερο μουσικό όργανο."},
+              {icon:"♬",renk:C.rust,bg:"#fdf0ec",
+               baslik:lang==="tr"?"UNESCO ve Müzik Mirası":lang==="en"?"UNESCO and Musical Heritage":"UNESCO και Μουσική Κληρονομιά",
+               metin:lang==="tr"?"UNESCO'nun Somut Olmayan Kültürel Miras listesinde 600'den fazla müzik geleneği yer almaktadır. Türkiye'den bu listede yer alanlar arasında Meddahlık, Mevlevi Sema töreni, Âşıklık geleneği ve Karagöz ile Hacivat bulunmaktadır.":lang==="en"?"UNESCO's Intangible Cultural Heritage list includes more than 600 musical traditions. Among those from Turkey are Meddahlık, the Mevlevi Sema ceremony, the Âşık storytelling tradition, and Karagöz and Hacivat.":"Η λίστα άυλης κληρονομιάς της UNESCO περιλαμβάνει πάνω από 600 μουσικές παραδόσεις."},
+              {icon:"◉",renk:"#4a3a8a",bg:"#f0eefb",
+               baslik:lang==="tr"?"Müzik ve Beyin":lang==="en"?"Music and the Brain":"Μουσική και Εγκέφαλος",
+               metin:lang==="tr"?"Nöromüzikoloji araştırmaları, çalgı eğitiminin beynin hem sol hem sağ yarımküresini eş zamanlı etkinleştirdiğini göstermektedir. Müzisyenlerin beynindeki korpus kallozum (iki yarımküreyi birleştiren yapı) ortalama %15 daha gelişmiş olarak gözlemlenmektedir.":lang==="en"?"Neuromusicology research shows that musical instrument training activates both the left and right hemispheres of the brain simultaneously. The corpus callosum (the structure connecting the two hemispheres) in musicians' brains is observed to be approximately 15% more developed on average.":"Η νευρομουσικολογική έρευνα δείχνει ότι η μουσική εκπαίδευση ενεργοποιεί ταυτόχρονα και τα δύο ημισφαίρια του εγκεφάλου."},
+            ].map(k=>(
+              <div key={k.baslik} style={{background:"#fff",borderRadius:12,padding:"26px 22px",border:`1px solid ${C.border}`,borderTop:`3px solid ${k.renk}`}}>
+                <div style={{fontFamily:"serif",fontSize:36,color:k.renk,marginBottom:12}}>{k.icon}</div>
+                <h3 style={{fontFamily:"'Cinzel',serif",fontSize:13,fontWeight:700,color:C.ink,marginBottom:10,letterSpacing:0.5}}>{k.baslik}</h3>
+                <p style={{fontSize:13,color:"#555",margin:0,lineHeight:1.8}}>{k.metin}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Kapsam alanları */}
+          <div style={{display:"flex",alignItems:"baseline",gap:16,marginBottom:28}}>
             <h2 style={{fontFamily:"'Cinzel',serif",fontSize:22,fontWeight:700,color:C.ink,margin:0,letterSpacing:2}}>{t.scope_title}</h2>
             <div style={{flex:1,height:1,background:`linear-gradient(to right,${C.gold}88,transparent)`}}/>
           </div>
@@ -976,8 +1070,8 @@ function App() {
             </p>
           </div>
           <a
-            href="https://mehmetsoulemezz-dot.github.io/arsisakademik/ARSiS_Makale_Sablonu.docx"
-            download="ARSiS_Makale_Sablonu.docx"
+            href="https://mehmetsoulemezz-dot.github.io/arsisakademik/ARSİS_Makale_Sablonu.docx"
+            download="ARSİS_Makale_Sablonu.docx"
             style={{
               background:C.gold, color:C.ink, textDecoration:"none",
               padding:"14px 28px", borderRadius:8, fontFamily:"'Cinzel',serif",
@@ -1179,6 +1273,20 @@ function App() {
               const archiveLabels=["Arşiv","Archive","Αρχείο"];
               const oaLabels=["Açık Erişim","Open Access","Ανοιχτή Πρόσβαση"];
               const submitLabels=["Makale Gönder","Submit Article","Υποβολή"];
+              const socialLinks={
+                "ResearchGate":"https://www.researchgate.net",
+                "Academia.edu":"https://www.academia.edu",
+                "ORCID":"https://orcid.org",
+                "Google Scholar":"https://scholar.google.com",
+              };
+              if(socialLinks[item]) return(
+                <a key={item} href={socialLinks[item]} target="_blank" rel="noopener noreferrer"
+                  style={{display:"block",fontSize:12.5,color:"#c4b896",marginBottom:7,textDecoration:"none",transition:"color 0.2s"}}
+                  onMouseEnter={e=>e.target.style.color=C.goldL}
+                  onMouseLeave={e=>e.target.style.color="#c4b896"}>
+                  {item} ↗
+                </a>
+              );
               let onClick=undefined;
               if(guideLabels.includes(item)) onClick=()=>setPage("yazim-kurallari");
               else if(ethicsLabels.includes(item)) onClick=()=>setPage("etik-ilkeler");
