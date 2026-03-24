@@ -535,25 +535,24 @@ const WaveLogo=({size=28,color=C.gold})=>(
   </div>
 );
 
-function YanitKutusu({postId, postFromEmail, isEditor, replyLabel, onYanitGonder}) {
-  const inputId = `yanit-${postId}`;
-  const gonder = async () => {
-    const el = document.getElementById(inputId);
-    if(!el || !el.value.trim()) return;
-    const text = el.value;
-    el.value = "";
+function YanitKutusu({postId, postFromEmail, isEditor, onYanitGonder}) {
+  const ref = React.useRef(null);
+  const gonder = React.useCallback(async () => {
+    if(!ref.current || !ref.current.value.trim()) return;
+    const text = ref.current.value;
+    ref.current.value = "";
     await onYanitGonder(postId, postFromEmail, text);
-  };
+  }, [postId, postFromEmail, onYanitGonder]);
+
   return (
     <div style={{background:C.paper,borderTop:`1px solid ${C.border}`,padding:"12px 22px",display:"flex",gap:10}}>
       <input
-        id={inputId}
-        placeholder={replyLabel}
+        ref={ref}
+        placeholder={isEditor ? "Kullanıcıya yanıt yazın..." : "Editöre yanıt yazın..."}
         style={{flex:1,padding:"8px 14px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:13,outline:"none",background:"#fff",color:C.ink}}
         onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();gonder();}}}
       />
-      <button
-        onClick={gonder}
+      <button onClick={gonder}
         style={{background:C.gold,color:C.ink,border:"none",padding:"8px 18px",borderRadius:6,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>
         ↩ GÖNDER
       </button>
@@ -561,94 +560,129 @@ function YanitKutusu({postId, postFromEmail, isEditor, replyLabel, onYanitGonder
   );
 }
 
-function MesajlarTab({user,toast_,t}) {
-  const [posts,setPosts]=useState([]);
+function YeniMesajFormu({user, onGonder}) {
+  const konuRef = React.useRef(null);
+  const icerikRef = React.useRef(null);
+  const gonder = async () => {
+    const konu = konuRef.current?.value?.trim();
+    const icerik = icerikRef.current?.value?.trim();
+    if(!konu || !icerik) { alert("Konu ve mesaj zorunludur."); return; }
+    await onGonder(konu, icerik);
+    if(konuRef.current) konuRef.current.value = "";
+    if(icerikRef.current) icerikRef.current.value = "";
+  };
+  return (
+    <div style={{background:C.cream,borderRadius:12,padding:"20px 24px",marginBottom:28,border:`1px solid ${C.border}`}}>
+      <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.rust,letterSpacing:1.5,marginBottom:14}}>YENİ MESAJ</div>
+      <input ref={konuRef} placeholder="Konu *"
+        style={{width:"100%",padding:"10px 14px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:14,outline:"none",background:"#fff",color:C.ink,marginBottom:10,boxSizing:"border-box"}}/>
+      <textarea ref={icerikRef} placeholder="Mesajınız *"
+        style={{width:"100%",padding:"10px 14px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:14,outline:"none",background:"#fff",color:C.ink,marginBottom:10,boxSizing:"border-box",height:90,resize:"vertical"}}/>
+      <button onClick={gonder}
+        style={{background:C.ink,color:C.gold,border:"none",padding:"10px 24px",borderRadius:7,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:12,fontWeight:700,letterSpacing:1}}>
+        GÖNDER
+      </button>
+    </div>
+  );
+}
 
-  useEffect(()=>{yukle();},[]);
+function MesajlarTab({user, toast_, lang}) {
+  const [posts, setPosts] = React.useState([]);
 
-  const yukle=async()=>{
-    if(user.role==="editor"){
-      const{data}=await supa.from("messages").select("*").order("created_at",{ascending:false});
-      if(data)setPosts(data);
+  const yukle = React.useCallback(async () => {
+    if(user.role === "editor") {
+      const {data} = await supa.from("messages").select("*").order("created_at",{ascending:false});
+      if(data) setPosts(data);
     } else {
-      const{data}=await supa.from("messages").select("*").eq("from_email",user.email).order("created_at",{ascending:false});
-      if(data){
-        const anaIds=data.filter(p=>p.to_email==="forum").map(p=>p.id);
-        if(anaIds.length>0){
-          const{data:yanitlar}=await supa.from("messages").select("*").in("to_email",anaIds.map(id=>`reply_${id}`));
-          setPosts([...data,...(yanitlar||[])]);
+      const {data} = await supa.from("messages").select("*").eq("from_email", user.email).order("created_at",{ascending:false});
+      if(data) {
+        const anaIds = data.filter(p=>p.to_email==="forum").map(p=>p.id);
+        if(anaIds.length > 0) {
+          const {data: yanitlar} = await supa.from("messages").select("*").in("to_email", anaIds.map(id=>`reply_${id}`));
+          setPosts([...data, ...(yanitlar||[])]);
         } else setPosts(data);
       }
     }
-  };
+  }, [user.role, user.email]);
 
-  const yanitGonder=async(postId,postFromEmail,text)=>{
-    await supa.from("messages").insert([{from_name:user.name,from_email:user.email,to_email:`reply_${postId}`,subject:"Reply",content:text,read:false,reply_to_user:postFromEmail}]);
-    yukle();toast_(t.reply_send+" ✓");
-  };
+  React.useEffect(() => { yukle(); }, [yukle]);
 
-  const isEditor=user?.role==="editor";
-  const anaPostlar=posts.filter(p=>p.to_email==="forum").filter(p=>isEditor?true:p.from_email===user.email);
-  const yanit=(id)=>posts.filter(p=>p.to_email===`reply_${id}`).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
-  const okunmamis=isEditor?posts.filter(p=>p.to_email==="forum"&&!p.read).length:0;
+  const yanitGonder = React.useCallback(async (postId, postFromEmail, text) => {
+    await supa.from("messages").insert([{
+      from_name: user.name, from_email: user.email,
+      to_email: `reply_${postId}`, subject: "Reply",
+      content: text, read: false, reply_to_user: postFromEmail
+    }]);
+    yukle();
+    toast_("✓ Yanıtınız gönderildi.");
+  }, [user.name, user.email, yukle, toast_]);
 
-  return(
+  const mesajGonder = React.useCallback(async (konu, icerik) => {
+    await supa.from("messages").insert([{
+      from_name: user.name, from_email: user.email,
+      to_email: "forum", subject: konu, content: icerik, read: false
+    }]);
+    yukle();
+    toast_("✓ Mesajınız gönderildi.");
+  }, [user.name, user.email, yukle, toast_]);
+
+  const isEditor = user?.role === "editor";
+  const anaPostlar = posts.filter(p=>p.to_email==="forum").filter(p=> isEditor ? true : p.from_email===user.email);
+  const yanit = (id) => posts.filter(p=>p.to_email===`reply_${id}`).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+  const okunmamis = isEditor ? posts.filter(p=>p.to_email==="forum"&&!p.read).length : 0;
+
+  return (
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-        <h3 style={{fontFamily:"'Cinzel',serif",margin:0,fontSize:17,letterSpacing:1,color:C.ink}}>{t.panel_messages.toUpperCase()}</h3>
-        {isEditor&&okunmamis>0&&(
+        <h3 style={{fontFamily:"'Cinzel',serif",margin:0,fontSize:17,letterSpacing:1,color:C.ink}}>MESAJLAR</h3>
+        {isEditor && okunmamis > 0 && (
           <div style={{background:`${C.rust}15`,border:`1px solid ${C.rust}44`,borderRadius:8,padding:"8px 16px",display:"flex",alignItems:"center",gap:8}}>
             <span style={{background:C.rust,color:"#fff",borderRadius:"50%",width:22,height:22,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800}}>{okunmamis}</span>
-            <span style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.rust,letterSpacing:0.5}}>{t.unread}</span>
+            <span style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.rust,letterSpacing:0.5}}>okunmamış mesaj</span>
           </div>
         )}
       </div>
-      <div style={{background:C.cream,borderRadius:12,padding:"20px 24px",marginBottom:28,border:`1px solid ${C.border}`}}>
-        <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.rust,letterSpacing:1.5,marginBottom:14}}>{t.new_msg}</div>
-        <input id="msg-konu" placeholder="Konu / Subject *"
-          style={{width:"100%",padding:"10px 14px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:14,outline:"none",background:"#fff",color:C.ink,marginBottom:10,boxSizing:"border-box"}}/>
-        <textarea id="msg-icerik" placeholder="Mesaj / Message *"
-          style={{width:"100%",padding:"10px 14px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:14,outline:"none",background:"#fff",color:C.ink,marginBottom:10,boxSizing:"border-box",height:90,resize:"vertical"}}/>
-        <button onClick={async()=>{
-          const konu = document.getElementById("msg-konu").value;
-          const icerik = document.getElementById("msg-icerik").value;
-          if(!konu.trim()||!icerik.trim()){toast_(t.submit_err,"err");return;}
-          await supa.from("messages").insert([{from_name:user.name,from_email:user.email,to_email:"forum",subject:konu,content:icerik,read:false}]);
-          document.getElementById("msg-konu").value="";
-          document.getElementById("msg-icerik").value="";
-          yukle();toast_(t.send+" ✓");
-        }} style={{background:C.ink,color:C.gold,border:"none",padding:"10px 24px",borderRadius:7,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:12,fontWeight:700,letterSpacing:1}}>{t.send}</button>
-      </div>
-      {anaPostlar.length===0
-        ?<div style={{textAlign:"center",padding:"40px",color:C.muted,fontStyle:"italic"}}>{t.no_msg}</div>
-        :anaPostlar.map(p=>{
-          const unread=!p.read&&isEditor;
-          return(
+
+      <YeniMesajFormu user={user} onGonder={mesajGonder} />
+
+      {anaPostlar.length === 0
+        ? <div style={{textAlign:"center",padding:"40px",color:C.muted,fontStyle:"italic"}}>Henüz mesaj yok.</div>
+        : anaPostlar.map(p => {
+          const unread = !p.read && isEditor;
+          return (
             <div key={p.id} style={{border:`1px solid ${unread?C.rust:C.border}`,borderRadius:12,marginBottom:16,overflow:"hidden",boxShadow:unread?`0 0 0 2px ${C.rust}22`:"none"}}>
               <div style={{background:unread?`${C.rust}06`:"#fff",padding:"18px 22px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:6,alignItems:"flex-start"}}>
                   <div style={{display:"flex",alignItems:"center",gap:10}}>
                     <span style={{fontFamily:"'Cinzel',serif",fontSize:14,fontWeight:700,color:C.ink}}>{p.subject}</span>
-                    {unread&&<span style={{background:C.rust,color:"#fff",fontSize:9,padding:"2px 8px",borderRadius:20,fontWeight:700}}>NEW</span>}
+                    {unread && <span style={{background:C.rust,color:"#fff",fontSize:9,padding:"2px 8px",borderRadius:20,fontWeight:700}}>YENİ</span>}
                   </div>
                   <span style={{fontSize:11,color:C.muted,whiteSpace:"nowrap",marginLeft:12}}>{p.created_at?.split("T")[0]}</span>
                 </div>
-                {isEditor&&<div style={{fontSize:11,color:C.teal,marginBottom:6,fontWeight:600}}>{t.from} {p.from_name} ({p.from_email})</div>}
+                {isEditor && <div style={{fontSize:11,color:C.teal,marginBottom:6,fontWeight:600}}>Gönderen: {p.from_name} ({p.from_email})</div>}
                 <div style={{fontSize:12,color:C.muted,marginBottom:10,fontStyle:"italic"}}>— {p.from_name}</div>
                 <p style={{margin:0,fontSize:14,color:"#444",lineHeight:1.75}}>{p.content}</p>
               </div>
-              {yanit(p.id).length>0&&(
+              {yanit(p.id).length > 0 && (
                 <div style={{background:C.cream,borderTop:`1px solid ${C.border}`}}>
-                  {yanit(p.id).map(r=>(
-                    <div key={r.id} style={{padding:"12px 22px",borderBottom:`1px solid ${C.border}44`,background:r.from_email===user.email?"#fff":C.cream}}>
-                      <div style={{fontSize:12,color:r.from_email===user.email?C.rust:C.teal,marginBottom:4,fontWeight:600}}>{r.from_name} · {r.created_at?.split("T")[0]}</div>
+                  {yanit(p.id).map(r => (
+                    <div key={r.id} style={{padding:"12px 22px",borderBottom:`1px solid ${C.border}44`}}>
+                      <div style={{fontSize:12,color:r.from_email===user.email?C.rust:C.teal,marginBottom:4,fontWeight:600}}>
+                        {r.from_email===user.email?"Siz":"Editörden"} · {r.from_name} · {r.created_at?.split("T")[0]}
+                      </div>
                       <p style={{margin:0,fontSize:13.5,color:"#444",lineHeight:1.7}}>{r.content}</p>
                     </div>
                   ))}
                 </div>
               )}
-              {(isEditor||p.from_email===user.email)&&(
-                <YanitKutusu postId={p.id} postFromEmail={p.from_email} isEditor={isEditor} replyLabel={isEditor?t.user_reply:t.editor_reply} onYanitGonder={yanitGonder}/>
+              {(isEditor || p.from_email===user.email) && (
+                <YanitKutusu
+                  key={`yanit-box-${p.id}`}
+                  postId={p.id}
+                  postFromEmail={p.from_email}
+                  isEditor={isEditor}
+                  onYanitGonder={yanitGonder}
+                />
               )}
             </div>
           );
@@ -1187,7 +1221,7 @@ function App() {
               })}
             </div>
           )}
-          {tab==="mesajlar"&&<MesajlarTab user={user} toast_={toast_} t={t}/>}
+          {tab==="mesajlar"&&<MesajlarTab user={user} toast_={toast_} lang={lang}/>}
           {tab==="profil"&&(
             <div>
               <h3 style={{fontFamily:"'Cinzel',serif",margin:"0 0 26px",fontSize:17,letterSpacing:1,color:C.ink}}>{t.profile_title}</h3>
