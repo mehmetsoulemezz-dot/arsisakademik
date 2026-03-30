@@ -694,6 +694,232 @@ function MesajlarTab({user, toast_}) {
 }
 
 
+// ── HAKEM ATA MODAL ──────────────────────────────────────────────────────────
+function HakemAtaModal({article, users, onClose, toast_, loadArticles}) {
+  const [mevcut, setMevcut] = React.useState([]);
+  const hakemler = users.filter(u=>u.role==="hakem");
+  const secilenRef = React.useRef(null);
+
+  React.useEffect(()=>{
+    supa.from("reviews").select("*").eq("article_id", article.id)
+      .then(({data})=>{ if(data) setMevcut(data); });
+  },[article.id]);
+
+  const ata = async () => {
+    const email = secilenRef.current?.value;
+    if(!email){ toast_("Lütfen bir hakem seçin.","err"); return; }
+    const hakem = hakemler.find(h=>h.email===email);
+    if(!hakem){ toast_("Hakem bulunamadı.","err"); return; }
+    const zatenAtanmis = mevcut.some(r=>r.reviewer_email===email);
+    if(zatenAtanmis){ toast_("Bu hakem zaten atanmış.","err"); return; }
+    await supa.from("reviews").insert([{
+      article_id: article.id,
+      reviewer_email: hakem.email,
+      reviewer_name: hakem.name,
+      status: "beklemede"
+    }]);
+    await supa.from("articles").update({status:"hakemde"}).eq("id", article.id);
+    await loadArticles();
+    toast_("✓ Hakem atandı!");
+    onClose();
+  };
+
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.paper,borderRadius:16,padding:"32px 36px",width:"100%",maxWidth:480,boxShadow:"0 24px 80px rgba(0,0,0,0.4)",border:`1px solid ${C.gold}44`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
+          <div>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:15,fontWeight:700,color:C.ink,letterSpacing:1}}>HAKEME GÖNDER</div>
+            <div style={{fontSize:12,color:C.muted,marginTop:4,fontStyle:"italic",maxWidth:320}}>{article.title}</div>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:C.muted}}>×</button>
+        </div>
+
+        {/* Mevcut hakemler */}
+        {mevcut.length>0&&(
+          <div style={{marginBottom:16}}>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.teal,letterSpacing:1.5,marginBottom:8}}>ATANMIŞ HAKEMLER</div>
+            {mevcut.map(r=>(
+              <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.cream,borderRadius:8,padding:"8px 14px",marginBottom:6,border:`1px solid ${C.border}`}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,color:C.ink}}>{r.reviewer_name}</div>
+                  <div style={{fontSize:11,color:C.muted}}>{r.reviewer_email}</div>
+                </div>
+                <span style={{fontSize:10,padding:"3px 10px",borderRadius:20,fontWeight:700,
+                  background:r.status==="tamamlandi"?"#d1fae5":r.status==="reddetti"?"#fee2e2":"#dbeafe",
+                  color:r.status==="tamamlandi"?"#065f46":r.status==="reddetti"?"#991b1b":"#1e40af"}}>
+                  {r.status==="tamamlandi"?"Değerlendirdi":r.status==="reddetti"?"Reddetti":"Bekliyor"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Yeni hakem seç */}
+        <div style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.rust,letterSpacing:1.5,marginBottom:8}}>YENİ HAKEM ATA</div>
+        {hakemler.length===0?(
+          <div style={{background:C.cream,borderRadius:8,padding:"14px",fontSize:13,color:C.muted,fontStyle:"italic",marginBottom:16}}>
+            Sistemde kayıtlı hakem bulunmuyor. Kullanıcılar hakem rolüyle kayıt olabilir veya Supabase'den rol değiştirilebilir.
+          </div>
+        ):(
+          <select ref={secilenRef} style={{width:"100%",padding:"10px 14px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:13,outline:"none",background:"#fff",color:C.ink,marginBottom:16}}>
+            <option value="">Hakem seçin...</option>
+            {hakemler.filter(h=>!mevcut.some(r=>r.reviewer_email===h.email)).map(h=>(
+              <option key={h.id} value={h.email}>{h.name} — {h.institution||h.email}</option>
+            ))}
+          </select>
+        )}
+
+        <div style={{display:"flex",gap:10}}>
+          <button onClick={ata} style={{flex:1,background:C.teal,color:"#fff",border:"none",padding:"11px 0",borderRadius:7,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:12,fontWeight:700,letterSpacing:1}}>
+            ⊕ HAKEME GÖNDER
+          </button>
+          <button onClick={onClose} style={{padding:"11px 20px",background:"none",border:`1px solid ${C.border}`,borderRadius:7,cursor:"pointer",fontSize:12,color:C.muted}}>İptal</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── HAKEM PANELİ ─────────────────────────────────────────────────────────────
+function HakemPanel({user, toast_}) {
+  const [atamalar, setAtamalar] = React.useState([]);
+  const [makaleler, setMakaleler] = React.useState({});
+  const [acik, setAcik] = React.useState(null);
+
+  React.useEffect(()=>{
+    supa.from("reviews").select("*").eq("reviewer_email", user.email)
+      .order("assigned_at",{ascending:false})
+      .then(async({data})=>{
+        if(!data) return;
+        setAtamalar(data);
+        const ids = [...new Set(data.map(r=>r.article_id))];
+        if(ids.length>0){
+          const {data:arts} = await supa.from("articles").select("*").in("id",ids);
+          if(arts){
+            const map = {};
+            arts.forEach(a=>{ map[a.id]=a; });
+            setMakaleler(map);
+          }
+        }
+      });
+  },[user.email]);
+
+  const degerlendir = async(reviewId, articleId, karar, yorumRef) => {
+    const yorum = yorumRef.current?.value?.trim();
+    if(!yorum){ toast_("Lütfen değerlendirme yorumu yazın.","err"); return; }
+    if(!karar){ toast_("Lütfen bir karar seçin.","err"); return; }
+    await supa.from("reviews").update({
+      status:"tamamlandi", decision:karar,
+      comments:yorum, completed_at:new Date().toISOString()
+    }).eq("id",reviewId);
+    const yeniDurum = karar==="kabul"?"baskida":karar==="revizyon"?"revizyon":"reddedildi";
+    await supa.from("articles").update({status:yeniDurum}).eq("id",articleId);
+    toast_("✓ Değerlendirmeniz editöre iletildi!");
+    setAcik(null);
+    const {data} = await supa.from("reviews").select("*").eq("reviewer_email",user.email).order("assigned_at",{ascending:false});
+    if(data) setAtamalar(data);
+  };
+
+  return (
+    <div>
+      <h3 style={{fontFamily:"'Cinzel',serif",margin:"0 0 6px",fontSize:17,letterSpacing:1,color:C.ink}}>HAKEM PANELİ</h3>
+      <p style={{fontSize:13,color:C.muted,marginBottom:24,fontStyle:"italic"}}>Size atanan makaleler aşağıda listelenmektedir. Her makale için değerlendirmenizi girebilirsiniz.</p>
+
+      {atamalar.length===0?(
+        <div style={{textAlign:"center",padding:"60px 20px",color:C.muted,background:C.cream,borderRadius:12,border:`1px solid ${C.border}`}}>
+          <div style={{fontSize:32,marginBottom:12}}>⊕</div>
+          <p style={{fontStyle:"italic"}}>Henüz size atanmış makale bulunmuyor.</p>
+          <p style={{fontSize:12,marginTop:8}}>Editör size bir makale atadığında burada görünecek.</p>
+        </div>
+      ):atamalar.map(r=>{
+        const art = makaleler[r.article_id];
+        const yorumRef = React.createRef();
+        const [karar, setKarar] = React.useState("");
+        const tamam = r.status==="tamamlandi";
+        return (
+          <div key={r.id} style={{border:`1px solid ${tamam?C.border:C.teal}`,borderRadius:12,marginBottom:14,overflow:"hidden",borderTop:`3px solid ${tamam?"#d1fae5":C.teal}`}}>
+            {/* Başlık satırı */}
+            <div style={{background:"#fff",padding:"16px 20px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}} onClick={()=>setAcik(acik===r.id?null:r.id)}>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:"'Cinzel',serif",fontSize:13.5,fontWeight:700,color:C.ink,marginBottom:4,lineHeight:1.4}}>
+                  {art?.title||"Makale yükleniyor..."}
+                </div>
+                <div style={{fontSize:11,color:C.muted}}>
+                  {art?.author} · {art?.field} · Atandı: {r.assigned_at?.split("T")[0]}
+                </div>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
+                <span style={{fontSize:10,padding:"3px 10px",borderRadius:20,fontWeight:700,
+                  background:tamam?"#d1fae5":"#dbeafe",
+                  color:tamam?"#065f46":"#1e40af"}}>
+                  {tamam?"✓ Tamamlandı":"Bekliyor"}
+                </span>
+                <span style={{color:C.gold,fontSize:13}}>{acik===r.id?"▲":"▼"}</span>
+              </div>
+            </div>
+
+            {/* Açık panel */}
+            {acik===r.id&&(
+              <div style={{borderTop:`1px solid ${C.border}`}}>
+                {/* Makale bilgileri */}
+                {art&&(
+                  <div style={{background:`${C.gold}06`,padding:"14px 20px",borderBottom:`1px solid ${C.border}`}}>
+                    <div style={{fontSize:11,color:C.muted,marginBottom:6,fontStyle:"italic"}}>{art.abstract?.substring(0,300)}{art.abstract?.length>300?"...":""}</div>
+                    <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                      {art.keywords&&<div style={{fontSize:11,color:C.muted}}><b>Anahtar:</b> {art.keywords}</div>}
+                      {art.file_url&&<a href={art.file_url} target="_blank" style={{fontSize:11,color:C.teal,fontWeight:700}}>📄 Makaleyi İndir</a>}
+                    </div>
+                  </div>
+                )}
+
+                {tamam?(
+                  /* Tamamlanmış değerlendirme */
+                  <div style={{padding:"16px 20px",background:C.cream}}>
+                    <div style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.teal,letterSpacing:1.5,marginBottom:10}}>DEĞERLENDİRMENİZ</div>
+                    <div style={{marginBottom:8}}>
+                      <span style={{fontSize:12,fontWeight:700,color:C.ink}}>Karar: </span>
+                      <span style={{fontSize:12,color:r.decision==="kabul"?"#065f46":r.decision==="revizyon"?"#6d28d9":"#991b1b",fontWeight:700}}>
+                        {r.decision==="kabul"?"✓ Kabul":r.decision==="revizyon"?"↻ Revizyon":"✗ Red"}
+                      </span>
+                    </div>
+                    <div style={{fontSize:13,color:"#444",lineHeight:1.7,background:"#fff",borderRadius:8,padding:"10px 14px",border:`1px solid ${C.border}`}}>{r.comments}</div>
+                    <div style={{fontSize:11,color:C.muted,marginTop:8}}>Tamamlandı: {r.completed_at?.split("T")[0]}</div>
+                  </div>
+                ):(
+                  /* Değerlendirme formu */
+                  <div style={{padding:"16px 20px",background:C.cream}}>
+                    <div style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.rust,letterSpacing:1.5,marginBottom:12}}>DEĞERLENDİRMENİZİ GİRİN</div>
+
+                    {/* Karar seç */}
+                    <div style={{display:"flex",gap:8,marginBottom:14}}>
+                      {[["kabul","✓ Kabul","#065f46","#d1fae5"],["revizyon","↻ Revizyon","#6d28d9","#ede9fe"],["red","✗ Red","#991b1b","#fee2e2"]].map(([k,l,c,bg])=>(
+                        <button key={k} onClick={()=>setKarar(k)}
+                          style={{flex:1,padding:"8px 0",borderRadius:7,border:`2px solid ${karar===k?c:C.border}`,background:karar===k?bg:"#fff",color:c,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Cinzel',serif",transition:"all 0.15s"}}>
+                          {l}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Değerlendirme metni */}
+                    <textarea ref={yorumRef} placeholder="Değerlendirme yorumunuzu buraya yazın. Makalenin güçlü ve zayıf yönlerini, düzeltilmesi gereken noktaları ve genel izleniminizi belirtin..." rows={6}
+                      style={{width:"100%",padding:"10px 14px",border:`1.5px solid ${C.border}`,borderRadius:8,fontSize:13,outline:"none",background:"#fff",color:C.ink,resize:"vertical",boxSizing:"border-box",marginBottom:12,lineHeight:1.7}}/>
+
+                    <button onClick={()=>degerlendir(r.id, r.article_id, karar, yorumRef)}
+                      style={{background:C.teal,color:"#fff",border:"none",padding:"11px 28px",borderRadius:7,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:12,fontWeight:700,letterSpacing:1}}>
+                      DEĞERLENDİRMEYİ GÖNDER →
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function App() {
   const [lang,setLang]=useState("tr");
   const [articles,setArticles]=useState([]);
@@ -1190,7 +1416,7 @@ function App() {
             <div style={{fontSize:12,color:"#8a7d60",marginTop:3,fontStyle:"italic"}}>{user?.institution}</div>
           </div>
           <div style={{background:"#fff",borderRadius:12,border:`1px solid ${C.border}`,overflow:"hidden"}}>
-            {[{id:"makalelerim",icon:"♩",label:t.panel_articles},{id:"mesajlar",icon:"✉",label:t.panel_messages},{id:"profil",icon:"◎",label:t.panel_profile},...(user?.role==="editor"?[{id:"yonetim",icon:"⚙",label:t.panel_admin}]:[])].map(item=>(
+            {[{id:"makalelerim",icon:"♩",label:t.panel_articles},{id:"mesajlar",icon:"✉",label:t.panel_messages},{id:"profil",icon:"◎",label:t.panel_profile},...(user?.role==="editor"?[{id:"yonetim",icon:"⚙",label:t.panel_admin}]:[]),...(user?.role==="hakem"?[{id:"hakem",icon:"⊕",label:"Hakem Paneli"}]:[])].map(item=>(
               <button key={item.id} onClick={()=>setTab(item.id)} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"13px 18px",background:tab===item.id?`${C.gold}12`:"transparent",border:"none",cursor:"pointer",fontSize:13.5,fontWeight:tab===item.id?700:500,color:tab===item.id?C.rust:C.ink,borderLeft:tab===item.id?`3px solid ${C.gold}`:"3px solid transparent"}}>
                 <span style={{color:C.gold}}>{item.icon}</span>{item.label}
               </button>
@@ -1237,7 +1463,12 @@ function App() {
               </div>
             </div>
           )}
-          {tab==="yonetim"&&user?.role==="editor"&&(
+          {/* HAKEM PANELİ */}
+          {tab==="hakem"&&user?.role==="hakem"&&(
+            <HakemPanel user={user} toast_={toast_}/>
+          )}
+
+          {/* YÖNETİM PANELİ */}
             <div>
               <h3 style={{fontFamily:"'Cinzel',serif",margin:"0 0 24px",fontSize:17,letterSpacing:1,color:C.ink}}>{t.admin_title}</h3>
               <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:32}}>
@@ -1261,8 +1492,18 @@ function App() {
                             {Object.entries(STATUS).map(([k,v])=><option key={k} value={k}>{v.label[lang]||v.label.tr}</option>)}
                           </select>
                         </div>
-                        <div style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>{a.author} · {a.author_email} · {a.field} · {a.created_at?.split("T")[0]}</div>
-                        {a.file_url&&<a href={a.file_url} target="_blank" style={{fontSize:12,color:C.teal,marginTop:4,display:"inline-block"}}>📄 {t.download}</a>}
+                        <div style={{fontSize:12,color:C.muted,fontStyle:"italic",marginBottom:8}}>{a.author} · {a.author_email} · {a.field} · {a.created_at?.split("T")[0]}</div>
+                        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                          {a.file_url&&<a href={a.file_url} target="_blank" style={{fontSize:12,color:C.teal,textDecoration:"none"}}>📄 {t.download}</a>}
+                          <button onClick={()=>setModal(`hakem_ata_${a.id}`)}
+                            style={{fontSize:11,color:"#fff",background:C.teal,border:"none",padding:"4px 12px",borderRadius:6,cursor:"pointer",fontFamily:"'Cinzel',serif",fontWeight:700}}>
+                            ⊕ HAKEME GÖNDER
+                          </button>
+                        </div>
+                        {/* Hakem atama modalı */}
+                        {modal===`hakem_ata_${a.id}`&&(
+                          <HakemAtaModal article={a} users={users} onClose={()=>setModal(null)} toast_={toast_} loadArticles={loadArticles}/>
+                        )}
                       </div>
                     );
                   })
