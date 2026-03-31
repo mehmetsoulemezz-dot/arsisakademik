@@ -15,6 +15,8 @@
     @keyframes wave{from{transform:scaleY(0.4)}to{transform:scaleY(1)}}
     @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+    @keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes glow{0%,100%{box-shadow:0 0 5px rgba(201,168,76,0.3)}50%{box-shadow:0 0 20px rgba(201,168,76,0.6)}}
     .nav-link{background:transparent;border:none;color:#c4b896;cursor:pointer;font-size:12px;font-weight:600;padding:8px 11px;border-radius:5px;transition:all 0.2s;letter-spacing:1px;text-transform:uppercase;font-family:'Crimson Pro',serif}
     .nav-link:hover{color:#e8d080;background:rgba(201,168,76,0.1)}
     .nav-link.active{color:#c9a84c;background:rgba(201,168,76,0.12);border-bottom:2px solid #c9a84c}
@@ -230,6 +232,20 @@ const T = {
     share_with_author:"Yazarla Paylaş",
     shared_badge:"Yazarla Paylaşıldı",
     review_notify_editor:"Editöre bildirim gönderildi.",
+    // Yeni eklenen admin metinleri
+    admin_dashboard:"KONTROL PANELİ",
+    admin_reviews:"HAKEM DEĞERLENDİRMELERİ",
+    admin_pending_reviews:"Bekleyen Değerlendirme",
+    admin_completed_reviews:"Tamamlanan Değerlendirme",
+    admin_average_score:"Ortalama Puan",
+    admin_decision:"Karar",
+    admin_reviewer:"Hakem",
+    admin_review_date:"Değerlendirme Tarihi",
+    admin_view_details:"Detayları Gör",
+    admin_no_reviews:"Henüz hakem değerlendirmesi yok.",
+    admin_notifications:"BİLDİRİMLER",
+    admin_new_review:"Yeni hakem değerlendirmesi var!",
+    admin_system_notification:"Sistem Bildirimi",
   },
   en:{
     title:"ARSIS",subtitle:"Journal of Music, Musicology & Anthropology",
@@ -337,6 +353,20 @@ const T = {
     share_with_author:"Share with Author",
     shared_badge:"Shared with Author",
     review_notify_editor:"Editor has been notified.",
+    // Yeni eklenen admin metinleri
+    admin_dashboard:"DASHBOARD",
+    admin_reviews:"PEER REVIEWS",
+    admin_pending_reviews:"Pending Reviews",
+    admin_completed_reviews:"Completed Reviews",
+    admin_average_score:"Average Score",
+    admin_decision:"Decision",
+    admin_reviewer:"Reviewer",
+    admin_review_date:"Review Date",
+    admin_view_details:"View Details",
+    admin_no_reviews:"No peer reviews yet.",
+    admin_notifications:"NOTIFICATIONS",
+    admin_new_review:"New peer review received!",
+    admin_system_notification:"System Notification",
   }
 };
 
@@ -1015,22 +1045,4 @@ function ReviewForm({review, article, lang, t, onSubmit, readOnly = false}) {
         <div style={{fontFamily:"'Cinzel',serif",fontSize:9,color:C.gold,letterSpacing:3,marginBottom:8}}>DEĞERLENDİRİLECEK MAKALE</div>
         <h3 style={{fontFamily:"'Cinzel',serif",color:"#f0e6cc",fontSize:15,margin:"0 0 8px",lineHeight:1.5}}>{article?.title}</h3>
         <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-          <span style={{fontSize:12,color:C.gold}}>{article?.field}</span>
-          {article?.file_url&&<a href={article.file_url} target="_blank" style={{fontSize:12,color:"#a0c4bc",fontWeight:700}}>📄 Makaleyi İndir</a>}
-        </div>
-        {article?.abstract&&<p style={{fontSize:12.5,color:"#8a7d60",margin:"10px 0 0",lineHeight:1.7,fontStyle:"italic"}}>"{article.abstract.substring(0,200)}…"</p>}
-      </div>
-
-      {/* İlerleme çubuğu */}
-      <div style={{background:C.cream,borderRadius:10,padding:"14px 18px",marginBottom:20,border:`1px solid ${C.border}`}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <span style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.muted,letterSpacing:1}}>GENEL İLERLEME</span>
-          <span style={{fontFamily:"'Cinzel',serif",fontSize:13,fontWeight:700,color:allAnswered?C.teal:C.rust}}>
-            {answeredCount} / {totalQuestions}
-          </span>
-        </div>
-        <div style={{background:C.border,borderRadius:6,height:8,overflow:"hidden"}}>
-          <div style={{height:"100%",width:`${(answeredCount/totalQuestions)*100}%`,background:allAnswered?C.teal:C.gold,borderRadius:6,transition:"width 0.3s"}}/>
-        </div>
-        {!allAnswered&&<p style={{fontSize:11,color:C.muted,marginTop:6,fontStyle:"italic"}}>
-          Tüm bölümleri tamamladıktan sonra
+          <span style={{fontSize:12,color:C.gold}}>{article
