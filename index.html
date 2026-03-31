@@ -31,285 +31,25 @@
 <script type="text/babel">
 const { useState, useEffect, useCallback, useRef, useMemo } = React;
 
-/* ── SUPABASE ── */
-const supa = supabase.createClient(
-  "https://nivablklgvgykwauzbeo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU"
-);
+/* SUPABASE */
+const supa = supabase.createClient("https://nivablklgvgykwauzbeo.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU");
 
 const C={ink:"#1a1208",paper:"#f5f0e8",cream:"#ede8dc",gold:"#c9a84c",goldL:"#e8d080",rust:"#8b3a2a",teal:"#1d6a5e",muted:"#7a6e5f",border:"#d4c9b4"};
 const INP={width:"100%",padding:"10px 14px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:14,outline:"none",background:"#fff",color:C.ink,marginBottom:12,boxSizing:"border-box"};
 
-const STATUS={
-  beklemede:{label:{tr:"Ön İnceleme",en:"Under Review"},color:"#1e40af",bg:"#dbeafe"},
-  hakemde:{label:{tr:"Hakem İncelemesinde",en:"Peer Review"},color:"#b45309",bg:"#fef3c7"},
-  revizyon:{label:{tr:"Revizyon Bekleniyor",en:"Revision Required"},color:"#6d28d9",bg:"#ede9fe"},
-  baskida:{label:{tr:"Baskıya Hazır",en:"Ready for Press"},color:"#065f46",bg:"#d1fae5"},
-  yayinda:{label:{tr:"Yayınlandı",en:"Published"},color:"#065f46",bg:"#d1fae5"},
-  reddedildi:{label:{tr:"Reddedildi",en:"Rejected"},color:"#991b1b",bg:"#fee2e2"},
-};
+const STATUS={beklemede:{label:{tr:"Ön İnceleme",en:"Under Review"},color:"#1e40af",bg:"#dbeafe"},hakemde:{label:{tr:"Hakem İncelemesinde",en:"Peer Review"},color:"#b45309",bg:"#fef3c7"},revizyon:{label:{tr:"Revizyon Bekleniyor",en:"Revision Required"},color:"#6d28d9",bg:"#ede9fe"},baskida:{label:{tr:"Baskıya Hazır",en:"Ready for Press"},color:"#065f46",bg:"#d1fae5"},yayinda:{label:{tr:"Yayınlandı",en:"Published"},color:"#065f46",bg:"#d1fae5"},reddedildi:{label:{tr:"Reddedildi",en:"Rejected"},color:"#991b1b",bg:"#fee2e2"}};
 
-const REVIEW_SECTIONS = [
-  {id:"originality",title:{tr:"Özgünlük ve Katkı",en:"Originality & Contribution"},icon:"◈",color:"#1d6a5e",questions:[{id:"orig_1",tr:"Makale, alana özgün ve yeni bir katkı sunmaktadır.",en:"The manuscript presents an original and novel contribution to the field."},{id:"orig_2",tr:"Araştırma sorusu/hipotezi açık ve net biçimde ifade edilmiştir.",en:"The research question/hypothesis is clearly and precisely articulated."},{id:"orig_3",tr:"Mevcut literatürdeki boşluklar yeterince ele alınmıştır.",en:"The gaps in the existing literature are adequately addressed."}]},
-  {id:"methodology",title:{tr:"Yöntem ve Metodoloji",en:"Methodology & Research Design"},icon:"⊛",color:"#8b3a2a",questions:[{id:"meth_1",tr:"Araştırma yöntemi konuya uygun ve gerekçelendirilmiştir.",en:"The research methodology is appropriate for the subject and well-justified."},{id:"meth_2",tr:"Veri toplama ve analiz süreçleri açık ve tekrarlanabilir biçimde aktarılmıştır.",en:"Data collection and analysis processes are described clearly and replicably."},{id:"meth_3",tr:"Metodolojik sınırlılıklar kabul edilmiş ve tartışılmıştır.",en:"Methodological limitations are acknowledged and discussed."}]},
-  {id:"literature",title:{tr:"Literatür ve Kuramsal Çerçeve",en:"Literature & Theoretical Framework"},icon:"♦",color:"#4a3a8a",questions:[{id:"lit_1",tr:"Literatür taraması kapsamlı ve günceldir.",en:"The literature review is comprehensive and up-to-date."},{id:"lit_2",tr:"Kuramsal çerçeve tutarlı biçimde uygulanmıştır.",en:"The theoretical framework is consistently applied throughout the manuscript."},{id:"lit_3",tr:"Birincil ve ikincil kaynaklar dengeli kullanılmıştır.",en:"Primary and secondary sources are used in a balanced manner."}]},
-  {id:"presentation",title:{tr:"Sunum ve Yazım Kalitesi",en:"Presentation & Writing Quality"},icon:"♬",color:"#1e5a8a",questions:[{id:"pres_1",tr:"Makale açık, akıcı ve akademik bir dille kaleme alınmıştır.",en:"The manuscript is written in a clear, fluent, and academic style."},{id:"pres_2",tr:"Yapı ve organizasyon mantıklı ve tutarlıdır.",en:"The structure and organization are logical and consistent."},{id:"pres_3",tr:"Şekiller, tablolar, nota örnekleri (varsa) etkin kullanılmıştır.",en:"Figures, tables, and musical examples (if any) are effectively presented."}]},
-  {id:"significance",title:{tr:"Akademik Etki ve Önemi",en:"Academic Significance & Impact"},icon:"𝄞",color:"#c9a84c",questions:[{id:"sig_1",tr:"Bulgular ve sonuçlar araştırma sorusuyla tutarlıdır.",en:"The findings and conclusions are consistent with the research question."},{id:"sig_2",tr:"Çalışma, müzik/müzikoloji/antropoloji literatürüne anlamlı katkı sağlamaktadır.",en:"The work makes a meaningful contribution to music/musicology/anthropology literature."},{id:"sig_3",tr:"Makale ARSİS'in yayın kapsamına ve standartlarına uygundur.",en:"The manuscript fits ARSIS's scope and editorial standards."}]}
-];
+const REVIEW_SECTIONS=[{id:"originality",title:{tr:"Özgünlük ve Katkı",en:"Originality & Contribution"},icon:"◈",color:"#1d6a5e",questions:[{id:"orig_1",tr:"Makale, alana özgün ve yeni bir katkı sunmaktadır."},{id:"orig_2",tr:"Araştırma sorusu/hipotezi açık ve net biçimde ifade edilmiştir."},{id:"orig_3",tr:"Mevcut literatürdeki boşluklar yeterince ele alınmıştır."}]},{id:"methodology",title:{tr:"Yöntem ve Metodoloji",en:"Methodology & Research Design"},icon:"⊛",color:"#8b3a2a",questions:[{id:"meth_1",tr:"Araştırma yöntemi konuya uygun ve gerekçelendirilmiştir."},{id:"meth_2",tr:"Veri toplama ve analiz süreçleri açık ve tekrarlanabilir biçimde aktarılmıştır."},{id:"meth_3",tr:"Metodolojik sınırlılıklar kabul edilmiş ve tartışılmıştır."}]},{id:"literature",title:{tr:"Literatür ve Kuramsal Çerçeve",en:"Literature & Theoretical Framework"},icon:"♦",color:"#4a3a8a",questions:[{id:"lit_1",tr:"Literatür taraması kapsamlı ve günceldir."},{id:"lit_2",tr:"Kuramsal çerçeve tutarlı biçimde uygulanmıştır."},{id:"lit_3",tr:"Birincil ve ikincil kaynaklar dengeli kullanılmıştır."}]},{id:"presentation",title:{tr:"Sunum ve Yazım Kalitesi",en:"Presentation & Writing Quality"},icon:"♬",color:"#1e5a8a",questions:[{id:"pres_1",tr:"Makale açık, akıcı ve akademik bir dille kaleme alınmıştır."},{id:"pres_2",tr:"Yapı ve organizasyon mantıklı ve tutarlıdır."},{id:"pres_3",tr:"Şekiller, tablolar, nota örnekleri (varsa) etkin kullanılmıştır."}]},{id:"significance",title:{tr:"Akademik Etki ve Önemi",en:"Academic Significance & Impact"},icon:"𝄞",color:"#c9a84c",questions:[{id:"sig_1",tr:"Bulgular ve sonuçlar araştırma sorusuyla tutarlıdır."},{id:"sig_2",tr:"Çalışma, müzik/müzikoloji/antropoloji literatürüne anlamlı katkı sağlamaktadır."},{id:"sig_3",tr:"Makale ARSİS'in yayın kapsamına ve standartlarına uygundur."}]}];
 
-const LIKERT_LABELS = {tr:["Kesinlikle Katılmıyorum","Katılmıyorum","Kararsızım","Katılıyorum","Kesinlikle Katılıyorum"],en:["Strongly Disagree","Disagree","Neutral","Agree","Strongly Agree"]};
+const LIKERT_LABELS={tr:["Kesinlikle Katılmıyorum","Katılmıyorum","Kararsızım","Katılıyorum","Kesinlikle Katılıyorum"],en:["Strongly Disagree","Disagree","Neutral","Agree","Strongly Agree"]};
 
-const T = {
-  tr:{
-    title:"ARSİS",subtitle:"Journal of Music, Musicology & Anthropology",
-    motto:"Müziği kültürle, sesi insanla, ritmi zamanla buluşturan hakemli akademik dergi",
-    tagline:"ἄρσις — YÜKSELIŞ",
-    nav:{home:"Ana Sayfa",archive:"Arşiv",about:"Hakkında",openaccess:"Açık Erişim",submit:"Makale Gönder",login:"Giriş",register:"Kayıt"},
-    hero_btn1:"ARŞİVİ İNCELE",hero_btn2:"Makale Gönder",
-    coming:"HAZİRAN 2026",coming_title:"İlk Ses Yükseliyor",
-    coming_motto:"Müzik sınır tanımaz; ses, duvarları aşar. ARSİS bu inançla yola çıkıyor.",
-    coming_sub:"Müzik, müzikoloji, antropoloji ve etnomüzikoloji alanlarında özgün araştırmaları bir arada sunacak olan ARSİS, ilk sayısıyla Haziran 2026'da okurlarıyla buluşuyor.",
-    deadline:"Son gönderim: 30 Nisan 2026",
-    scope_title:"KAPSAM ALANLARI",
-    fields:[
-      {icon:"𝄞",name:"Etnomüzikoloji",desc:"Kültürel bağlamda müziğin incelenmesi"},
-      {icon:"♬",name:"Müzikoloji",desc:"Müzik teorisi, tarihi ve analizi"},
-      {icon:"◉",name:"Antropoloji",desc:"Kültürler arası müzik pratikleri"},
-      {icon:"ψ",name:"Müzik Antropolojisi",desc:"Müzik, insanlık tarihi ve kültürel evrim"},
-      {icon:"♦",name:"Organoloji",desc:"Çalgı bilimi ve akustik araştırmalar"},
-      {icon:"♩",name:"Müzik Tarihi",desc:"Tarihsel müzik pratikleri ve karşılaştırmalı analizler"},
-    ],
-    stats:[["Haziran 2026","İlk Sayı"],["5","Kapsam Alanı"],["Açık Erişim","Ücretsiz"],["Çift Kör","Hakem"]],
-    about_title:"ARSİS Hakkında",about_sub:"Antik Yunanca'da \"ἄρσις\" — yükselen ses, ritmin güçlü vuruşu.",
-    scope_text:"ARSİS, müzik, müzikoloji, antropoloji ve etnomüzikoloji alanlarında özgün araştırmaları yayımlayan çift kör hakemli açık erişim bir dergidir.",
-    scope_long:"Müzik, insanlığın en evrensel ve en kişisel ifade biçimlerinden biridir. ARSİS, müziği yalnızca bir sanat dalı olarak değil; toplumların kendini ifade ettiği canlı bir pratik olarak ele alır.",
-    peer:"Hakemlik Süreci",peer_text:"Çift kör hakem değerlendirmesi. Her makale en az iki hakeme gönderilir. COPE ilkeleri benimsenmiştir.",
-    guide:"Yazım Kuralları",guide_text:"Chicago veya APA 7. Baskı. Türkçe ve İngilizce özet zorunludur. 5.000–12.000 kelime.",
-    oa_policy:"Açık Erişim Politikası",oa_text:"Tamamen açık erişimli. APC alınmaz. CC BY 4.0.",
-    contact:"İLETİŞİM",free:"Ücretsiz",
-    oa_title:"AÇIK ERİŞİM",oa_sub:"Tüm içerikler tamamen ücretsizdir.",
-    register_free:"KAYIT OL — ÜCRETSİZ",
-    archive_title:"Cilt 1, Sayı 1 · Haziran 2026",archive_sub:"İlk sayı hazırlık aşamasındadır.",
-    archive_coming:"HAZİRAN 2026'DA BULUŞUYORUZ",
-    call:"MAKALE ÇAĞRISI",call_title:"ARSİS — Cilt 1, Sayı 1 · Haziran 2026",
-    call_text:"Son gönderim tarihi:",submit_btn:"MAKALE GÖNDER",
-    panel_articles:"Makalelerim",panel_messages:"Forum",panel_profile:"Profilim",panel_admin:"Yönetim",panel_review:"Hakem Paneli",
-    logout:"Çıkış",no_articles:"Henüz makale göndermediniz.",first_article:"İLK MAKALENİZİ GÖNDERİN",
-    no_msg:"Henüz mesaj yok.",
-    submit_title:"MAKALENİZİ GÖNDERİN",
-    fields_select:"Alan Seçin *",coauth:"Ortak Yazarlar (isteğe bağlı)",abstract_ph:"Özet (min. 150 kelime) *",keywords_ph:"Anahtar Kelimeler (virgülle ayırın)",
-    file_label:"MAKALE DOSYASI (PDF veya DOCX)",uploading:"Dosya yükleniyor...",uploaded:"Dosya başarıyla yüklendi!",upload_err:"Dosya yüklenemedi: ",
-    sending:"Gönderiliyor...",submit_success:"Makaleniz ARSİS'e iletildi!",submit_err:"Başlık, özet ve alan zorunludur.",
-    login_title:"ARSİS'E GİRİŞ",login_btn:"GİRİŞ YAP",login_err:"E-posta veya şifre hatalı.",no_account:"Hesabınız yok mu?",register_link:"Kayıt olun",
-    register_title:"KAYIT OL",name_ph:"Ad Soyad *",email_ph:"E-posta *",inst_ph:"Kurum / Üniversite",orcid_ph:"ORCID ID (isteğe bağlı)",pass_ph:"Şifre *",
-    role_author:"Yazar / Araştırmacı",role_reviewer:"Hakem",
-    welcome:"ARSİS'e hoş geldiniz!",email_taken:"Bu e-posta zaten kayıtlı.",required_fields:"Ad ve e-posta zorunludur.",required_pass:"Şifre zorunludur.",
-    db_title:"DERGİ BİLGİLERİ",
-    db:[["ISSN (Online)","Başvuruda"],["ISSN (Basılı)","—"],["İlk Sayı","Cilt 1, Sayı 1 · Haz. 2026"],["Periyot","Yılda 2 sayı"],["Dil","Türkçe / İngilizce"],["Erişim","Açık Erişim"],["İndeks","TR Dizin (başvuruda)"]],
-    footer_motto:"Müziği kültürle, sesi insanla buluşturan hakemli dergi",
-    footer_cols:[["Dergi",["Ana Sayfa","Arşiv","Makale Gönder","Açık Erişim"]],["Bilgi",["Yazım Kuralları","Etik İlkeler","Hakem Süreci","İletişim"]],["Sosyal",["ResearchGate","Academia.edu","ORCID","Google Scholar"]]],
-    copyright:"© 2026 ARSİS · Journal of Music, Musicology & Anthropology",
-    admin_title:"YÖNETİM PANELİ",total_articles:"Toplam Makale",pending:"Beklemede",in_review:"Hakemde",total_members:"Toplam Üye",
-    sent_articles:"GÖNDERİLEN MAKALELER",no_sent:"Henüz makale gönderilmemiş.",members:"KAYITLI ÜYELER",no_members:"Henüz üye yok.",
-    status_update:"Durum güncellendi.",download:"İndir",profile_title:"PROFİL BİLGİLERİM",
-    profile_fields:[["Ad Soyad"],["E-posta"],["Kurum"],["ORCID"],["Rol"],["Erişim"]],
-    access:"Açık Erişim",logout_msg:"Çıkış yapıldı.",
-    editorial_title:"EDİTÖR KURULU",
-    editorial_note:"ARSİS editör kurulu oluşturulmaktadır. Güncel liste ilk sayı yayımıyla açıklanacaktır.",
-    editorial_contact:"İletişim: arsisakademik@gmail.com",
-    ai_title:"YAPAY ZEKA POLİTİKASI",
-    ai_text:"Büyük dil modelleri yardımcı araç olarak kullanılabilir; ancak yazar olarak tanımlanamaz. YZ kullanımı teşekkür bölümünde belirtilmelidir.",
-    archiving_title:"ARŞİVLEME POLİTİKASI",
-    archiving_text:"LOCKSS ve CLOCKSS sistemleriyle uyumlu arşivleme. Tüm makalelere DOI tahsis edilecektir.",
-    doi_title:"DOI & KALICI ERİŞİM",
-    doi_text:"CrossRef üyeliği aracılığıyla tüm makalelere DOI tahsis edilecektir.",
-    guide_page:"YAZIM KURALLARI",ethics_page:"ETİK İLKELER",
-    guide_sections:[
-      {title:"Genel Biçim",items:["Microsoft Word (.docx) formatında gönderilmelidir.","A4, kenar boşlukları 2,5 cm, satır aralığı 1,5.","Times New Roman 12 punto önerilir.","5.000–12.000 kelime (kaynakça hariç)."]},
-      {title:"Başlık ve Özet",items:["Başlık Türkçe ve İngilizce verilmelidir.","150–250 kelime arası özet.","5–8 anahtar kelime, iki dilde."]},
-      {title:"Atıf ve Kaynakça",items:["Chicago Yazar-Tarih veya APA 7. Baskı.","Kaynakça alfabetik sırayla.","İnternet kaynaklarında erişim tarihi belirtilmelidir."]},
-    ],
-    ethics_sections:[
-      {title:"Özgünlük ve İntihal",items:["Gönderilen makaleler özgün çalışmalar olmalıdır.","İntihal etik ihlal sayılır.","ARSİS intihal tarama hakkını saklı tutar."]},
-      {title:"Yazarlık",items:["Tüm yazarlar çalışmaya önemli katkı sağlamış olmalıdır.","YZ araçları kullanılması durumunda dipnotta belirtilmelidir."]},
-    ],
-    review_panel:"HAKEM DEĞERLENDİRME PANELİ",
-    review_assigned:"Size Atanan Makaleler",
-    review_form:"Değerlendirme Formu",
-    review_submit:"DEĞERLENDİRMEYİ GÖNDER",
-    review_decision:"Genel Karar",
-    review_comments:"Editöre Gizli Not (isteğe bağlı)",
-    review_comments_author:"Yazara İletilecek Genel Yorum",
-    review_decision_accept:"Kabul",
-    review_decision_minor:"Küçük Revizyon",
-    review_decision_major:"Büyük Revizyon",
-    review_decision_reject:"Red",
-    review_done:"Değerlendirme tamamlandı. Editör bilgilendirildi.",
-    review_incomplete:"Lütfen tüm soruları yanıtlayın ve bir karar seçin.",
-    review_completed_badge:"Tamamlandı",
-    review_pending_badge:"Bekliyor",
-    review_score:"Ortalama Puan",
-    review_section_score:"Bölüm Puanı",
-    admin_msg_title:"EDİTÖR MESAJLARI",
-    msg_to_author:"Yazara Mesaj Gönder",
-    msg_send:"GÖNDER",
-    msg_placeholder:"Yazarınıza iletmek istediğiniz mesajı yazın...",
-    msg_sent:"Mesaj gönderildi.",
-    msg_inbox:"Gelen Mesajlar",
-    msg_from_editor:"Editörden",
-    msg_reply:"Yanıtla",
-    msg_reply_ph:"Yanıtınızı yazın...",
-    msg_reply_sent:"Yanıtınız iletildi.",
-    no_messages:"Mesaj bulunmuyor.",
-    assign_reviewer:"Hakem Ata",
-    assign_btn:"HAKEME GÖNDER",
-    assign_success:"Hakem atandı ve bildirim gönderildi.",
-    assign_already:"Bu hakem zaten atanmış.",
-    assign_no_reviewer:"Lütfen hakem seçin.",
-    reviewer_list:"Atanmış Hakemler",
-    review_results:"Hakem Değerlendirme Sonuçları",
-    share_with_author:"Yazarla Paylaş",
-    shared_badge:"Yazarla Paylaşıldı",
-    review_notify_editor:"Editöre bildirim gönderildi.",
-  },
-  en:{
-    title:"ARSIS",subtitle:"Journal of Music, Musicology & Anthropology",
-    motto:"A peer-reviewed academic journal uniting music with culture, sound with humanity",
-    tagline:"ἄρσις — ASCENT",
-    nav:{home:"Home",archive:"Archive",about:"About",openaccess:"Open Access",submit:"Submit Article",login:"Login",register:"Register"},
-    hero_btn1:"BROWSE ARCHIVE",hero_btn2:"Submit Article",
-    coming:"JUNE 2026",coming_title:"The First Sound Rises",
-    coming_motto:"Music knows no borders; sound transcends walls. ARSIS sets forth with this conviction.",
-    coming_sub:"ARSIS will meet its readers with its inaugural issue in June 2026.",
-    deadline:"Submission deadline: 30 April 2026",
-    scope_title:"SCOPE & COVERAGE",
-    fields:[
-      {icon:"𝄞",name:"Ethnomusicology",desc:"Music in its cultural context"},
-      {icon:"♬",name:"Musicology",desc:"Music theory, history and analysis"},
-      {icon:"◉",name:"Anthropology",desc:"Cross-cultural musical practices"},
-      {icon:"ψ",name:"Music Anthropology",desc:"Music and cultural evolution"},
-      {icon:"♦",name:"Organology",desc:"Instrument science and acoustics"},
-      {icon:"♩",name:"Music History",desc:"Historical practices and comparative analyses"},
-    ],
-    stats:[["June 2026","Inaugural Issue"],["5","Fields"],["Open Access","Free"],["Double-Blind","Review"]],
-    about_title:"About ARSIS",about_sub:"In Ancient Greek, \"ἄρσις\" — the rising note, the strong beat of rhythm.",
-    scope_text:"ARSIS is a double-blind peer-reviewed open-access journal in music, musicology, anthropology and ethnomusicology.",
-    scope_long:"Music is one of humanity's most universal forms of expression. ARSIS treats music as a living practice through which communities express themselves.",
-    peer:"Peer Review",peer_text:"Double-blind peer review. Each manuscript sent to at least two reviewers. COPE principles adopted.",
-    guide:"Author Guidelines",guide_text:"Chicago or APA 7th Edition. Turkish and English abstracts required. 5,000–12,000 words.",
-    oa_policy:"Open Access Policy",oa_text:"Fully open-access. No APCs. CC BY 4.0.",
-    contact:"CONTACT",free:"Free",
-    oa_title:"OPEN ACCESS",oa_sub:"All content is entirely free of charge.",
-    register_free:"REGISTER — FREE",
-    archive_title:"Volume 1, Issue 1 · June 2026",archive_sub:"The inaugural issue is in preparation.",
-    archive_coming:"COMING IN JUNE 2026",
-    call:"CALL FOR PAPERS",call_title:"ARSIS — Volume 1, Issue 1 · June 2026",
-    call_text:"Submission deadline:",submit_btn:"SUBMIT ARTICLE",
-    panel_articles:"My Articles",panel_messages:"Forum",panel_profile:"My Profile",panel_admin:"Admin",panel_review:"Review Panel",
-    logout:"Logout",no_articles:"No articles submitted yet.",first_article:"SUBMIT YOUR FIRST ARTICLE",
-    no_msg:"No messages yet.",
-    submit_title:"SUBMIT YOUR ARTICLE",
-    fields_select:"Select Field *",coauth:"Co-authors (optional)",abstract_ph:"Abstract (min. 150 words) *",keywords_ph:"Keywords (comma-separated)",
-    file_label:"MANUSCRIPT FILE (PDF or DOCX)",uploading:"Uploading...",uploaded:"File uploaded!",upload_err:"Upload failed: ",
-    sending:"Sending...",submit_success:"Your article has been submitted!",submit_err:"Title, abstract and field are required.",
-    login_title:"LOGIN TO ARSIS",login_btn:"LOGIN",login_err:"Incorrect email or password.",no_account:"No account?",register_link:"Register",
-    register_title:"REGISTER",name_ph:"Full Name *",email_ph:"Email *",inst_ph:"Institution",orcid_ph:"ORCID ID (optional)",pass_ph:"Password *",
-    role_author:"Author / Researcher",role_reviewer:"Reviewer",
-    welcome:"Welcome to ARSIS!",email_taken:"Email may already be registered.",required_fields:"Name and email required.",required_pass:"Password required.",
-    db_title:"JOURNAL INFORMATION",
-    db:[["ISSN (Online)","Pending"],["ISSN (Print)","—"],["First Issue","Vol. 1, No. 1 · Jun. 2026"],["Frequency","2 issues/year"],["Language","Turkish / English"],["Access","Open Access"],["Index","TR Dizin (applied)"]],
-    footer_motto:"A peer-reviewed journal uniting music with culture",
-    footer_cols:[["Journal",["Home","Archive","Submit Article","Open Access"]],["Info",["Author Guidelines","Ethics","Peer Review","Contact"]],["Social",["ResearchGate","Academia.edu","ORCID","Google Scholar"]]],
-    copyright:"© 2026 ARSIS · Journal of Music, Musicology & Anthropology",
-    admin_title:"ADMIN PANEL",total_articles:"Total Articles",pending:"Pending",in_review:"Under Review",total_members:"Total Members",
-    sent_articles:"SUBMITTED ARTICLES",no_sent:"No articles yet.",members:"MEMBERS",no_members:"No members yet.",
-    status_update:"Status updated.",download:"Download",profile_title:"MY PROFILE",
-    profile_fields:[["Full Name"],["Email"],["Institution"],["ORCID"],["Role"],["Access"]],
-    access:"Open Access",logout_msg:"Logged out.",
-    editorial_title:"EDITORIAL BOARD",editorial_note:"Board will be announced with the first issue.",editorial_contact:"Contact: arsisakademik@gmail.com",
-    ai_title:"AI POLICY",ai_text:"AI tools may assist writing but cannot be listed as authors. Disclosure required.",
-    archiving_title:"ARCHIVING",archiving_text:"LOCKSS/CLOCKSS compatible archiving. DOIs for all articles.",
-    doi_title:"DOI & PERMANENT ACCESS",doi_text:"DOIs assigned via CrossRef membership.",
-    guide_page:"AUTHOR GUIDELINES",ethics_page:"ETHICS & POLICIES",
-    guide_sections:[
-      {title:"General Format",items:["Submit in Microsoft Word (.docx).","A4, 2.5cm margins, 1.5 line spacing.","Times New Roman 12pt recommended.","5,000–12,000 words (excluding references)."]},
-      {title:"Title and Abstract",items:["Title in Turkish and English.","150–250 word abstract.","5–8 keywords in both languages."]},
-      {title:"Citations",items:["Chicago Author-Date or APA 7th Edition.","References listed alphabetically.","Web sources: include access date."]},
-    ],
-    ethics_sections:[
-      {title:"Originality",items:["Manuscripts must be original and unpublished.","Plagiarism is an ethical violation.","ARSIS reserves the right to screen for plagiarism."]},
-      {title:"Authorship",items:["All authors must have contributed significantly.","AI tool use must be disclosed in a footnote."]},
-    ],
-    review_panel:"PEER REVIEW PANEL",
-    review_assigned:"Manuscripts Assigned to You",
-    review_form:"Review Form",
-    review_submit:"SUBMIT REVIEW",
-    review_decision:"Overall Decision",
-    review_comments:"Confidential Note to Editor (optional)",
-    review_comments_author:"General Comments for Author",
-    review_decision_accept:"Accept",
-    review_decision_minor:"Minor Revision",
-    review_decision_major:"Major Revision",
-    review_decision_reject:"Reject",
-    review_done:"Review submitted. Editor has been notified.",
-    review_incomplete:"Please answer all questions and select a decision.",
-    review_completed_badge:"Completed",
-    review_pending_badge:"Pending",
-    review_score:"Average Score",
-    review_section_score:"Section Score",
-    admin_msg_title:"EDITOR MESSAGES",
-    msg_to_author:"Send Message to Author",
-    msg_send:"SEND",
-    msg_placeholder:"Write your message to the author...",
-    msg_sent:"Message sent.",
-    msg_inbox:"Inbox",
-    msg_from_editor:"From Editor",
-    msg_reply:"Reply",
-    msg_reply_ph:"Write your reply...",
-    msg_reply_sent:"Reply sent.",
-    no_messages:"No messages.",
-    assign_reviewer:"Assign Reviewer",
-    assign_btn:"ASSIGN",
-    assign_success:"Reviewer assigned.",
-    assign_already:"Already assigned.",
-    assign_no_reviewer:"Please select a reviewer.",
-    reviewer_list:"Assigned Reviewers",
-    review_results:"Peer Review Results",
-    share_with_author:"Share with Author",
-    shared_badge:"Shared with Author",
-    review_notify_editor:"Editor has been notified.",
-  }
-};
+const T={tr:{title:"ARSİS",subtitle:"Journal of Music, Musicology & Anthropology",motto:"Müziği kültürle, sesi insanla, ritmi zamanla buluşturan hakemli akademik dergi",tagline:"ἄρσις — YÜKSELIŞ",nav:{home:"Ana Sayfa",archive:"Arşiv",about:"Hakkında",openaccess:"Açık Erişim",submit:"Makale Gönder",login:"Giriş",register:"Kayıt"},hero_btn1:"ARŞİVİ İNCELE",hero_btn2:"Makale Gönder",coming:"HAZİRAN 2026",coming_title:"İlk Ses Yükseliyor",coming_motto:"Müzik sınır tanımaz; ses, duvarları aşar. ARSİS bu inançla yola çıkıyor.",coming_sub:"Müzik, müzikoloji, antropoloji ve etnomüzikoloji alanlarında özgün araştırmaları bir arada sunacak olan ARSİS, ilk sayısıyla Haziran 2026'da okurlarıyla buluşuyor.",deadline:"Son gönderim: 30 Nisan 2026",scope_title:"KAPSAM ALANLARI",fields:[{icon:"𝄞",name:"Etnomüzikoloji",desc:"Kültürel bağlamda müziğin incelenmesi"},{icon:"♬",name:"Müzikoloji",desc:"Müzik teorisi, tarihi ve analizi"},{icon:"◉",name:"Antropoloji",desc:"Kültürler arası müzik pratikleri"},{icon:"ψ",name:"Müzik Antropolojisi",desc:"Müzik, insanlık tarihi ve kültürel evrim"},{icon:"♦",name:"Organoloji",desc:"Çalgı bilimi ve akustik araştırmalar"},{icon:"♩",name:"Müzik Tarihi",desc:"Tarihsel müzik pratikleri ve karşılaştırmalı analizler"}],stats:[["Haziran 2026","İlk Sayı"],["5","Kapsam Alanı"],["Açık Erişim","Ücretsiz"],["Çift Kör","Hakem"]],about_title:"ARSİS Hakkında",about_sub:"Antik Yunanca'da \"ἄρσις\" — yükselen ses, ritmin güçlü vuruşu.",scope_text:"ARSİS, müzik, müzikoloji, antropoloji ve etnomüzikoloji alanlarında özgün araştırmaları yayımlayan çift kör hakemli açık erişim bir dergidir.",scope_long:"Müzik, insanlığın en evrensel ve en kişisel ifade biçimlerinden biridir. ARSİS, müziği yalnızca bir sanat dalı olarak değil; toplumların kendini ifade ettiği canlı bir pratik olarak ele alır.",peer:"Hakemlik Süreci",peer_text:"Çift kör hakem değerlendirmesi. Her makale en az iki hakeme gönderilir. COPE ilkeleri benimsenmiştir.",guide:"Yazım Kuralları",guide_text:"Chicago veya APA 7. Baskı. Türkçe ve İngilizce özet zorunludur. 5.000–12.000 kelime.",oa_policy:"Açık Erişim Politikası",oa_text:"Tamamen açık erişimli. APC alınmaz. CC BY 4.0.",contact:"İLETİŞİM",free:"Ücretsiz",oa_title:"AÇIK ERİŞİM",oa_sub:"Tüm içerikler tamamen ücretsizdir.",register_free:"KAYIT OL — ÜCRETSİZ",archive_title:"Cilt 1, Sayı 1 · Haziran 2026",archive_sub:"İlk sayı hazırlık aşamasındadır.",archive_coming:"HAZİRAN 2026'DA BULUŞUYORUZ",call:"MAKALE ÇAĞRISI",call_title:"ARSİS — Cilt 1, Sayı 1 · Haziran 2026",call_text:"Son gönderim tarihi:",submit_btn:"MAKALE GÖNDER",panel_articles:"Makalelerim",panel_messages:"Forum",panel_profile:"Profilim",panel_admin:"Yönetim",panel_review:"Hakem Paneli",logout:"Çıkış",no_articles:"Henüz makale göndermediniz.",first_article:"İLK MAKALENİZİ GÖNDERİN",no_msg:"Henüz mesaj yok.",submit_title:"MAKALENİZİ GÖNDERİN",fields_select:"Alan Seçin *",coauth:"Ortak Yazarlar (isteğe bağlı)",abstract_ph:"Özet (min. 150 kelime) *",keywords_ph:"Anahtar Kelimeler (virgülle ayırın)",file_label:"MAKALE DOSYASI (PDF veya DOCX)",uploading:"Dosya yükleniyor...",uploaded:"Dosya başarıyla yüklendi!",upload_err:"Dosya yüklenemedi: ",sending:"Gönderiliyor...",submit_success:"Makaleniz ARSİS'e iletildi!",submit_err:"Başlık, özet ve alan zorunludur.",login_title:"ARSİS'E GİRİŞ",login_btn:"GİRİŞ YAP",login_err:"E-posta veya şifre hatalı.",no_account:"Hesabınız yok mu?",register_link:"Kayıt olun",register_title:"KAYIT OL",name_ph:"Ad Soyad *",email_ph:"E-posta *",inst_ph:"Kurum / Üniversite",orcid_ph:"ORCID ID (isteğe bağlı)",pass_ph:"Şifre *",role_author:"Yazar / Araştırmacı",role_reviewer:"Hakem",welcome:"ARSİS'e hoş geldiniz!",email_taken:"Bu e-posta zaten kayıtlı.",required_fields:"Ad ve e-posta zorunludur.",required_pass:"Şifre zorunludur.",db_title:"DERGİ BİLGİLERİ",db:[["ISSN (Online)","Başvuruda"],["ISSN (Basılı)","—"],["İlk Sayı","Cilt 1, Sayı 1 · Haz. 2026"],["Periyot","Yılda 2 sayı"],["Dil","Türkçe / İngilizce"],["Erişim","Açık Erişim"],["İndeks","TR Dizin (başvuruda)"]],footer_motto:"Müziği kültürle, sesi insanla buluşturan hakemli dergi",footer_cols:[["Dergi",["Ana Sayfa","Arşiv","Makale Gönder","Açık Erişim"]],["Bilgi",["Yazım Kuralları","Etik İlkeler","Hakem Süreci","İletişim"]],["Sosyal",["ResearchGate","Academia.edu","ORCID","Google Scholar"]]],copyright:"© 2026 ARSİS · Journal of Music, Musicology & Anthropology",admin_title:"YÖNETİM PANELİ",total_articles:"Toplam Makale",pending:"Beklemede",in_review:"Hakemde",total_members:"Toplam Üye",sent_articles:"GÖNDERİLEN MAKALELER",no_sent:"Henüz makale gönderilmemiş.",members:"KAYITLI ÜYELER",no_members:"Henüz üye yok.",status_update:"Durum güncellendi.",download:"İndir",profile_title:"PROFİL BİLGİLERİM",profile_fields:[["Ad Soyad"],["E-posta"],["Kurum"],["ORCID"],["Rol"],["Erişim"]],access:"Açık Erişim",logout_msg:"Çıkış yapıldı.",editorial_title:"EDİTÖR KURULU",editorial_note:"ARSİS editör kurulu oluşturulmaktadır. Güncel liste ilk sayı yayımıyla açıklanacaktır.",editorial_contact:"İletişim: arsisakademik@gmail.com",ai_title:"YAPAY ZEKA POLİTİKASI",ai_text:"Büyük dil modelleri yardımcı araç olarak kullanılabilir; ancak yazar olarak tanımlanamaz. YZ kullanımı teşekkür bölümünde belirtilmelidir.",archiving_title:"ARŞİVLEME POLİTİKASI",archiving_text:"LOCKSS ve CLOCKSS sistemleriyle uyumlu arşivleme. Tüm makalelere DOI tahsis edilecektir.",doi_title:"DOI & KALICI ERİŞİM",doi_text:"CrossRef üyeliği aracılığıyla tüm makalelere DOI tahsis edilecektir.",guide_page:"YAZIM KURALLARI",ethics_page:"ETİK İLKELER",guide_sections:[{title:"Genel Biçim",items:["Microsoft Word (.docx) formatında gönderilmelidir.","A4, kenar boşlukları 2,5 cm, satır aralığı 1,5.","Times New Roman 12 punto önerilir.","5.000–12.000 kelime (kaynakça hariç)."]},{title:"Başlık ve Özet",items:["Başlık Türkçe ve İngilizce verilmelidir.","150–250 kelime arası özet.","5–8 anahtar kelime, iki dilde."]},{title:"Atıf ve Kaynakça",items:["Chicago Yazar-Tarih veya APA 7. Baskı.","Kaynakça alfabetik sırayla.","İnternet kaynaklarında erişim tarihi belirtilmelidir."]}],ethics_sections:[{title:"Özgünlük ve İntihal",items:["Gönderilen makaleler özgün çalışmalar olmalıdır.","İntihal etik ihlal sayılır.","ARSİS intihal tarama hakkını saklı tutar."]},{title:"Yazarlık",items:["Tüm yazarlar çalışmaya önemli katkı sağlamış olmalıdır.","YZ araçları kullanılması durumunda dipnotta belirtilmelidir."]}],review_panel:"HAKEM DEĞERLENDİRME PANELİ",review_assigned:"Size Atanan Makaleler",review_form:"Değerlendirme Formu",review_submit:"DEĞERLENDİRMEYİ GÖNDER",review_decision:"Genel Karar",review_comments:"Editöre Gizli Not (isteğe bağlı)",review_comments_author:"Yazara İletilecek Genel Yorum",review_decision_accept:"Kabul",review_decision_minor:"Küçük Revizyon",review_decision_major:"Büyük Revizyon",review_decision_reject:"Red",review_done:"Değerlendirme tamamlandı. Editör bilgilendirildi.",review_incomplete:"Lütfen tüm soruları yanıtlayın ve bir karar seçin.",review_completed_badge:"Tamamlandı",review_pending_badge:"Bekliyor",review_score:"Ortalama Puan",review_section_score:"Bölüm Puanı",admin_msg_title:"EDİTÖR MESAJLARI",msg_to_author:"Yazara Mesaj Gönder",msg_send:"GÖNDER",msg_placeholder:"Yazarınıza iletmek istediğiniz mesajı yazın...",msg_sent:"Mesaj gönderildi.",msg_inbox:"Gelen Mesajlar",msg_from_editor:"Editörden",msg_reply:"Yanıtla",msg_reply_ph:"Yanıtınızı yazın...",msg_reply_sent:"Yanıtınız iletildi.",no_messages:"Mesaj bulunmuyor.",assign_reviewer:"Hakem Ata",assign_btn:"HAKEME GÖNDER",assign_success:"Hakem atandı ve bildirim gönderildi.",assign_already:"Bu hakem zaten atanmış.",assign_no_reviewer:"Lütfen hakem seçin.",reviewer_list:"Atanmış Hakemler",review_results:"Hakem Değerlendirme Sonuçları",share_with_author:"Yazarla Paylaş",shared_badge:"Yazarla Paylaşıldı",review_notify_editor:"Editöre bildirim gönderildi."},en:{title:"ARSIS",subtitle:"Journal of Music, Musicology & Anthropology",motto:"A peer-reviewed academic journal uniting music with culture, sound with humanity",tagline:"ἄρσις — ASCENT",nav:{home:"Home",archive:"Archive",about:"About",openaccess:"Open Access",submit:"Submit Article",login:"Login",register:"Register"},hero_btn1:"BROWSE ARCHIVE",hero_btn2:"Submit Article",coming:"JUNE 2026",coming_title:"The First Sound Rises",coming_motto:"Music knows no borders; sound transcends walls. ARSIS sets forth with this conviction.",coming_sub:"ARSIS will meet its readers with its inaugural issue in June 2026.",deadline:"Submission deadline: 30 April 2026",scope_title:"SCOPE & COVERAGE",fields:[{icon:"𝄞",name:"Ethnomusicology",desc:"Music in its cultural context"},{icon:"♬",name:"Musicology",desc:"Music theory, history and analysis"},{icon:"◉",name:"Anthropology",desc:"Cross-cultural musical practices"},{icon:"ψ",name:"Music Anthropology",desc:"Music and cultural evolution"},{icon:"♦",name:"Organology",desc:"Instrument science and acoustics"},{icon:"♩",name:"Music History",desc:"Historical practices and comparative analyses"}],stats:[["June 2026","Inaugural Issue"],["5","Fields"],["Open Access","Free"],["Double-Blind","Review"]],about_title:"About ARSIS",about_sub:"In Ancient Greek, \"ἄρσις\" — the rising note, the strong beat of rhythm.",scope_text:"ARSIS is a double-blind peer-reviewed open-access journal in music, musicology, anthropology and ethnomusicology.",scope_long:"Music is one of humanity's most universal forms of expression. ARSIS treats music as a living practice through which communities express themselves.",peer:"Peer Review",peer_text:"Double-blind peer review. Each manuscript sent to at least two reviewers. COPE principles adopted.",guide:"Author Guidelines",guide_text:"Chicago or APA 7th Edition. Turkish and English abstracts required. 5,000–12,000 words.",oa_policy:"Open Access Policy",oa_text:"Fully open-access. No APCs. CC BY 4.0.",contact:"CONTACT",free:"Free",oa_title:"OPEN ACCESS",oa_sub:"All content is entirely free of charge.",register_free:"REGISTER — FREE",archive_title:"Volume 1, Issue 1 · June 2026",archive_sub:"The inaugural issue is in preparation.",archive_coming:"COMING IN JUNE 2026",call:"CALL FOR PAPERS",call_title:"ARSIS — Volume 1, Issue 1 · June 2026",call_text:"Submission deadline:",submit_btn:"SUBMIT ARTICLE",panel_articles:"My Articles",panel_messages:"Forum",panel_profile:"My Profile",panel_admin:"Admin",panel_review:"Review Panel",logout:"Logout",no_articles:"No articles submitted yet.",first_article:"SUBMIT YOUR FIRST ARTICLE",no_msg:"No messages yet.",submit_title:"SUBMIT YOUR ARTICLE",fields_select:"Select Field *",coauth:"Co-authors (optional)",abstract_ph:"Abstract (min. 150 words) *",keywords_ph:"Keywords (comma-separated)",file_label:"MANUSCRIPT FILE (PDF or DOCX)",uploading:"Uploading...",uploaded:"File uploaded!",upload_err:"Upload failed: ",sending:"Sending...",submit_success:"Your article has been submitted!",submit_err:"Title, abstract and field are required.",login_title:"LOGIN TO ARSIS",login_btn:"LOGIN",login_err:"Incorrect email or password.",no_account:"No account?",register_link:"Register",register_title:"REGISTER",name_ph:"Full Name *",email_ph:"Email *",inst_ph:"Institution",orcid_ph:"ORCID ID (optional)",pass_ph:"Password *",role_author:"Author / Researcher",role_reviewer:"Reviewer",welcome:"Welcome to ARSIS!",email_taken:"Email may already be registered.",required_fields:"Name and email required.",required_pass:"Password required.",db_title:"JOURNAL INFORMATION",db:[["ISSN (Online)","Pending"],["ISSN (Print)","—"],["First Issue","Vol. 1, No. 1 · Jun. 2026"],["Frequency","2 issues/year"],["Language","Turkish / English"],["Access","Open Access"],["Index","TR Dizin (applied)"]],footer_motto:"A peer-reviewed journal uniting music with culture",footer_cols:[["Journal",["Home","Archive","Submit Article","Open Access"]],["Info",["Author Guidelines","Ethics","Peer Review","Contact"]],["Social",["ResearchGate","Academia.edu","ORCID","Google Scholar"]]],copyright:"© 2026 ARSIS · Journal of Music, Musicology & Anthropology",admin_title:"ADMIN PANEL",total_articles:"Total Articles",pending:"Pending",in_review:"Under Review",total_members:"Total Members",sent_articles:"SUBMITTED ARTICLES",no_sent:"No articles yet.",members:"MEMBERS",no_members:"No members yet.",status_update:"Status updated.",download:"Download",profile_title:"MY PROFILE",profile_fields:[["Full Name"],["Email"],["Institution"],["ORCID"],["Role"],["Access"]],access:"Open Access",logout_msg:"Logged out.",editorial_title:"EDITORIAL BOARD",editorial_note:"Board will be announced with the first issue.",editorial_contact:"Contact: arsisakademik@gmail.com",ai_title:"AI POLICY",ai_text:"AI tools may assist writing but cannot be listed as authors. Disclosure required.",archiving_title:"ARCHIVING",archiving_text:"LOCKSS/CLOCKSS compatible archiving. DOIs for all articles.",doi_title:"DOI & PERMANENT ACCESS",doi_text:"DOIs assigned via CrossRef membership.",guide_page:"AUTHOR GUIDELINES",ethics_page:"ETHICS & POLICIES",guide_sections:[{title:"General Format",items:["Submit in Microsoft Word (.docx).","A4, 2.5cm margins, 1.5 line spacing.","Times New Roman 12pt recommended.","5,000–12,000 words (excluding references)."]},{title:"Title and Abstract",items:["Title in Turkish and English.","150–250 word abstract.","5–8 keywords in both languages."]},{title:"Citations",items:["Chicago Author-Date or APA 7th Edition.","References listed alphabetically.","Web sources: include access date."]}],ethics_sections:[{title:"Originality",items:["Manuscripts must be original and unpublished.","Plagiarism is an ethical violation.","ARSIS reserves the right to screen for plagiarism."]},{title:"Authorship",items:["All authors must have contributed significantly.","AI tool use must be disclosed in a footnote."]}],review_panel:"PEER REVIEW PANEL",review_assigned:"Manuscripts Assigned to You",review_form:"Review Form",review_submit:"SUBMIT REVIEW",review_decision:"Overall Decision",review_comments:"Confidential Note to Editor (optional)",review_comments_author:"General Comments for Author",review_decision_accept:"Accept",review_decision_minor:"Minor Revision",review_decision_major:"Major Revision",review_decision_reject:"Reject",review_done:"Review submitted. Editor has been notified.",review_incomplete:"Please answer all questions and select a decision.",review_completed_badge:"Completed",review_pending_badge:"Pending",review_score:"Average Score",review_section_score:"Section Score",admin_msg_title:"EDITOR MESSAGES",msg_to_author:"Send Message to Author",msg_send:"SEND",msg_placeholder:"Write your message to the author...",msg_sent:"Message sent.",msg_inbox:"Inbox",msg_from_editor:"From Editor",msg_reply:"Reply",msg_reply_ph:"Write your reply...",msg_reply_sent:"Reply sent.",no_messages:"No messages.",assign_reviewer:"Assign Reviewer",assign_btn:"ASSIGN",assign_success:"Reviewer assigned.",assign_already:"Already assigned.",assign_no_reviewer:"Please select a reviewer.",reviewer_list:"Assigned Reviewers",review_results:"Peer Review Results",share_with_author:"Share with Author",shared_badge:"Shared with Author",review_notify_editor:"Editor has been notified."}};
 
-const WaveLogo=({size=28,color=C.gold})=>(
-  <div style={{display:"flex",alignItems:"center",gap:2,color,height:size}}>
-    {[0.6,1,0.7,1,0.5,0.9,0.6].map((h,i)=>(
-      <div key={i} style={{width:3,background:"currentColor",borderRadius:2,height:h*size,animation:`wave 1.4s ease-in-out ${i*0.12}s infinite alternate`}}/>
-    ))}
-  </div>
-);
+const WaveLogo=({size=28,color=C.gold})=>(<div style={{display:"flex",alignItems:"center",gap:2,color,height:size}}>{[0.6,1,0.7,1,0.5,0.9,0.6].map((h,i)=>(<div key={i} style={{width:3,background:"currentColor",borderRadius:2,height:h*size,animation:`wave 1.4s ease-in-out ${i*0.12}s infinite alternate`}}/>))}</div>);
 
-const LikertQuestion=({question, lang, value, onChange})=>{
-  const labels=LIKERT_LABELS[lang]||LIKERT_LABELS.tr;
-  return(
-    <div style={{marginBottom:20}}>
-      <p style={{fontSize:14,color:"#333",marginBottom:10,lineHeight:1.7,fontStyle:"italic"}}>
-        {question[lang]||question.tr}
-      </p>
-      <div style={{display:"flex",gap:6}}>
-        {labels.map((label,i)=>(
-          <button key={i} className={`likert-btn${value===i+1?" selected":""}`}
-            onClick={()=>onChange(i+1)} title={label}>
-            <div style={{fontSize:11,fontWeight:700,marginBottom:3}}>{i+1}</div>
-            <div style={{fontSize:9,lineHeight:1.3,color:"inherit"}}>{label}</div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-};
+const LikertQuestion=({question, lang, value, onChange})=>{const labels=LIKERT_LABELS[lang]||LIKERT_LABELS.tr;return(<div style={{marginBottom:20}}><p style={{fontSize:14,color:"#333",marginBottom:10,lineHeight:1.7,fontStyle:"italic"}}>{question[lang]||question.tr}</p><div style={{display:"flex",gap:6}}>{labels.map((label,i)=>(<button key={i} className={`likert-btn${value===i+1?" selected":""}`} onClick={()=>onChange(i+1)} title={label}><div style={{fontSize:11,fontWeight:700,marginBottom:3}}>{i+1}</div><div style={{fontSize:9,lineHeight:1.3,color:"inherit"}}>{label}</div></button>))}</div></div>);};
 
-/* ── KOMPAKT MESSAGES TAB ── */
+/* MESSAGES TAB - DÜZELTİLMİŞ */
 function MessagesTab({user, t, articles, toast_}) {
   const [messages, setMessages] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState("");
@@ -325,6 +65,7 @@ function MessagesTab({user, t, articles, toast_}) {
     let query = supa.from("editor_messages").select("*");
     
     if (isEditor) {
+      // DÜZELTME: Editör tüm mesajları görebilir
       query = query.or(`to_email.eq.${user.email},from_email.eq.${user.email},is_system_notification.eq.true`);
     } else {
       query = query.eq("author_email", user.email);
@@ -518,7 +259,7 @@ function MessagesTab({user, t, articles, toast_}) {
   );
 }
 
-/* ── KOMPAKT REVIEW FORM ── */
+/* REVIEW FORM - DÜZELTİLMİŞ */
 function ReviewForm({review, article, lang, t, onSubmit, readOnly = false}) {
   const [answers, setAnswers] = useState({});
   const [decision, setDecision] = useState("");
@@ -747,7 +488,7 @@ function ReviewForm({review, article, lang, t, onSubmit, readOnly = false}) {
   );
 }
 
-/* ── HAKEM PANELİ ── */
+/* HAKEM PANELİ - DÜZELTİLMİŞ */
 function HakemPanel({user, t, lang, toast_}) {
   const [atamalar, setAtamalar] = useState([]);
   const [makaleler, setMakaleler] = useState({});
@@ -826,7 +567,7 @@ function HakemPanel({user, t, lang, toast_}) {
       `Tarih: ${new Date().toLocaleString('tr-TR')}`
     );
 
-    // Editör bildirimi - DÜZELTİLMİŞ
+    // DÜZELTİLMİŞ: Editör bildirimi
     await supa.from("editor_messages").insert([{
       from_editor: true,
       from_name: user.name,
@@ -841,7 +582,7 @@ function HakemPanel({user, t, lang, toast_}) {
       is_system_notification: true,
       notification_type: "review_completed",
       review_id: reviewId,
-    });
+    }]);
 
     toast_("✓ Değerlendirme tamamlandı ve editöre iletildi.");
     setAcik(null);
@@ -856,4 +597,21 @@ function HakemPanel({user, t, lang, toast_}) {
       {atamalar.length===0?(
         <div style={{textAlign:"center",padding:"60px 20px",color:C.muted,background:C.cream,borderRadius:12,border:`1px solid ${C.border}`}}>
           <div style={{fontSize:32,marginBottom:12}}>⊕</div>
-          <p style={{fontStyle:"italic"}}>Henüz size atanmış makale yok.</p
+          <p style={{fontStyle:"italic"}}>Henüz size atanmış makale yok.</p>
+        </div>
+      ):atamalar.map(r=>{
+        const art=makaleler[r.article_id];
+        const tamam=r.status==="tamamlandi";
+        return(
+          <div key={r.id} style={{border:`2px solid ${tamam?C.border:C.teal}`,borderRadius:12,marginBottom:16,overflow:"hidden",borderTop:`4px solid ${tamam?"#d1fae5":C.teal}`}}>
+            <div style={{background:"#fff",padding:"16px 20px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}} onClick={()=>setAcik(acik===r.id?null:r.id)}>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:"'Cinzel',serif",fontSize:13.5,fontWeight:700,color:C.ink,marginBottom:4}}>{art?.title||"Yükleniyor..."}</div>
+                <div style={{fontSize:11,color:C.muted}}>{art?.field} · Atandı: {r.assigned_at?.split("T")[0]}</div>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
+                <span style={{fontSize:10,padding:"3px 10px",borderRadius:20,fontWeight:700,background:tamam?"#d1fae5":"#dbeafe",color:tamam?"#065f46":"#1e40af"}}>
+                  {tamam?"✓ Tamamlandı":"Bekliyor"}
+                </span>
+                {tamam&&r.total_score>0&&<span style={{fontFamily:"'Cinzel',serif",fontSize:14,fontWeight:700,color:C.gold}}>{r.total_score}/5</span>}
+                <span style={{color:C.gold,fontSize:13}}>{acik===
