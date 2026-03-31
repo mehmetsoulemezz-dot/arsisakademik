@@ -14,9 +14,6 @@
     body{background:#f5f0e8;font-family:'Crimson Pro',serif}
     @keyframes wave{from{transform:scaleY(0.4)}to{transform:scaleY(1)}}
     @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
-    @keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
-    @keyframes glow{0%,100%{box-shadow:0 0 5px rgba(201,168,76,0.3)}50%{box-shadow:0 0 20px rgba(201,168,76,0.6)}}
     .nav-link{background:transparent;border:none;color:#c4b896;cursor:pointer;font-size:12px;font-weight:600;padding:8px 11px;border-radius:5px;transition:all 0.2s;letter-spacing:1px;text-transform:uppercase;font-family:'Crimson Pro',serif}
     .nav-link:hover{color:#e8d080;background:rgba(201,168,76,0.1)}
     .nav-link.active{color:#c9a84c;background:rgba(201,168,76,0.12);border-bottom:2px solid #c9a84c}
@@ -25,8 +22,6 @@
     .likert-btn{border:2px solid #d4c9b4;border-radius:8px;cursor:pointer;padding:8px 4px;text-align:center;transition:all 0.18s;background:#fff;font-family:'Crimson Pro',serif;font-size:12px;color:#7a6e5f;flex:1}
     .likert-btn:hover{border-color:#c9a84c;background:#fdf8ee}
     .likert-btn.selected{border-color:#1d6a5e;background:#e8f5f2;color:#1d6a5e;font-weight:700}
-    .tab-btn{background:none;border:none;cursor:pointer;padding:10px 16px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;color:#7a6e5f;border-bottom:2px solid transparent;transition:all 0.2s}
-    .tab-btn.active{color:#8b3a2a;border-bottom-color:#c9a84c;font-weight:700}
     ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#f5f0e8}::-webkit-scrollbar-thumb{background:#c9a84c;border-radius:3px}
     select,input,textarea{font-family:'Crimson Pro',serif}
   </style>
@@ -41,16 +36,10 @@ const supa = supabase.createClient(
   "https://nivablklgvgykwauzbeo.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU"
 );
-const EDGE_URL="https://nivablklgvgykwauzbeo.supabase.co/functions/v1/swift-handler";
-const ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU";
-const sendMail=(name,email,type)=>fetch(EDGE_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${ANON_KEY}`},body:JSON.stringify({name,email,type})});
 
-/* ── RENKLER ── */
 const C={ink:"#1a1208",paper:"#f5f0e8",cream:"#ede8dc",gold:"#c9a84c",goldL:"#e8d080",rust:"#8b3a2a",teal:"#1d6a5e",muted:"#7a6e5f",border:"#d4c9b4"};
 const INP={width:"100%",padding:"10px 14px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:14,outline:"none",background:"#fff",color:C.ink,marginBottom:12,boxSizing:"border-box"};
-const BTN={background:C.gold,color:C.ink,border:"none",padding:"12px 0",borderRadius:7,cursor:"pointer",fontWeight:800,fontSize:14,width:"100%",marginTop:4};
 
-/* ── MAKALE DURUMLARI ── */
 const STATUS={
   beklemede:{label:{tr:"Ön İnceleme",en:"Under Review"},color:"#1e40af",bg:"#dbeafe"},
   hakemde:{label:{tr:"Hakem İncelemesinde",en:"Peer Review"},color:"#b45309",bg:"#fef3c7"},
@@ -60,66 +49,16 @@ const STATUS={
   reddedildi:{label:{tr:"Reddedildi",en:"Rejected"},color:"#991b1b",bg:"#fee2e2"},
 };
 
-/* ── LİKERT ANKET SORULARI ── */
 const REVIEW_SECTIONS = [
-  {
-    id:"originality",
-    title:{tr:"Özgünlük ve Katkı",en:"Originality & Contribution"},
-    icon:"◈",color:"#1d6a5e",
-    questions:[
-      {id:"orig_1",tr:"Makale, alana özgün ve yeni bir katkı sunmaktadır.",en:"The manuscript presents an original and novel contribution to the field."},
-      {id:"orig_2",tr:"Araştırma sorusu/hipotezi açık ve net biçimde ifade edilmiştir.",en:"The research question/hypothesis is clearly and precisely articulated."},
-      {id:"orig_3",tr:"Mevcut literatürdeki boşluklar yeterince ele alınmıştır.",en:"The gaps in the existing literature are adequately addressed."},
-    ]
-  },
-  {
-    id:"methodology",
-    title:{tr:"Yöntem ve Metodoloji",en:"Methodology & Research Design"},
-    icon:"⊛",color:"#8b3a2a",
-    questions:[
-      {id:"meth_1",tr:"Araştırma yöntemi konuya uygun ve gerekçelendirilmiştir.",en:"The research methodology is appropriate for the subject and well-justified."},
-      {id:"meth_2",tr:"Veri toplama ve analiz süreçleri açık ve tekrarlanabilir biçimde aktarılmıştır.",en:"Data collection and analysis processes are described clearly and replicably."},
-      {id:"meth_3",tr:"Metodolojik sınırlılıklar kabul edilmiş ve tartışılmıştır.",en:"Methodological limitations are acknowledged and discussed."},
-    ]
-  },
-  {
-    id:"literature",
-    title:{tr:"Literatür ve Kuramsal Çerçeve",en:"Literature & Theoretical Framework"},
-    icon:"♦",color:"#4a3a8a",
-    questions:[
-      {id:"lit_1",tr:"Literatür taraması kapsamlı ve günceldir.",en:"The literature review is comprehensive and up-to-date."},
-      {id:"lit_2",tr:"Kuramsal çerçeve tutarlı biçimde uygulanmıştır.",en:"The theoretical framework is consistently applied throughout the manuscript."},
-      {id:"lit_3",tr:"Birincil ve ikincil kaynaklar dengeli kullanılmıştır.",en:"Primary and secondary sources are used in a balanced manner."},
-    ]
-  },
-  {
-    id:"presentation",
-    title:{tr:"Sunum ve Yazım Kalitesi",en:"Presentation & Writing Quality"},
-    icon:"♬",color:"#1e5a8a",
-    questions:[
-      {id:"pres_1",tr:"Makale açık, akıcı ve akademik bir dille kaleme alınmıştır.",en:"The manuscript is written in a clear, fluent, and academic style."},
-      {id:"pres_2",tr:"Yapı ve organizasyon mantıklı ve tutarlıdır.",en:"The structure and organization are logical and consistent."},
-      {id:"pres_3",tr:"Şekiller, tablolar, nota örnekleri (varsa) etkin kullanılmıştır.",en:"Figures, tables, and musical examples (if any) are effectively presented."},
-    ]
-  },
-  {
-    id:"significance",
-    title:{tr:"Akademik Etki ve Önemi",en:"Academic Significance & Impact"},
-    icon:"𝄞",color:"#c9a84c",
-    questions:[
-      {id:"sig_1",tr:"Bulgular ve sonuçlar araştırma sorusuyla tutarlıdır.",en:"The findings and conclusions are consistent with the research question."},
-      {id:"sig_2",tr:"Çalışma, müzik/müzikoloji/antropoloji literatürüne anlamlı katkı sağlamaktadır.",en:"The work makes a meaningful contribution to music/musicology/anthropology literature."},
-      {id:"sig_3",tr:"Makale ARSİS'in yayın kapsamına ve standartlarına uygundur.",en:"The manuscript fits ARSIS's scope and editorial standards."},
-    ]
-  }
+  {id:"originality",title:{tr:"Özgünlük ve Katkı",en:"Originality & Contribution"},icon:"◈",color:"#1d6a5e",questions:[{id:"orig_1",tr:"Makale, alana özgün ve yeni bir katkı sunmaktadır.",en:"The manuscript presents an original and novel contribution to the field."},{id:"orig_2",tr:"Araştırma sorusu/hipotezi açık ve net biçimde ifade edilmiştir.",en:"The research question/hypothesis is clearly and precisely articulated."},{id:"orig_3",tr:"Mevcut literatürdeki boşluklar yeterince ele alınmıştır.",en:"The gaps in the existing literature are adequately addressed."}]},
+  {id:"methodology",title:{tr:"Yöntem ve Metodoloji",en:"Methodology & Research Design"},icon:"⊛",color:"#8b3a2a",questions:[{id:"meth_1",tr:"Araştırma yöntemi konuya uygun ve gerekçelendirilmiştir.",en:"The research methodology is appropriate for the subject and well-justified."},{id:"meth_2",tr:"Veri toplama ve analiz süreçleri açık ve tekrarlanabilir biçimde aktarılmıştır.",en:"Data collection and analysis processes are described clearly and replicably."},{id:"meth_3",tr:"Metodolojik sınırlılıklar kabul edilmiş ve tartışılmıştır.",en:"Methodological limitations are acknowledged and discussed."}]},
+  {id:"literature",title:{tr:"Literatür ve Kuramsal Çerçeve",en:"Literature & Theoretical Framework"},icon:"♦",color:"#4a3a8a",questions:[{id:"lit_1",tr:"Literatür taraması kapsamlı ve günceldir.",en:"The literature review is comprehensive and up-to-date."},{id:"lit_2",tr:"Kuramsal çerçeve tutarlı biçimde uygulanmıştır.",en:"The theoretical framework is consistently applied throughout the manuscript."},{id:"lit_3",tr:"Birincil ve ikincil kaynaklar dengeli kullanılmıştır.",en:"Primary and secondary sources are used in a balanced manner."}]},
+  {id:"presentation",title:{tr:"Sunum ve Yazım Kalitesi",en:"Presentation & Writing Quality"},icon:"♬",color:"#1e5a8a",questions:[{id:"pres_1",tr:"Makale açık, akıcı ve akademik bir dille kaleme alınmıştır.",en:"The manuscript is written in a clear, fluent, and academic style."},{id:"pres_2",tr:"Yapı ve organizasyon mantıklı ve tutarlıdır.",en:"The structure and organization are logical and consistent."},{id:"pres_3",tr:"Şekiller, tablolar, nota örnekleri (varsa) etkin kullanılmıştır.",en:"Figures, tables, and musical examples (if any) are effectively presented."}]},
+  {id:"significance",title:{tr:"Akademik Etki ve Önemi",en:"Academic Significance & Impact"},icon:"𝄞",color:"#c9a84c",questions:[{id:"sig_1",tr:"Bulgular ve sonuçlar araştırma sorusuyla tutarlıdır.",en:"The findings and conclusions are consistent with the research question."},{id:"sig_2",tr:"Çalışma, müzik/müzikoloji/antropoloji literatürüne anlamlı katkı sağlamaktadır.",en:"The work makes a meaningful contribution to music/musicology/anthropology literature."},{id:"sig_3",tr:"Makale ARSİS'in yayın kapsamına ve standartlarına uygundur.",en:"The manuscript fits ARSIS's scope and editorial standards."}]}
 ];
 
-const LIKERT_LABELS = {
-  tr:["Kesinlikle Katılmıyorum","Katılmıyorum","Kararsızım","Katılıyorum","Kesinlikle Katılıyorum"],
-  en:["Strongly Disagree","Disagree","Neutral","Agree","Strongly Agree"]
-};
+const LIKERT_LABELS = {tr:["Kesinlikle Katılmıyorum","Katılmıyorum","Kararsızım","Katılıyorum","Kesinlikle Katılıyorum"],en:["Strongly Disagree","Disagree","Neutral","Agree","Strongly Agree"]};
 
-/* ── ÜÇ DİLLİ METİNLER ── */
 const T = {
   tr:{
     title:"ARSİS",subtitle:"Journal of Music, Musicology & Anthropology",
@@ -232,20 +171,6 @@ const T = {
     share_with_author:"Yazarla Paylaş",
     shared_badge:"Yazarla Paylaşıldı",
     review_notify_editor:"Editöre bildirim gönderildi.",
-    // Yeni eklenen admin metinleri
-    admin_dashboard:"KONTROL PANELİ",
-    admin_reviews:"HAKEM DEĞERLENDİRMELERİ",
-    admin_pending_reviews:"Bekleyen Değerlendirme",
-    admin_completed_reviews:"Tamamlanan Değerlendirme",
-    admin_average_score:"Ortalama Puan",
-    admin_decision:"Karar",
-    admin_reviewer:"Hakem",
-    admin_review_date:"Değerlendirme Tarihi",
-    admin_view_details:"Detayları Gör",
-    admin_no_reviews:"Henüz hakem değerlendirmesi yok.",
-    admin_notifications:"BİLDİRİMLER",
-    admin_new_review:"Yeni hakem değerlendirmesi var!",
-    admin_system_notification:"Sistem Bildirimi",
   },
   en:{
     title:"ARSIS",subtitle:"Journal of Music, Musicology & Anthropology",
@@ -353,24 +278,9 @@ const T = {
     share_with_author:"Share with Author",
     shared_badge:"Shared with Author",
     review_notify_editor:"Editor has been notified.",
-    // Yeni eklenen admin metinleri
-    admin_dashboard:"DASHBOARD",
-    admin_reviews:"PEER REVIEWS",
-    admin_pending_reviews:"Pending Reviews",
-    admin_completed_reviews:"Completed Reviews",
-    admin_average_score:"Average Score",
-    admin_decision:"Decision",
-    admin_reviewer:"Reviewer",
-    admin_review_date:"Review Date",
-    admin_view_details:"View Details",
-    admin_no_reviews:"No peer reviews yet.",
-    admin_notifications:"NOTIFICATIONS",
-    admin_new_review:"New peer review received!",
-    admin_system_notification:"System Notification",
   }
 };
 
-/* ── WAVE LOGO ── */
 const WaveLogo=({size=28,color=C.gold})=>(
   <div style={{display:"flex",alignItems:"center",gap:2,color,height:size}}>
     {[0.6,1,0.7,1,0.5,0.9,0.6].map((h,i)=>(
@@ -379,7 +289,6 @@ const WaveLogo=({size=28,color=C.gold})=>(
   </div>
 );
 
-/* ── LİKERT SORU KOMPONENTI ── */
 const LikertQuestion=({question, lang, value, onChange})=>{
   const labels=LIKERT_LABELS[lang]||LIKERT_LABELS.tr;
   return(
@@ -400,130 +309,7 @@ const LikertQuestion=({question, lang, value, onChange})=>{
   );
 };
 
-/* ── FORUM ── */
-function ForumYeniKonu({user, onGonder}) {
-  const titleRef=useRef(null);
-  const bodyRef=useRef(null);
-  const [busy,setBusy]=useState(false);
-  const gonder=async()=>{
-    const title=titleRef.current?.value?.trim();
-    const body=bodyRef.current?.value?.trim();
-    if(!title||!body){alert("Konu ve mesaj zorunludur.");return;}
-    setBusy(true);
-    await onGonder(title,body);
-    titleRef.current.value="";bodyRef.current.value="";
-    setBusy(false);
-  };
-  return(
-    <div style={{background:C.cream,borderRadius:12,padding:"22px 26px",marginBottom:24,border:`1px solid ${C.border}`}}>
-      <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.rust,letterSpacing:1.5,marginBottom:14}}>YENİ KONU AÇ</div>
-      <input ref={titleRef} placeholder="Konu başlığı *" style={{...INP,marginBottom:10}}/>
-      <textarea ref={bodyRef} placeholder="Mesajınızı yazın *" rows={4}
-        style={{...INP,height:100,resize:"vertical"}}/>
-      <button onClick={gonder} disabled={busy}
-        style={{background:C.ink,color:C.gold,border:"none",padding:"10px 26px",borderRadius:7,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:11,fontWeight:700,letterSpacing:1,opacity:busy?0.6:1}}>
-        {busy?"GÖNDERİLİYOR...":"GÖNDER"}
-      </button>
-    </div>
-  );
-}
-
-function ForumPost({post,user,onYanitGonder}) {
-  const [replies,setReplies]=useState([]);
-  const [acik,setAcik]=useState(false);
-  const ref=useRef(null);
-  const [busy,setBusy]=useState(false);
-
-  useEffect(()=>{
-    if(acik){
-      supa.from("forum_replies").select("*").eq("post_id",post.id).order("created_at",{ascending:true})
-        .then(({data})=>{if(data)setReplies(data);});
-    }
-  },[acik,post.id]);
-
-  const yanıtEkle=async()=>{
-    const text=ref.current?.value?.trim();
-    if(!text)return;
-    setBusy(true);
-    await supa.from("forum_replies").insert([{post_id:post.id,body:text,author:user.name,author_email:user.email}]);
-    ref.current.value="";
-    const{data}=await supa.from("forum_replies").select("*").eq("post_id",post.id).order("created_at",{ascending:true});
-    if(data)setReplies(data);
-    setBusy(false);
-  };
-
-  return(
-    <div style={{border:`1px solid ${C.border}`,borderRadius:12,marginBottom:12,overflow:"hidden"}}>
-      <div style={{background:"#fff",padding:"15px 20px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}} onClick={()=>setAcik(!acik)}>
-        <div style={{flex:1}}>
-          <div style={{fontFamily:"'Cinzel',serif",fontSize:13,fontWeight:700,color:C.ink,marginBottom:4}}>{post.title}</div>
-          <div style={{fontSize:11,color:C.muted,fontStyle:"italic"}}>
-            {post.author} · {post.created_at?.split("T")[0]}
-            {replies.length>0&&<span style={{marginLeft:8,color:C.teal,fontWeight:700}}>{replies.length} yanıt</span>}
-          </div>
-        </div>
-        <span style={{color:C.gold,fontSize:14,flexShrink:0}}>{acik?"▲":"▼"}</span>
-      </div>
-      {acik&&(
-        <div>
-          <div style={{background:`${C.gold}06`,padding:"14px 20px",borderTop:`1px solid ${C.border}`}}>
-            <p style={{margin:0,fontSize:14,color:"#444",lineHeight:1.8,whiteSpace:"pre-wrap"}}>{post.body}</p>
-          </div>
-          {replies.map((r,i)=>(
-            <div key={r.id} style={{padding:"12px 20px",borderBottom:i<replies.length-1?`1px solid ${C.border}44`:"none",background:r.author_email===user?.email?"#fff":C.cream}}>
-              <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:5}}>
-                <div style={{width:24,height:24,borderRadius:"50%",background:r.author_email===user?.email?C.rust:C.teal,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:10,fontWeight:700}}>
-                  {r.author[0]}
-                </div>
-                <span style={{fontFamily:"'Cinzel',serif",fontSize:10,fontWeight:700,color:r.author_email===user?.email?C.rust:C.teal}}>
-                  {r.author_email===user?.email?"Siz":r.author}
-                </span>
-                <span style={{fontSize:10,color:C.muted}}>{r.created_at?.split("T")[0]}</span>
-              </div>
-              <p style={{margin:"0 0 0 32px",fontSize:13.5,color:"#444",lineHeight:1.7}}>{r.body}</p>
-            </div>
-          ))}
-          <div style={{background:C.paper,borderTop:`1px solid ${C.border}`,padding:"12px 20px",display:"flex",gap:10}}>
-            <input ref={ref} placeholder="Yanıtınızı yazın..."
-              style={{flex:1,padding:"8px 12px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:13,outline:"none",background:"#fff",color:C.ink}}
-              onKeyDown={e=>{if(e.key==="Enter")yanıtEkle();}}/>
-            <button onClick={yanıtEkle} disabled={busy}
-              style={{background:C.gold,color:C.ink,border:"none",padding:"8px 18px",borderRadius:6,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:10,fontWeight:700,opacity:busy?0.6:1}}>
-              ↩ YANIT
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ForumTab({user,toast_}) {
-  const [posts,setPosts]=useState([]);
-  const [yukleniyor,setYukleniyor]=useState(true);
-  const yukle=useCallback(async()=>{
-    const{data}=await supa.from("forum_posts").select("*").order("created_at",{ascending:false});
-    if(data)setPosts(data);setYukleniyor(false);
-  },[]);
-  useEffect(()=>{yukle();},[yukle]);
-  const yeniKonu=async(title,body)=>{
-    await supa.from("forum_posts").insert([{title,body,author:user.name,author_email:user.email}]);
-    yukle();toast_("✓ Mesajınız paylaşıldı!");
-  };
-  return(
-    <div>
-      <h3 style={{fontFamily:"'Cinzel',serif",margin:"0 0 20px",fontSize:17,letterSpacing:1,color:C.ink}}>FORUM</h3>
-      <ForumYeniKonu user={user} onGonder={yeniKonu}/>
-      {yukleniyor?<div style={{textAlign:"center",padding:40,color:C.muted}}>Yükleniyor...</div>:
-       posts.length===0?<div style={{textAlign:"center",padding:40,color:C.muted,fontStyle:"italic"}}>Henüz konu açılmamış.</div>:
-       posts.map(p=><ForumPost key={p.id} post={p} user={user} onYanitGonder={()=>{}}/>)}
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   DÜZELTİLMİŞ MessagesTab — Editör tüm mesajları görüyor
-───────────────────────────────────────────────────────────── */
+/* ── KOMPAKT MESSAGES TAB ── */
 function MessagesTab({user, t, articles, toast_}) {
   const [messages, setMessages] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState("");
@@ -534,40 +320,26 @@ function MessagesTab({user, t, articles, toast_}) {
 
   const isEditor = user?.role === "editor";
 
-  // DÜZELTİLMİŞ: Editör tüm mesajları görebilir
   const loadMessages = useCallback(async()=>{
     setLoading(true);
-    
     let query = supa.from("editor_messages").select("*");
     
     if (isEditor) {
-      // EDITÖR: Sistem bildirimleri + kendi gönderdikleri + yazarlardan gelenler
       query = query.or(`to_email.eq.${user.email},from_email.eq.${user.email},is_system_notification.eq.true`);
     } else {
-      // YAZAR: Sadece kendi makaleleriyle ilgili mesajlar
       query = query.eq("author_email", user.email);
     }
     
     const {data, error} = await query.order("created_at",{ascending:false});
-    
-    if (error) {
-      console.error("Messages load error:", error);
-    } else {
-      setMessages(data || []);
-    }
-    
+    if (!error) setMessages(data || []);
     setLoading(false);
   },[user, isEditor]);
 
   useEffect(()=>{ loadMessages(); },[loadMessages]);
 
-  // DÜZELTİLMİŞ: Mesaj gönderme mantığı
   const sendMessage = async()=>{
     if(!msgText.trim()) return;
-    if(isEditor && !selectedArticle){ 
-      toast_("Lütfen makale seçin", "err"); 
-      return; 
-    }
+    if(isEditor && !selectedArticle){ toast_("Lütfen makale seçin", "err"); return; }
     
     setBusy(true);
     const art = isEditor ? articles.find(a=>a.id===selectedArticle) : null;
@@ -581,7 +353,6 @@ function MessagesTab({user, t, articles, toast_}) {
     };
 
     if (isEditor) {
-      // Editör yazara mesaj gönderiyor
       messageData.to_email = art?.author_email;
       messageData.author_email = art?.author_email;
       messageData.author_name = art?.author;
@@ -589,19 +360,16 @@ function MessagesTab({user, t, articles, toast_}) {
       messageData.article_title = art?.title;
       messageData.is_system_notification = false;
     } else {
-      // Yazar editöre mesaj gönderiyor
       messageData.to_email = "arsisakademik@gmail.com";
       messageData.author_email = user.email;
       messageData.author_name = user.name;
     }
 
     const {error} = await supa.from("editor_messages").insert([messageData]);
-    
     setBusy(false);
     
     if (error) {
       toast_("Mesaj gönderilemedi.", "err");
-      console.error(error);
     } else {
       setMsgText(""); 
       setSelectedArticle("");
@@ -636,87 +404,43 @@ function MessagesTab({user, t, articles, toast_}) {
 
   const rootMessages = messages.filter(m => !m.parent_id);
   const getReplies = (parentId) => messages.filter(m => m.parent_id === parentId);
-  const displayMessages = isEditor 
-    ? rootMessages 
-    : rootMessages.filter(m => 
-        m.author_email === user.email || 
-        m.to_email === user.email ||
-        m.from_email === user.email
-      );
+  const displayMessages = isEditor ? rootMessages : rootMessages.filter(m => m.author_email === user.email || m.to_email === user.email || m.from_email === user.email);
 
   return(
     <div>
       <h3 style={{fontFamily:"'Cinzel',serif",margin:"0 0 20px",fontSize:17,letterSpacing:1,color:C.ink}}>
-        {isEditor ? t.admin_msg_title || "EDİTÖR MESAJLARI" : "MESAJLARIM"}
+        {isEditor ? "EDİTÖR MESAJLARI" : "MESAJLARIM"}
       </h3>
 
-      {/* Yeni Mesaj Formu */}
       <div style={{background:C.cream,borderRadius:12,padding:"22px 26px",marginBottom:28,border:`1px solid ${C.border}`}}>
         <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.rust,letterSpacing:1.5,marginBottom:14}}>
-          {isEditor ? t.msg_to_author || "YAZARA MESAJ GÖNDER" : "EDİTÖRE MESAJ GÖNDER"}
+          {isEditor ? "YAZARA MESAJ GÖNDER" : "EDİTÖRE MESAJ GÖNDER"}
         </div>
         
         {isEditor && (
-          <select 
-            value={selectedArticle} 
-            onChange={e=>setSelectedArticle(e.target.value)}
-            style={{...INP,marginBottom:10}}
-          >
+          <select value={selectedArticle} onChange={e=>setSelectedArticle(e.target.value)} style={{...INP,marginBottom:10}}>
             <option value="">Makale Seçin *</option>
-            {articles.map(a=>(
-              <option key={a.id} value={a.id}>
-                {a.title} — {a.author}
-              </option>
-            ))}
+            {articles.map(a=>(<option key={a.id} value={a.id}>{a.title} — {a.author}</option>))}
           </select>
         )}
         
-        <textarea 
-          value={msgText} 
-          onChange={e=>setMsgText(e.target.value)}
-          placeholder={isEditor ? t.msg_placeholder : "Editöre iletmek istediğiniz mesajı yazın..."}
-          rows={3} 
-          style={{...INP,height:90,resize:"vertical"}}
-        />
+        <textarea value={msgText} onChange={e=>setMsgText(e.target.value)}
+          placeholder={isEditor ? "Yazarınıza iletmek istediğiniz mesajı yazın..." : "Editöre iletmek istediğiniz mesajı yazın..."}
+          rows={3} style={{...INP,height:90,resize:"vertical"}}/>
         
-        <button 
-          onClick={sendMessage} 
-          disabled={busy}
-          style={{
-            background:C.ink,
-            color:C.gold,
-            border:"none",
-            padding:"10px 26px",
-            borderRadius:7,
-            cursor:"pointer",
-            fontFamily:"'Cinzel',serif",
-            fontSize:11,
-            fontWeight:700,
-            letterSpacing:1,
-            opacity:busy?0.6:1
-          }}
-        >
-          {busy ? "GÖNDERİLİYOR..." : t.msg_send || "GÖNDER"}
+        <button onClick={sendMessage} disabled={busy}
+          style={{background:C.ink,color:C.gold,border:"none",padding:"10px 26px",borderRadius:7,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:11,fontWeight:700,letterSpacing:1,opacity:busy?0.6:1}}>
+          {busy ? "GÖNDERİLİYOR..." : "GÖNDER"}
         </button>
       </div>
 
-      {/* Mesaj Listesi */}
       <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.muted,letterSpacing:1.5,marginBottom:14}}>
-        {t.msg_inbox || "GELEN KUTUSU"}
-        {loading && <span style={{marginLeft:10,fontSize:10}}>(Yükleniyor...)</span>}
+        GELEN KUTUSU {loading && <span style={{marginLeft:10,fontSize:10}}>(Yükleniyor...)</span>}
       </div>
 
       {displayMessages.length === 0 ? (
-        <div style={{
-          textAlign:"center",
-          padding:"40px",
-          color:C.muted,
-          fontStyle:"italic",
-          background:C.cream,
-          borderRadius:12,
-          border:`1px solid ${C.border}`
-        }}>
-          {t.no_messages || "Henüz mesaj bulunmuyor."}
+        <div style={{textAlign:"center",padding:"40px",color:C.muted,fontStyle:"italic",background:C.cream,borderRadius:12,border:`1px solid ${C.border}`}}>
+          Henüz mesaj bulunmuyor.
         </div>
       ) : displayMessages.map(msg => {
         const replies = getReplies(msg.id);
@@ -725,71 +449,38 @@ function MessagesTab({user, t, articles, toast_}) {
         
         return(
           <div key={msg.id} style={{
-            border:`1px solid ${isSystem ? C.gold : C.border}`,
+            border:`2px solid ${isSystem ? C.gold : C.border}`,
             borderRadius:12,
             marginBottom:14,
             overflow:"hidden",
-            background: isSystem ? "#fffbf0" : "#fff"
+            background: isSystem ? "#fffbf0" : "#fff",
+            boxShadow: isSystem ? `0 4px 12px ${C.gold}30` : 'none'
           }}>
-            {/* Mesaj Başlığı */}
             <div style={{
-              background: isSystem ? `${C.gold}15` : "#fff",
+              background: isSystem ? `${C.gold}20` : "#fff",
               padding:"16px 20px",
               borderBottom: replies.length > 0 ? `1px solid ${C.border}` : "none"
             }}>
-              <div style={{
-                display:"flex",
-                justifyContent:"space-between",
-                alignItems:"flex-start",
-                marginBottom:8
-              }}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
                 <div style={{flex:1}}>
-                  <div style={{
-                    display:"flex",
-                    alignItems:"center",
-                    gap:8,
-                    marginBottom:4
-                  }}>
-                    {isSystem && <span style={{fontSize:11,background:C.gold,color:C.ink,padding:"2px 8px",borderRadius:4,fontWeight:700}}>SİSTEM</span>}
-                    <span style={{
-                      fontFamily:"'Cinzel',serif",
-                      fontSize:11,
-                      fontWeight:700,
-                      color: msg.from_editor ? C.teal : (isFromMe ? C.rust : C.ink)
-                    }}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                    {isSystem && <span style={{fontSize:11,background:C.gold,color:C.ink,padding:"3px 10px",borderRadius:4,fontWeight:700}}>📋 SİSTEM</span>}
+                    <span style={{fontFamily:"'Cinzel',serif",fontSize:11,fontWeight:700,color: msg.from_editor ? C.teal : (isFromMe ? C.rust : C.ink)}}>
                       {isFromMe ? "Siz" : msg.from_name} 
                       {msg.from_editor && !isFromMe ? " (Editör)" : ""}
                       {!msg.from_editor && !isFromMe && !isSystem ? " (Yazar)" : ""}
                     </span>
-                    
-                    {msg.article_title && (
-                      <span style={{fontSize:11,color:C.muted,fontStyle:"italic"}}>
-                        · {msg.article_title}
-                      </span>
-                    )}
+                    {msg.article_title && <span style={{fontSize:11,color:C.muted,fontStyle:"italic"}}>· {msg.article_title}</span>}
                   </div>
-                  
-                  <span style={{fontSize:11,color:C.muted}}>
-                    {new Date(msg.created_at).toLocaleString('tr-TR')}
-                  </span>
+                  <span style={{fontSize:11,color:C.muted}}>{new Date(msg.created_at).toLocaleString('tr-TR')}</span>
                 </div>
-                
-                {isSystem && <span style={{fontSize:20}}>📋</span>}
               </div>
               
-              <p style={{
-                margin:0,
-                fontSize:14,
-                color:isSystem ? C.ink : "#333",
-                lineHeight:1.75,
-                whiteSpace:"pre-wrap",
-                fontFamily: isSystem ? "monospace" : "inherit"
-              }}>
+              <p style={{margin:0,fontSize:14,color:isSystem ? C.ink : "#333",lineHeight:1.75,whiteSpace:"pre-wrap",fontFamily: isSystem ? "monospace" : "inherit"}}>
                 {msg.body}
               </p>
             </div>
 
-            {/* Yanıtlar */}
             {replies.map((r, i) => (
               <div key={r.id} style={{
                 background: r.from_email === user.email ? `${C.gold}08` : C.cream,
@@ -797,70 +488,27 @@ function MessagesTab({user, t, articles, toast_}) {
                 borderBottom: i < replies.length - 1 ? `1px solid ${C.border}44` : "none"
               }}>
                 <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:6}}>
-                  <span style={{
-                    fontFamily:"'Cinzel',serif",
-                    fontSize:10,
-                    fontWeight:700,
-                    color: r.from_editor ? C.teal : (r.from_email === user.email ? C.rust : C.ink)
-                  }}>
+                  <span style={{fontFamily:"'Cinzel',serif",fontSize:10,fontWeight:700,color: r.from_editor ? C.teal : (r.from_email === user.email ? C.rust : C.ink)}}>
                     {r.from_email === user.email ? "↩ Siz" : `↩ ${r.from_name}`}
                     {r.from_editor && r.from_email !== user.email ? " (Editör)" : ""}
                   </span>
-                  <span style={{fontSize:10,color:C.muted}}>
-                    {new Date(r.created_at).toLocaleString('tr-TR')}
-                  </span>
+                  <span style={{fontSize:10,color:C.muted}}>{new Date(r.created_at).toLocaleString('tr-TR')}</span>
                 </div>
-                <p style={{margin:0,fontSize:13.5,color:"#444",lineHeight:1.7}}>
-                  {r.body}
-                </p>
+                <p style={{margin:0,fontSize:13.5,color:"#444",lineHeight:1.7}}>{r.body}</p>
               </div>
             ))}
 
-            {/* Yanıt Formu */}
-            <div style={{
-              background:C.paper,
-              borderTop:`1px solid ${C.border}`,
-              padding:"10px 20px",
-              display:"flex",
-              gap:10
-            }}>
+            <div style={{background:C.paper,borderTop:`1px solid ${C.border}`,padding:"10px 20px",display:"flex",gap:10}}>
               <input
                 value={replyText[msg.id] || ""}
                 onChange={e => setReplyText(prev => ({...prev, [msg.id]: e.target.value}))}
-                placeholder={t.msg_reply_ph || "Yanıtınızı yazın..."}
-                style={{
-                  flex:1,
-                  padding:"8px 12px",
-                  border:`1.5px solid ${C.border}`,
-                  borderRadius:6,
-                  fontSize:13,
-                  outline:"none",
-                  background:"#fff",
-                  color:C.ink
-                }}
-                onKeyDown={e => {
-                  if(e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    sendReply(msg.id, msg);
-                  }
-                }}
+                placeholder="Yanıtınızı yazın..."
+                style={{flex:1,padding:"8px 12px",border:`1.5px solid ${C.border}`,borderRadius:6,fontSize:13,outline:"none",background:"#fff",color:C.ink}}
+                onKeyDown={e => {if(e.key === "Enter" && !e.shiftKey) {e.preventDefault();sendReply(msg.id, msg);}}}
               />
-              <button 
-                onClick={() => sendReply(msg.id, msg)}
-                style={{
-                  background: C.gold,
-                  color: C.ink,
-                  border:"none",
-                  padding:"8px 16px",
-                  borderRadius:6,
-                  cursor:"pointer",
-                  fontFamily:"'Cinzel',serif",
-                  fontSize:10,
-                  fontWeight:700,
-                  whiteSpace:"nowrap"
-                }}
-              >
-                ↩ {t.msg_reply || "YANITLA"}
+              <button onClick={() => sendReply(msg.id, msg)}
+                style={{background: C.gold,color: C.ink,border:"none",padding:"8px 16px",borderRadius:6,cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:10,fontWeight:700,whiteSpace:"nowrap"}}>
+                ↩ YANITLA
               </button>
             </div>
           </div>
@@ -870,10 +518,7 @@ function MessagesTab({user, t, articles, toast_}) {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   DÜZELTİLMİŞ ReviewForm — readOnly prop eklendi
-   Tamamlanmış değerlendirmelerde form kilitleniyor
-───────────────────────────────────────────────────────────── */
+/* ── KOMPAKT REVIEW FORM ── */
 function ReviewForm({review, article, lang, t, onSubmit, readOnly = false}) {
   const [answers, setAnswers] = useState({});
   const [decision, setDecision] = useState("");
@@ -882,26 +527,20 @@ function ReviewForm({review, article, lang, t, onSubmit, readOnly = false}) {
   const [busy, setBusy] = useState(false);
   const [activeSection, setActiveSection] = useState(0);
 
-  // readOnly modunda değerleri review'dan yükle
   useEffect(() => {
     if (readOnly && review?.answers_json) {
       try {
-        setAnswers(JSON.parse(review.answers_json));
+        const parsed = JSON.parse(review.answers_json);
+        setAnswers(parsed);
         setDecision(review.decision || "");
         setCommentsEditor(review.comments_editor || "");
         setCommentsAuthor(review.comments_author || "");
-      } catch (e) {
-        console.error("Review parse error:", e);
-      }
+      } catch (e) {console.error(e);}
     }
   }, [readOnly, review]);
 
   const totalQuestions = REVIEW_SECTIONS.flatMap(s=>s.questions).length;
-  const answeredCount = useMemo(()=>{
-    return REVIEW_SECTIONS.flatMap(s=>s.questions)
-      .filter(q=>answers[q.id]>=1&&answers[q.id]<=5).length;
-  },[answers]);
-
+  const answeredCount = useMemo(()=>REVIEW_SECTIONS.flatMap(s=>s.questions).filter(q=>answers[q.id]>=1&&answers[q.id]<=5).length,[answers]);
   const allAnswered = readOnly ? true : answeredCount === totalQuestions;
 
   const sectionScore = (section)=>{
@@ -924,58 +563,35 @@ function ReviewForm({review, article, lang, t, onSubmit, readOnly = false}) {
     setBusy(false);
   };
 
-  const decisions=[
-    {k:"accept",l:t.review_decision_accept,c:"#065f46",bg:"#d1fae5"},
-    {k:"minor",l:t.review_decision_minor,c:"#b45309",bg:"#fef3c7"},
-    {k:"major",l:t.review_decision_major,c:"#6d28d9",bg:"#ede9fe"},
-    {k:"reject",l:t.review_decision_reject,c:"#991b1b",bg:"#fee2e2"},
-  ];
-
+  const decisions=[{k:"accept",l:"Kabul",c:"#065f46",bg:"#d1fae5"},{k:"minor",l:"Küçük Revizyon",c:"#b45309",bg:"#fef3c7"},{k:"major",l:"Büyük Revizyon",c:"#6d28d9",bg:"#ede9fe"},{k:"reject",l:"Red",c:"#991b1b",bg:"#fee2e2"}];
   const isSectionComplete = (sec) => sec.questions.every(q=>answers[q.id]>=1);
 
-  // ═══════════════════════════════════════════════════════════
-  // READONLY GÖRÜNÜMÜ - Tamamlanmış değerlendirme (KİLİTLİ)
-  // ═══════════════════════════════════════════════════════════
+  // READONLY GÖRÜNÜMÜ
   if (readOnly) {
     return(
       <div>
-        {/* Makale Bilgisi */}
         <div style={{background:C.ink,borderRadius:12,padding:"20px 24px",marginBottom:24}}>
-          <div style={{fontFamily:"'Cinzel',serif",fontSize:9,color:C.gold,letterSpacing:3,marginBottom:8}}>
-            ✓ TAMAMLANMIŞ DEĞERLENDİRME
-          </div>
-          <h3 style={{fontFamily:"'Cinzel',serif",color:"#f0e6cc",fontSize:15,margin:"0 0 8px"}}>
-            {article?.title}
-          </h3>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:9,color:C.gold,letterSpacing:3,marginBottom:8}}>✓ TAMAMLANMIŞ DEĞERLENDİRME</div>
+          <h3 style={{fontFamily:"'Cinzel',serif",color:"#f0e6cc",fontSize:15,margin:"0 0 8px"}}>{article?.title}</h3>
           <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
             <span style={{fontSize:12,color:C.gold}}>{article?.field}</span>
             {article?.file_url && <a href={article.file_url} target="_blank" style={{fontSize:12,color:"#a0c4bc"}}>📄 İndir</a>}
           </div>
         </div>
 
-        {/* Sonuç Özeti - Kilitli görünüm */}
         <div style={{background:"#f0fdf4",borderRadius:12,padding:"24px 28px",marginBottom:20,border:`2px solid #16a34a`}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
             <div>
-              <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:"#16a34a",letterSpacing:1}}>
-                DEĞERLENDİRME KAYDEDİLDİ
-              </div>
-              <div style={{fontSize:13,color:"#166534",marginTop:4}}>
-                Bu değerlendirme tamamlanmış ve kilitlenmiştir.
-              </div>
+              <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:"#16a34a",letterSpacing:1}}>DEĞERLENDİRME KAYDEDİLDİ</div>
+              <div style={{fontSize:13,color:"#166534",marginTop:4}}>Bu değerlendirme tamamlanmış ve kilitlenmiştir.</div>
             </div>
             <div style={{textAlign:"right"}}>
-              <div style={{fontFamily:"'Cinzel',serif",fontSize:36,fontWeight:900,color:C.gold}}>
-                {totalScore}<span style={{fontSize:18}}>/5</span>
-              </div>
+              <div style={{fontFamily:"'Cinzel',serif",fontSize:36,fontWeight:900,color:C.gold}}>{totalScore}<span style={{fontSize:18}}>/5</span></div>
             </div>
           </div>
           
-          {/* Karar Badge */}
           <div style={{background:"#fff",borderRadius:10,padding:"16px 20px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
-            <span style={{fontSize:24}}>
-              {{accept:"✅",minor:"📝",major:"✏️",reject:"❌"}[decision] || "📋"}
-            </span>
+            <span style={{fontSize:24}}>{{accept:"✅",minor:"📝",major:"✏️",reject:"❌"}[decision] || "📋"}</span>
             <div>
               <div style={{fontSize:11,color:C.muted}}>KARAR</div>
               <div style={{fontSize:15,fontWeight:700,color:decisions.find(d=>d.k===decision)?.c||C.ink}}>
@@ -984,7 +600,6 @@ function ReviewForm({review, article, lang, t, onSubmit, readOnly = false}) {
             </div>
           </div>
 
-          {/* Bölüm Puanları */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:16}}>
             {REVIEW_SECTIONS.map(s=>{
               const sc = sectionScore(s);
@@ -994,36 +609,27 @@ function ReviewForm({review, article, lang, t, onSubmit, readOnly = false}) {
                     <span style={{fontSize:16,color:s.color}}>{s.icon}</span>
                     <span style={{fontSize:11,color:C.muted}}>{s.title[lang]||s.title.tr}</span>
                   </div>
-                  <span style={{fontFamily:"'Cinzel',serif",fontSize:16,fontWeight:700,color:sc?s.color:"#ccc"}}>
-                    {sc || "—"}
-                  </span>
+                  <span style={{fontFamily:"'Cinzel',serif",fontSize:16,fontWeight:700,color:sc?s.color:"#ccc"}}>{sc || "—"}</span>
                 </div>
               );
             })}
           </div>
 
-          {/* Yazara Yorum */}
           {commentsAuthor && (
             <div style={{background:"#fff",borderRadius:10,padding:"16px 20px",marginBottom:12,borderLeft:`4px solid ${C.teal}`}}>
-              <div style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.teal,letterSpacing:1,marginBottom:8}}>
-                YAZARA İLETİLEN YORUM
-              </div>
+              <div style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.teal,letterSpacing:1,marginBottom:8}}>YAZARA İLETİLEN YORUM</div>
               <p style={{margin:0,fontSize:14,color:"#444",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{commentsAuthor}</p>
             </div>
           )}
 
-          {/* Editöre Gizli Not */}
           {commentsEditor && (
             <div style={{background:"#fffbf0",borderRadius:10,padding:"16px 20px",border:`1px dashed ${C.gold}`}}>
-              <div style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.rust,letterSpacing:1,marginBottom:8}}>
-                🔒 EDİTÖRE GİZLİ NOT (Yazar Görmez)
-              </div>
+              <div style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.rust,letterSpacing:1,marginBottom:8}}>🔒 EDİTÖRE GİZLİ NOT (Yazar Görmez)</div>
               <p style={{margin:0,fontSize:13.5,color:"#555",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{commentsEditor}</p>
             </div>
           )}
         </div>
 
-        {/* Kilit Mesajı */}
         <div style={{background:C.cream,borderRadius:10,padding:"16px 20px",textAlign:"center",border:`1px solid ${C.border}`}}>
           <div style={{fontSize:24,marginBottom:8}}>🔒</div>
           <p style={{margin:0,fontSize:13,color:C.muted,fontStyle:"italic"}}>
@@ -1035,14 +641,219 @@ function ReviewForm({review, article, lang, t, onSubmit, readOnly = false}) {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // NORMAL DÜZENLEME MODU (Mevcut kod aynen kalıyor)
-  // ═══════════════════════════════════════════════════════════
+  // NORMAL DÜZENLEME MODU
   return(
     <div>
-      {/* Makale Bilgisi */}
       <div style={{background:C.ink,borderRadius:12,padding:"20px 24px",marginBottom:24}}>
         <div style={{fontFamily:"'Cinzel',serif",fontSize:9,color:C.gold,letterSpacing:3,marginBottom:8}}>DEĞERLENDİRİLECEK MAKALE</div>
-        <h3 style={{fontFamily:"'Cinzel',serif",color:"#f0e6cc",fontSize:15,margin:"0 0 8px",lineHeight:1.5}}>{article?.title}</h3>
+        <h3 style={{fontFamily:"'Cinzel',serif",color:"#f0e6cc",fontSize:15,margin:"0 0 8px"}}>{article?.title}</h3>
         <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-          <span style={{fontSize:12,color:C.gold}}>{article
+          <span style={{fontSize:12,color:C.gold}}>{article?.field}</span>
+          {article?.file_url&&<a href={article.file_url} target="_blank" style={{fontSize:12,color:"#a0c4bc"}}>📄 İndir</a>}
+        </div>
+      </div>
+
+      <div style={{background:C.cream,borderRadius:10,padding:"14px 18px",marginBottom:20,border:`1px solid ${C.border}`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <span style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.muted,letterSpacing:1}}>GENEL İLERLEME</span>
+          <span style={{fontFamily:"'Cinzel',serif",fontSize:13,fontWeight:700,color:allAnswered?C.teal:C.rust}}>{answeredCount} / {totalQuestions}</span>
+        </div>
+        <div style={{background:C.border,borderRadius:6,height:8,overflow:"hidden"}}>
+          <div style={{height:"100%",width:`${(answeredCount/totalQuestions)*100}%`,background:allAnswered?C.teal:C.gold,borderRadius:6,transition:"width 0.3s"}}/>
+        </div>
+        {!allAnswered&&<p style={{fontSize:11,color:C.muted,marginTop:6,fontStyle:"italic"}}>Tüm bölümleri tamamladıktan sonra değerlendirmeyi gönderebilirsiniz.</p>}
+        {allAnswered&&<p style={{fontSize:11,color:C.teal,marginTop:6,fontWeight:700}}>✓ Tüm sorular yanıtlandı. Aşağıdan kararınızı verin.</p>}
+      </div>
+
+      <div style={{display:"flex",gap:6,marginBottom:24}}>
+        {REVIEW_SECTIONS.map((s,i)=>(
+          <button key={s.id} onClick={()=>setActiveSection(i)}
+            style={{flex:1,padding:"8px 4px",borderRadius:8,border:`2px solid ${activeSection===i?s.color:isSectionComplete(s)?`${s.color}88`:"#d4c9b4"}`,background:activeSection===i?s.color:isSectionComplete(s)?`${s.color}15`:"#fff",cursor:"pointer"}}>
+            <div style={{fontSize:16,color:activeSection===i?"#fff":s.color}}>{isSectionComplete(s)?"✓":s.icon}</div>
+            <div style={{fontSize:9,fontFamily:"'Cinzel',serif",color:activeSection===i?"#fff":C.muted}}>{i+1}/{REVIEW_SECTIONS.length}</div>
+          </button>
+        ))}
+      </div>
+
+      {REVIEW_SECTIONS.map((sec,si)=>(
+        si===activeSection&&(
+          <div key={sec.id} style={{background:"#fff",borderRadius:12,padding:"28px 32px",border:`2px solid ${sec.color}44`,borderTop:`4px solid ${sec.color}`,marginBottom:20}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:24,color:sec.color}}>{sec.icon}</span>
+                <div>
+                  <h4 style={{fontFamily:"'Cinzel',serif",margin:0,fontSize:14,fontWeight:700}}>{sec.title[lang]||sec.title.tr}</h4>
+                  <div style={{fontSize:11,color:C.muted}}>Bölüm {si+1} / {REVIEW_SECTIONS.length}</div>
+                </div>
+              </div>
+              {sectionScore(sec)>0&&<div style={{textAlign:"right"}}><div style={{fontFamily:"'Cinzel',serif",fontSize:20,fontWeight:700,color:sec.color}}>{sectionScore(sec)}</div></div>}
+            </div>
+            {sec.questions.map(q=>(
+              <LikertQuestion key={q.id} question={q} lang={lang} value={answers[q.id]||0} onChange={v=>setAnswers(prev=>({...prev,[q.id]:v}))}/>
+            ))}
+            <div style={{display:"flex",justifyContent:"flex-end",marginTop:10,gap:8}}>
+              {si>0&&<button onClick={()=>setActiveSection(si-1)} style={{background:"none",border:`1px solid ${C.border}`,borderRadius:7,padding:"8px 18px",cursor:"pointer"}}>← Önceki</button>}
+              {si<REVIEW_SECTIONS.length-1&&<button onClick={()=>setActiveSection(si+1)} style={{background:sec.color,color:"#fff",border:"none",borderRadius:7,padding:"8px 18px",cursor:"pointer"}}>Sonraki →</button>}
+            </div>
+          </div>
+        )
+      ))}
+
+      <div style={{background:allAnswered?C.cream:"#f0eee8",borderRadius:12,padding:"28px 32px",border:allAnswered?`2px solid ${C.teal}`:`1px solid ${C.border}`,marginBottom:20,opacity:allAnswered?1:0.55,position:"relative"}}>
+        {!allAnswered && <div style={{position:"absolute",inset:0,borderRadius:12,zIndex:10,cursor:"not-allowed"}}/>}
+        
+        <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:allAnswered?C.teal:C.muted,letterSpacing:1.5,marginBottom:16}}>
+          {allAnswered?"✓ GENEL DEĞERLENDİRME":"🔒 Tüm soruları yanıtlayın"}
+        </div>
+
+        <div style={{display:"flex",alignItems:"center",gap:16,background:"#fff",borderRadius:10,padding:"16px 20px",marginBottom:20,border:`1px solid ${C.border}`}}>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:36,fontWeight:900,color:C.gold}}>{totalScore||"—"}</div>
+          <div>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.muted}}>ORTALAMA PUAN</div>
+            <div style={{fontSize:12,color:C.muted}}>5 üzerinden · {totalQuestions} soru</div>
+          </div>
+        </div>
+
+        <div style={{marginBottom:16}}>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.rust,letterSpacing:1.5,marginBottom:10}}>KARAR *</div>
+          <div style={{display:"flex",gap:8}}>
+            {decisions.map(d=>(
+              <button key={d.k} onClick={()=>allAnswered&&setDecision(d.k)}
+                style={{flex:1,padding:"12px 4px",borderRadius:8,border:`2px solid ${decision===d.k?d.c:C.border}`,background:decision===d.k?d.bg:"#fff",color:d.c,fontSize:12,fontWeight:700,cursor:allAnswered?"pointer":"default"}}>
+                {d.l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{marginBottom:12}}>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.teal,letterSpacing:1.5,marginBottom:8}}>YAZARA YORUM</div>
+          <textarea value={commentsAuthor} onChange={e=>allAnswered&&setCommentsAuthor(e.target.value)}
+            placeholder="Yazara iletilecek genel değerlendirme yorumunuz..." rows={4} style={{...INP,resize:"vertical"}}/>
+        </div>
+
+        <div style={{marginBottom:20}}>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:10,color:C.rust,letterSpacing:1.5,marginBottom:8}}>🔒 EDİTÖRE GİZLİ NOT</div>
+          <textarea value={commentsEditor} onChange={e=>allAnswered&&setCommentsEditor(e.target.value)}
+            placeholder="Yazara iletilmeyecek, yalnızca editörün göreceği gizli notlarınız..." rows={3} style={{...INP,resize:"vertical",background:"#fffbf0"}}/>
+        </div>
+
+        <button onClick={handleSubmit} disabled={busy || !allAnswered || !decision}
+          style={{width:"100%",padding:"15px 0",borderRadius:9,border:"none",background:(!allAnswered||!decision)?"#ccc":C.teal,color:(!allAnswered||!decision)?"#888":"#fff",cursor:(!allAnswered||!decision)?"not-allowed":"pointer",fontFamily:"'Cinzel',serif",fontSize:14,fontWeight:700}}>
+          {busy ? "GÖNDERİLİYOR..." : (!allAnswered ? "🔒 Önce tüm soruları yanıtlayın" : !decision ? "Lütfen bir karar seçin" : "✓ DEĞERLENDİRMEYİ GÖNDER")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── HAKEM PANELİ ── */
+function HakemPanel({user, t, lang, toast_}) {
+  const [atamalar, setAtamalar] = useState([]);
+  const [makaleler, setMakaleler] = useState({});
+  const [acik, setAcik] = useState(null);
+
+  const yukle = useCallback(async()=>{
+    const{data}=await supa.from("reviews").select("*").eq("reviewer_email",user.email).order("assigned_at",{ascending:false});
+    if(!data) return;
+    setAtamalar(data);
+    const ids=[...new Set(data.map(r=>r.article_id))];
+    if(ids.length>0){
+      const{data:arts}=await supa.from("articles").select("*").in("id",ids);
+      if(arts){const map={};arts.forEach(a=>{map[a.id]=a;});setMakaleler(map);}
+    }
+  },[user.email]);
+
+  useEffect(()=>{yukle();},[yukle]);
+
+  const handleReviewSubmit = async(reviewId, articleId, {answers, decision, commentsEditor, commentsAuthor, totalScore})=>{
+    const statusMap={accept:"baskida",minor:"revizyon",major:"revizyon",reject:"reddedildi"};
+    const decisionLabels={accept:"Kabul",minor:"Küçük Revizyon",major:"Büyük Revizyon",reject:"Red"};
+
+    // 1. Review kaydını güncelle
+    await supa.from("reviews").update({
+      status:"tamamlandi",
+      decision,
+      answers_json: JSON.stringify(answers),
+      comments_editor: commentsEditor,
+      comments_author: commentsAuthor,
+      total_score: parseFloat(totalScore),
+      completed_at: new Date().toISOString()
+    }).eq("id",reviewId);
+
+    // 2. Makale durumunu güncelle
+    await supa.from("articles").update({status:statusMap[decision]||"revizyon"}).eq("id",articleId);
+
+    // 3. Makale bilgilerini çek
+    const{data:artData}=await supa.from("articles").select("*").eq("id",articleId).maybeSingle();
+
+    // 4. EDİTÖRE BİLDİRİM GÖNDER - DÜZELTİLMİŞ
+    const editorNotification = [
+      `📋 YENİ HAKEM DEĞERLENDİRMESİ TAMAMLANDI`,
+      ``,
+      `Makale: "${artData?.title || '—'}"`,
+      `Yazar: ${artData?.author || '—'} (${artData?.author_email || '—'})`,
+      ``,
+      `👤 Hakem: ${user.name} (${user.email})`,
+      `📊 Karar: ${decisionLabels[decision] || decision}`,
+      `⭐ Ortalama Puan: ${totalScore} / 5.0`,
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+      `📄 DETAYLI SONUÇLAR:`,
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+    ];
+
+    REVIEW_SECTIONS.forEach(sec => {
+      const vals = sec.questions.map(q => answers[q.id]).filter(v => v > 0);
+      const avg = vals.length ? (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1) : "—";
+      editorNotification.push(`${sec.icon} ${sec.title.tr}: ${avg}/5`);
+    });
+
+    editorNotification.push(
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+      `💬 YAZARA İLETİLECEK YORUM:`,
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+      commentsAuthor || "(Yorum girilmemiş)",
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+      `🔒 EDİTÖRE ÖZEL NOT (Gizli):`,
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+      commentsEditor || "(Gizli not girilmemiş)",
+      ``,
+      `---`,
+      `ARSİS Değerlendirme Sistemi`,
+      `Tarih: ${new Date().toLocaleString('tr-TR')}`
+    );
+
+    // Editör bildirimi - DÜZELTİLMİŞ
+    await supa.from("editor_messages").insert([{
+      from_editor: true,
+      from_name: user.name,
+      from_email: user.email,
+      to_email: "arsisakademik@gmail.com",
+      author_email: artData?.author_email,
+      author_name: artData?.author,
+      article_id: articleId,
+      article_title: artData?.title || "",
+      body: editorNotification.join("\n"),
+      parent_id: null,
+      is_system_notification: true,
+      notification_type: "review_completed",
+      review_id: reviewId,
+    });
+
+    toast_("✓ Değerlendirme tamamlandı ve editöre iletildi.");
+    setAcik(null);
+    yukle();
+  };
+
+  return(
+    <div>
+      <h3 style={{fontFamily:"'Cinzel',serif",margin:"0 0 6px",fontSize:17,letterSpacing:1,color:C.ink}}>{t.review_panel}</h3>
+      <p style={{fontSize:13,color:C.muted,marginBottom:24,fontStyle:"italic"}}>{t.review_assigned}</p>
+
+      {atamalar.length===0?(
+        <div style={{textAlign:"center",padding:"60px 20px",color:C.muted,background:C.cream,borderRadius:12,border:`1px solid ${C.border}`}}>
+          <div style={{fontSize:32,marginBottom:12}}>⊕</div>
+          <p style={{fontStyle:"italic"}}>Henüz size atanmış makale yok.</p
