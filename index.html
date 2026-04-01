@@ -1,31 +1,1754 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-  <title>ARSİS Test</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ARSİS — Journal of Music, Musicology & Anthropology</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#f5f0e8;font-family:Georgia,serif}
+    @keyframes wave{from{transform:scaleY(0.35)}to{transform:scaleY(1)}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    ::-webkit-scrollbar{width:5px}
+    ::-webkit-scrollbar-thumb{background:#c9a84c;border-radius:3px}
+    a{color:inherit;text-decoration:none}
+    button{cursor:pointer;font-family:Georgia,serif}
+    input,textarea,select{font-family:Georgia,serif;outline:none}
+  </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-  const App = () => {
-    const [ok, setOk] = React.useState(false);
-    React.useEffect(() => {
-      try {
-        const s = supabase.createClient('https://nivablklgvgykwauzbeo.supabase.co',
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU');
-        setOk(true);
-      } catch(e) { document.body.innerHTML += '<p>Hata: ' + e.message + '</p>'; }
-    }, []);
-    return <div style={{padding:40,fontFamily:'sans-serif'}}>
-      <h1 style={{color:'#c9a84c'}}>ARSİS Test</h1>
-      <p>React: ✓</p>
-      <p>Supabase: {ok ? '✓' : '...'}</p>
-    </div>;
+
+
+// MOCK SUPABASE - önizleme için
+const SUPA_URL = "https://nivablklgvgykwauzbeo.supabase.co";
+const SUPA_KEY = "mock";
+const _mockData = {
+  articles:[
+    {id:1,title:"Doğu Karadeniz'de Kemençe Geleneği",author:"Ayşe Duman",author_email:"a.duman@ktu.edu.tr",field:"Etnomüzikoloji",status:"hakemde",abstract:"Bu çalışma kemençe geleneğini kültürel bellek kuramı perspektifinden ele almaktadır.",created_at:"2026-01-12T10:00:00Z",file_url:null,keywords:"kemençe; kültürel bellek",coauthors:"Ercan Yılmaz"},
+    {id:2,title:"Alevi Cem Törenlerinde Müziğin Ritüel Ekonomisi",author:"Mehmet Karahan",author_email:"m.karahan@hacettepe.edu.tr",field:"Müzik Antropolojisi",status:"baskida",abstract:"Cem töreninde müziğin toplumsal işlevleri üzerine bir araştırma.",created_at:"2026-01-18T10:00:00Z",file_url:null,keywords:"Alevilik; cem",coauthors:null},
+    {id:3,title:"Osmanlı Arşivlerinde Ud Yapımı",author:"Selin Arslan",author_email:"s.arslan@itu.edu.tr",field:"Organoloji & Çalgı Yapımı",status:"beklemede",abstract:"18. yüzyıl İstanbul luthieria pratiğine ilişkin arşiv bulguları.",created_at:"2026-01-22T10:00:00Z",file_url:null,keywords:"ud; Osmanlı",coauthors:"James Whitfield"},
+  ],
+  users:[
+    {id:1,name:"Mehmet Söylemez",email:"editor@arsis.tr",password:"1234",institution:"Ankara Müzik ve Güzel Sanatlar Üniversitesi",orcid:"0000-0001-0000-0001",role:"editor"},
+    {id:2,name:"Ayşe Duman",email:"a.duman@ktu.edu.tr",password:"1234",institution:"Karadeniz Teknik Üniversitesi",orcid:"0000-0001-2345-6789",role:"yazar"},
+    {id:3,name:"Prof. Dr. Ercan Yılmaz",email:"e.yilmaz@hacettepe.edu.tr",password:"1234",institution:"Hacettepe Üniversitesi",orcid:"0000-0002-3456-7890",role:"hakem"},
+  ],
+  forum_posts:[
+    {id:1,title:"Makale gönderme süreci hakkında",body:"Merhaba, makale gönderme sürecinde hangi formata uymalıyım?",author:"Ayşe Duman",author_email:"a.duman@ktu.edu.tr",created_at:"2026-02-10T09:00:00Z"},
+  ],
+  forum_replies:[
+    {id:1,post_id:1,body:"Merhaba! Yazım Kuralları sayfamızdaki şablonu kullanabilirsiniz. Times New Roman 12pt, APA 7 formatında.",author:"Mehmet Söylemez",author_email:"editor@arsis.tr",created_at:"2026-02-10T10:30:00Z"},
+  ],
+  reviews:[
+    {id:1,article_id:1,reviewer_email:"e.yilmaz@hacettepe.edu.tr",reviewer_name:"Prof. Dr. Ercan Yılmaz",status:"tamamlandi",decision:"kabul",comments:"Makale alanına özgün katkı sunmaktadır. Küçük düzeltmelerle yayımlanabilir.",assigned_at:"2026-01-20T10:00:00Z",completed_at:"2026-02-01T10:00:00Z"},
+  ],
+  article_notes:[],
+};
+
+const supa = {
+  from:(table)=>({
+    select:(cols)=>({
+      order:(col,opts)=>({then:(fn)=>fn({data:_mockData[table]||[]})}),
+      eq:(col,val)=>({
+        order:(c,o)=>({then:(fn)=>fn({data:(_mockData[table]||[]).filter(r=>r[col]===val)})}),
+        single:()=>({then:(fn)=>fn({data:(_mockData[table]||[]).find(r=>r[col]===val)||null})}),
+        then:(fn)=>fn({data:(_mockData[table]||[]).filter(r=>r[col]===val)}),
+      }),
+      in:(col,vals)=>({order:(c,o)=>({then:(fn)=>fn({data:(_mockData[table]||[]).filter(r=>vals.includes(r[col]))})}),then:(fn)=>fn({data:(_mockData[table]||[]).filter(r=>vals.includes(r[col]))})}),
+      single:()=>({then:(fn)=>fn({data:null})}),
+      then:(fn)=>fn({data:_mockData[table]||[]}),
+    }),
+    insert:(rows)=>({
+      select:()=>({single:()=>new Promise(res=>{const row={...rows[0],id:Date.now(),created_at:new Date().toISOString()};(_mockData[table]=_mockData[table]||[]).push(row);res({data:row,error:null});})}),
+      then:(fn)=>{ (_mockData[table]=_mockData[table]||[]).push(...rows.map(r=>({...r,id:Date.now(),created_at:new Date().toISOString()})));fn({error:null}); }
+    }),
+    update:(vals)=>({
+      eq:(col,val)=>({then:(fn)=>{(_mockData[table]||[]).forEach(r=>{if(r[col]===val)Object.assign(r,vals);});fn({error:null});}})
+    }),
+  }),
+  storage:{from:()=>({upload:()=>new Promise(res=>res({error:null})),getPublicUrl:()=>({data:{publicUrl:"#"}})})}
+};
+
+
+// ─── RENKLER ────────────────────────────────────────────────────────────────
+const G = {
+  ink:"#1a1208", paper:"#f5f0e8", cream:"#ede8dc",
+  gold:"#c9a84c", goldL:"#e8d080", rust:"#8b3a2a",
+  teal:"#1d6a5e", muted:"#7a6e5f", border:"#d4c9b4",
+  white:"#ffffff"
+};
+
+// ─── DURUM ETİKETLERİ ────────────────────────────────────────────────────────
+const DURUM = {
+  beklemede: {tr:"Ön İnceleme",    en:"Under Review",  renk:"#1e40af", bg:"#dbeafe"},
+  hakemde:   {tr:"Hakemde",        en:"Peer Review",   renk:"#b45309", bg:"#fef3c7"},
+  revizyon:  {tr:"Revizyon",       en:"Revision",      renk:"#6d28d9", bg:"#ede9fe"},
+  baskida:   {tr:"Baskıya Hazır",  en:"Ready",         renk:"#065f46", bg:"#d1fae5"},
+  yayinda:   {tr:"Yayınlandı",     en:"Published",     renk:"#065f46", bg:"#d1fae5"},
+  reddedildi:{tr:"Reddedildi",     en:"Rejected",      renk:"#991b1b", bg:"#fee2e2"},
+};
+
+// ─── STİL YARDIMCILARI ───────────────────────────────────────────────────────
+const inp = {
+  width:"100%", padding:"10px 14px", border:`1.5px solid ${G.border}`,
+  borderRadius:6, fontSize:14, background:G.white, color:G.ink,
+  marginBottom:10, boxSizing:"border-box", display:"block"
+};
+const btn_gold = {
+  background:G.gold, color:G.ink, border:"none", padding:"11px 0",
+  borderRadius:7, fontWeight:700, fontSize:14, width:"100%", marginTop:4,
+  fontFamily:"Georgia,serif", letterSpacing:0.5
+};
+
+// ─── WAVE LOGO ───────────────────────────────────────────────────────────────
+function WaveLogo({size=28}) {
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:2,height:size}}>
+      {[0.5,0.9,0.65,1,0.7,0.9,0.5].map((h,i)=>(
+        <div key={i} style={{
+          width:3, background:G.gold, borderRadius:2,
+          height:h*size,
+          animation:`wave 1.4s ease-in-out ${i*0.12}s infinite alternate`
+        }}/>
+      ))}
+    </div>
+  );
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function Toast({msg,type}) {
+  if(!msg) return null;
+  return (
+    <div style={{
+      position:"fixed", bottom:24, left:"50%", transform:"translateX(-50%)",
+      background: type==="err"?"#991b1b":G.teal,
+      color:"#fff", padding:"12px 28px", borderRadius:8,
+      fontSize:14, fontWeight:600, zIndex:1000, boxShadow:"0 4px 20px rgba(0,0,0,0.3)"
+    }}>{msg}</div>
+  );
+}
+
+// ─── MODAL WRAPPER ────────────────────────────────────────────────────────────
+function Modal({title, sub, children, onClose}) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position:"fixed", inset:0, background:"rgba(10,8,4,0.75)",
+        zIndex:300, display:"flex", alignItems:"center", justifyContent:"center", padding:20
+      }}
+    >
+      <div
+        onClick={e=>e.stopPropagation()}
+        style={{
+          background:G.paper, borderRadius:16, padding:"36px 40px",
+          width:"100%", maxWidth:500, maxHeight:"90vh", overflowY:"auto",
+          border:`1px solid ${G.gold}44`
+        }}
+      >
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:24}}>
+          <div>
+            <div style={{fontFamily:"serif",fontSize:16,fontWeight:700,color:G.ink,letterSpacing:1}}>{title}</div>
+            {sub&&<div style={{fontSize:13,color:G.muted,marginTop:3}}>{sub}</div>}
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,color:G.muted,lineHeight:1}}>×</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─── FORUM: YENİ KONU FORMU ──────────────────────────────────────────────────
+function ForumYeniKonu({user, onGonder}) {
+  const baslikRef = React.useRef(null);
+  const icerikRef = React.useRef(null);
+  const [yukleniyor, setYukleniyor] = React.useState(false);
+
+  const gonder = async () => {
+    const baslik = baslikRef.current?.value?.trim();
+    const icerik = icerikRef.current?.value?.trim();
+    if (!baslik || !icerik) { alert("Konu başlığı ve mesaj zorunludur."); return; }
+    setYukleniyor(true);
+    await onGonder(baslik, icerik);
+    baslikRef.current.value = "";
+    icerikRef.current.value = "";
+    setYukleniyor(false);
   };
-  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+
+  return (
+    <div style={{background:G.cream,borderRadius:12,padding:"20px 24px",marginBottom:24,border:`1px solid ${G.border}`}}>
+      <div style={{fontSize:11,color:G.rust,letterSpacing:1.5,marginBottom:12,fontWeight:700}}>YENİ MESAJ</div>
+      <input ref={baslikRef} placeholder="Konu başlığı *" style={inp}/>
+      <textarea ref={icerikRef} placeholder="Mesajınızı yazın..." rows={4}
+        style={{...inp,resize:"vertical",marginBottom:12}}/>
+      <button onClick={gonder} disabled={yukleniyor}
+        style={{...btn_gold,width:"auto",padding:"10px 24px",opacity:yukleniyor?0.6:1}}>
+        {yukleniyor?"Gönderiliyor...":"GÖNDER"}
+      </button>
+    </div>
+  );
+}
+
+// ─── FORUM: YANIT KUTUSU ─────────────────────────────────────────────────────
+function ForumYanit({postId, onYanit}) {
+  const ref = React.useRef(null);
+  const [yukleniyor, setYukleniyor] = React.useState(false);
+
+  const gonder = async () => {
+    const text = ref.current?.value?.trim();
+    if (!text) return;
+    setYukleniyor(true);
+    await onYanit(postId, text);
+    ref.current.value = "";
+    setYukleniyor(false);
+  };
+
+  return (
+    <div style={{
+      background:G.paper, borderTop:`1px solid ${G.border}`,
+      padding:"10px 18px", display:"flex", gap:8, alignItems:"center"
+    }}>
+      <input
+        ref={ref}
+        placeholder="Yanıtınızı yazın..."
+        style={{flex:1, padding:"8px 12px", border:`1.5px solid ${G.border}`, borderRadius:6, fontSize:13}}
+        onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();gonder();} }}
+      />
+      <button onClick={gonder} disabled={yukleniyor}
+        style={{
+          background:G.gold, color:G.ink, border:"none",
+          padding:"8px 16px", borderRadius:6, fontSize:11, fontWeight:700, whiteSpace:"nowrap",
+          opacity:yukleniyor?0.6:1
+        }}>
+        {yukleniyor?"...":"↩ YANIT"}
+      </button>
+    </div>
+  );
+}
+
+// ─── FORUM: TEK GÖNDERI ──────────────────────────────────────────────────────
+function ForumGonderi({post, user, onYanit}) {
+  const [yanitlar, setYanitlar] = React.useState([]);
+  const [acik, setAcik] = React.useState(false);
+  const isEditor = user?.role === "editor";
+
+  React.useEffect(() => {
+    if (acik) {
+      supa.from("forum_replies").select("*")
+        .eq("post_id", post.id).order("created_at", {ascending:true})
+        .then(({data}) => { if (data) setYanitlar(data); });
+    }
+  }, [acik, post.id]);
+
+  const yanitEkle = async (postId, text) => {
+    await onYanit(postId, text);
+    const {data} = await supa.from("forum_replies").select("*")
+      .eq("post_id", post.id).order("created_at", {ascending:true});
+    if (data) setYanitlar(data);
+  };
+
+  return (
+    <div style={{border:`1px solid ${G.border}`,borderRadius:12,marginBottom:10,overflow:"hidden"}}>
+      <div
+        onClick={() => setAcik(!acik)}
+        style={{
+          background:G.white, padding:"14px 18px", cursor:"pointer",
+          display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12
+        }}
+      >
+        <div style={{flex:1}}>
+          <div style={{fontWeight:700,fontSize:13.5,color:G.ink,marginBottom:3}}>{post.title}</div>
+          <div style={{fontSize:11,color:G.muted}}>
+            {post.author}
+            {isEditor && <span style={{color:G.teal,marginLeft:6}}>({post.author_email})</span>}
+            {" · "}{post.created_at?.split("T")[0]}
+            {yanitlar.length > 0 && (
+              <span style={{
+                marginLeft:8,background:`${G.teal}15`,color:G.teal,
+                padding:"1px 7px",borderRadius:10,fontSize:10,fontWeight:700
+              }}>{yanitlar.length} yanıt</span>
+            )}
+          </div>
+        </div>
+        <span style={{color:G.gold,fontSize:14,flexShrink:0}}>{acik?"▲":"▼"}</span>
+      </div>
+
+      {acik && (
+        <div>
+          <div style={{padding:"14px 18px",background:`${G.gold}06`,borderTop:`1px solid ${G.border}`}}>
+            <p style={{fontSize:14,color:"#444",lineHeight:1.75,whiteSpace:"pre-wrap"}}>{post.body}</p>
+          </div>
+          {yanitlar.length > 0 && (
+            <div style={{background:G.cream,borderTop:`1px solid ${G.border}`}}>
+              {yanitlar.map((r,i) => (
+                <div key={r.id} style={{
+                  padding:"10px 18px",
+                  borderBottom: i<yanitlar.length-1 ? `1px solid ${G.border}44` : "none",
+                  background: r.author_email===user?.email ? G.white : G.cream
+                }}>
+                  <div style={{fontSize:11,color:r.author_email===user?.email?G.rust:G.teal,fontWeight:700,marginBottom:3}}>
+                    {r.author_email===user?.email ? "Siz" : isEditor ? `${r.author} (${r.author_email})` : r.author}
+                    {" · "}{r.created_at?.split("T")[0]}
+                  </div>
+                  <p style={{fontSize:13.5,color:"#444",lineHeight:1.7,margin:0}}>{r.body}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          <ForumYanit postId={post.id} onYanit={yanitEkle}/>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── MESAJLAR SEKMESİ ────────────────────────────────────────────────────────
+function MesajlarSekme({user, toast_}) {
+  const [gonderiler, setGonderiler] = React.useState([]);
+  const [yukleniyor, setYukleniyor] = React.useState(true);
+
+  const yukle = React.useCallback(async () => {
+    const {data} = await supa.from("forum_posts").select("*").order("created_at",{ascending:false});
+    if (data) setGonderiler(data);
+    setYukleniyor(false);
+  }, []);
+
+  React.useEffect(() => { yukle(); }, [yukle]);
+
+  const yeniKonu = React.useCallback(async (baslik, icerik) => {
+    await supa.from("forum_posts").insert([{
+      title:baslik, body:icerik,
+      author:user.name, author_email:user.email
+    }]);
+    await yukle();
+    toast_("✓ Mesajınız gönderildi!");
+  }, [user, yukle, toast_]);
+
+  const yanit = React.useCallback(async (postId, text) => {
+    await supa.from("forum_replies").insert([{
+      post_id:postId, body:text,
+      author:user.name, author_email:user.email
+    }]);
+    toast_("✓ Yanıtınız eklendi!");
+  }, [user, toast_]);
+
+  return (
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <h3 style={{fontSize:17,letterSpacing:1,color:G.ink,fontWeight:700}}>MESAJLAR</h3>
+        {gonderiler.length > 0 && (
+          <span style={{fontSize:11,color:G.muted}}>{gonderiler.length} konu</span>
+        )}
+      </div>
+      <ForumYeniKonu user={user} onGonder={yeniKonu}/>
+      {yukleniyor ? (
+        <div style={{textAlign:"center",padding:40,color:G.muted}}>Yükleniyor...</div>
+      ) : gonderiler.length === 0 ? (
+        <div style={{
+          textAlign:"center",padding:40,color:G.muted,fontStyle:"italic",
+          background:G.cream,borderRadius:12,border:`1px solid ${G.border}`
+        }}>
+          <div style={{fontSize:28,marginBottom:10}}>✉</div>
+          Henüz mesaj yok. İlk mesajı siz gönderin!
+        </div>
+      ) : gonderiler.map(p => (
+        <ForumGonderi key={p.id} post={p} user={user} onYanit={yanit}/>
+      ))}
+    </div>
+  );
+}
+
+// ─── YAZAR NOTLARI (editörden gelen notları gösterir) ────────────────────────
+function YazarNotlari({articleId}) {
+  const [notlar, setNotlar] = React.useState([]);
+
+  React.useEffect(() => {
+    supa.from("article_notes").select("*")
+      .eq("article_id", articleId).order("created_at",{ascending:false})
+      .then(({data}) => { if(data) setNotlar(data); });
+  }, [articleId]);
+
+  if (notlar.length === 0) return null;
+
+  return (
+    <div style={{
+      marginTop:10, padding:"10px 14px",
+      background:"#fff8e1", borderRadius:8, border:"1px solid #ffe082"
+    }}>
+      <div style={{fontSize:10,color:"#b45309",letterSpacing:1.5,fontWeight:700,marginBottom:8}}>
+        EDİTÖRDEN NOTLAR
+      </div>
+      {notlar.map(n => (
+        <div key={n.id} style={{marginBottom:6}}>
+          <div style={{fontSize:11,color:"#b45309",fontWeight:700,marginBottom:2}}>
+            {n.from_name} · {n.created_at?.split("T")[0]}
+          </div>
+          <div style={{fontSize:13,color:"#444",lineHeight:1.6}}>{n.content}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── HAKEM: TEK MAKALE KARTI ─────────────────────────────────────────────────
+function HakemMakaleKarti({review, makale, onDegerlendir}) {
+  const [acik, setAcik] = React.useState(false);
+  const [karar, setKarar] = React.useState("");
+  const yorumRef = React.useRef(null);
+  const tamam = review.status === "tamamlandi";
+
+  return (
+    <div style={{
+      border:`1px solid ${tamam?G.border:G.teal}`,
+      borderRadius:12, marginBottom:14, overflow:"hidden",
+      borderTop:`3px solid ${tamam?"#d1fae5":G.teal}`
+    }}>
+      <div
+        onClick={() => setAcik(!acik)}
+        style={{
+          background:G.white, padding:"16px 20px", cursor:"pointer",
+          display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12
+        }}
+      >
+        <div style={{flex:1}}>
+          <div style={{fontWeight:700,fontSize:13.5,color:G.ink,marginBottom:3,lineHeight:1.4}}>
+            {makale?.title || "Makale yükleniyor..."}
+          </div>
+          <div style={{fontSize:11,color:G.muted}}>
+            {makale?.author} · {makale?.field} · Atandı: {review.assigned_at?.split("T")[0]}
+          </div>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
+          <span style={{
+            fontSize:10, padding:"3px 10px", borderRadius:20, fontWeight:700,
+            background:tamam?"#d1fae5":"#dbeafe",
+            color:tamam?"#065f46":"#1e40af"
+          }}>
+            {tamam ? "✓ Tamamlandı" : "Bekliyor"}
+          </span>
+          <span style={{color:G.gold,fontSize:13}}>{acik?"▲":"▼"}</span>
+        </div>
+      </div>
+
+      {acik && (
+        <div style={{borderTop:`1px solid ${G.border}`}}>
+          {makale && (
+            <div style={{padding:"14px 20px",background:`${G.gold}06`,borderBottom:`1px solid ${G.border}`}}>
+              {makale.abstract && (
+                <p style={{fontSize:12,color:G.muted,fontStyle:"italic",marginBottom:8,lineHeight:1.6}}>
+                  "{makale.abstract.substring(0,300)}{makale.abstract.length>300?"...":""}"
+                </p>
+              )}
+              {makale.file_url && (
+                <a href={makale.file_url} target="_blank" style={{
+                  fontSize:12,color:G.white,background:G.teal,
+                  padding:"5px 14px",borderRadius:6,fontWeight:700
+                }}>📄 Makaleyi İndir</a>
+              )}
+            </div>
+          )}
+
+          {tamam ? (
+            <div style={{padding:"16px 20px",background:G.cream}}>
+              <div style={{fontSize:10,color:G.teal,letterSpacing:1.5,fontWeight:700,marginBottom:10}}>
+                DEĞERLENDİRMENİZ
+              </div>
+              <div style={{marginBottom:8}}>
+                <span style={{fontSize:12,fontWeight:700,color:G.ink}}>Karar: </span>
+                <span style={{
+                  fontSize:12,fontWeight:700,
+                  color:review.decision==="kabul"?"#065f46":review.decision==="revizyon"?"#6d28d9":"#991b1b"
+                }}>
+                  {review.decision==="kabul"?"✓ Kabul":review.decision==="revizyon"?"↻ Revizyon":"✗ Red"}
+                </span>
+              </div>
+              <div style={{
+                fontSize:13,color:"#444",lineHeight:1.7,
+                background:G.white,borderRadius:8,padding:"10px 14px",border:`1px solid ${G.border}`
+              }}>{review.comments}</div>
+              <div style={{fontSize:11,color:G.muted,marginTop:8}}>
+                Tamamlandı: {review.completed_at?.split("T")[0]}
+              </div>
+            </div>
+          ) : (
+            <div style={{padding:"16px 20px",background:G.cream}}>
+              <div style={{fontSize:10,color:G.rust,letterSpacing:1.5,fontWeight:700,marginBottom:12}}>
+                DEĞERLENDİRMENİZİ GİRİN
+              </div>
+              <div style={{display:"flex",gap:8,marginBottom:14}}>
+                {[["kabul","✓ Kabul","#065f46","#d1fae5"],
+                  ["revizyon","↻ Revizyon","#6d28d9","#ede9fe"],
+                  ["red","✗ Red","#991b1b","#fee2e2"]].map(([k,l,c,bg]) => (
+                  <button key={k} onClick={() => setKarar(k)} style={{
+                    flex:1, padding:"8px 0", borderRadius:7, fontWeight:700, fontSize:12,
+                    border:`2px solid ${karar===k?c:G.border}`,
+                    background:karar===k?bg:G.white, color:c
+                  }}>{l}</button>
+                ))}
+              </div>
+              <textarea
+                ref={yorumRef}
+                placeholder="Makalenin güçlü ve zayıf yönlerini, düzeltilmesi gereken noktaları belirtin..."
+                rows={6}
+                style={{
+                  width:"100%",padding:"10px 14px",border:`1.5px solid ${G.border}`,
+                  borderRadius:8,fontSize:13,background:G.white,color:G.ink,
+                  resize:"vertical",boxSizing:"border-box",marginBottom:12,lineHeight:1.7
+                }}
+              />
+              <button onClick={() => onDegerlendir(review.id, review.article_id, karar, yorumRef)}
+                style={{
+                  background:G.teal,color:G.white,border:"none",
+                  padding:"11px 28px",borderRadius:7,fontWeight:700,fontSize:12,letterSpacing:1
+                }}>
+                DEĞERLENDİRMEYİ GÖNDER →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── HAKEM PANELİ SEKMESİ ────────────────────────────────────────────────────
+function HakemSekme({user, toast_}) {
+  const [atamalar, setAtamalar] = React.useState([]);
+  const [makaleler, setMakaleler] = React.useState({});
+
+  const yukle = React.useCallback(async () => {
+    const {data} = await supa.from("reviews").select("*")
+      .eq("reviewer_email", user.email).order("assigned_at",{ascending:false});
+    if (!data) return;
+    setAtamalar(data);
+    const ids = [...new Set(data.map(r=>r.article_id))];
+    if (ids.length > 0) {
+      const {data:arts} = await supa.from("articles").select("*").in("id",ids);
+      if (arts) {
+        const m = {};
+        arts.forEach(a => { m[a.id]=a; });
+        setMakaleler(m);
+      }
+    }
+  }, [user.email]);
+
+  React.useEffect(() => { yukle(); }, [yukle]);
+
+  const degerlendir = React.useCallback(async (reviewId, articleId, karar, yorumRef) => {
+    const yorum = yorumRef.current?.value?.trim();
+    if (!yorum) { toast_("Lütfen değerlendirme yorumu yazın.", "err"); return; }
+    if (!karar) { toast_("Lütfen bir karar seçin.", "err"); return; }
+    await supa.from("reviews").update({
+      status:"tamamlandi", decision:karar,
+      comments:yorum, completed_at:new Date().toISOString()
+    }).eq("id", reviewId);
+    const yeniDurum = karar==="kabul"?"baskida":karar==="revizyon"?"revizyon":"reddedildi";
+    await supa.from("articles").update({status:yeniDurum}).eq("id",articleId);
+    toast_("✓ Değerlendirmeniz editöre iletildi!");
+    yukle();
+  }, [yukle, toast_]);
+
+  return (
+    <div>
+      <h3 style={{fontSize:17,letterSpacing:1,color:G.ink,fontWeight:700,marginBottom:6}}>HAKEM PANELİ</h3>
+      <p style={{fontSize:13,color:G.muted,marginBottom:24,fontStyle:"italic"}}>
+        Size atanan makaleler. Başlığa tıklayarak değerlendirmenizi girebilirsiniz.
+      </p>
+      {atamalar.length === 0 ? (
+        <div style={{
+          textAlign:"center",padding:"50px 20px",color:G.muted,
+          background:G.cream,borderRadius:12,border:`1px solid ${G.border}`
+        }}>
+          <div style={{fontSize:28,marginBottom:10}}>⊕</div>
+          <p style={{fontStyle:"italic"}}>Henüz size atanmış makale yok.</p>
+          <p style={{fontSize:12,marginTop:8}}>Editör atama yaptığında burada görünür.</p>
+        </div>
+      ) : atamalar.map(r => (
+        <HakemMakaleKarti key={r.id} review={r} makale={makaleler[r.article_id]} onDegerlendir={degerlendir}/>
+      ))}
+    </div>
+  );
+}
+
+// ─── YÖNETİM PANELİ ──────────────────────────────────────────────────────────
+function YonetimSekme({articles, users, toast_, loadArticles}) {
+  const [reviews, setReviews] = React.useState([]);
+  const [acikMakale, setAcikMakale] = React.useState(null);
+  const [sekme, setSekme] = React.useState("makaleler");
+  const [yazarNotMakale, setYazarNotMakale] = React.useState(null);
+  const notRef = React.useRef(null);
+
+  const yukleReviews = React.useCallback(async () => {
+    const {data} = await supa.from("reviews").select("*").order("assigned_at",{ascending:false});
+    if (data) setReviews(data);
+  }, []);
+
+  React.useEffect(() => { yukleReviews(); }, [yukleReviews]);
+
+  const durumGuncelle = async (id, durum) => {
+    await supa.from("articles").update({status:durum}).eq("id",id);
+    await loadArticles();
+    toast_("✓ Durum güncellendi!");
+  };
+
+  const hakemAta = async (makale, hakemEmail) => {
+    const hakem = users.find(u=>u.email===hakemEmail);
+    if (!hakem) return;
+    const zaten = reviews.some(r=>r.article_id===makale.id&&r.reviewer_email===hakemEmail);
+    if (zaten) { toast_("Bu hakem zaten atanmış.","err"); return; }
+    await supa.from("reviews").insert([{
+      article_id:makale.id, reviewer_email:hakem.email,
+      reviewer_name:hakem.name, status:"beklemede"
+    }]);
+    await supa.from("articles").update({status:"hakemde"}).eq("id",makale.id);
+    await loadArticles();
+    await yukleReviews();
+    toast_("✓ Hakem atandı!");
+  };
+
+  const yazaraNot = async () => {
+    const not = notRef.current?.value?.trim();
+    if (!not) { toast_("Not boş olamaz.","err"); return; }
+    await supa.from("article_notes").insert([{
+      article_id: yazarNotMakale.id,
+      to_email: yazarNotMakale.author_email,
+      from_name: "Editör",
+      content: not
+    }]);
+    toast_("✓ Not yazara iletildi!");
+    setYazarNotMakale(null);
+  };
+
+  const hakemler = users.filter(u=>u.role==="hakem");
+  const istatistik = [
+    {n:articles.length,          l:"Toplam Makale",    c:G.gold},
+    {n:articles.filter(a=>a.status==="beklemede").length, l:"Ön İncelemede", c:"#1e40af"},
+    {n:articles.filter(a=>a.status==="hakemde").length,   l:"Hakemde",       c:G.rust},
+    {n:reviews.filter(r=>r.status==="tamamlandi").length, l:"Değerlendirme", c:"#6d28d9"},
+    {n:articles.filter(a=>a.status==="baskida"||a.status==="yayinda").length, l:"Yayın", c:G.teal},
+    {n:users.length,             l:"Üye",              c:"#0891b2"},
+  ];
+
+  return (
+    <div>
+      <h3 style={{fontSize:17,letterSpacing:1,color:G.ink,fontWeight:700,marginBottom:20}}>YÖNETİM PANELİ</h3>
+
+      {/* İstatistik */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:24}}>
+        {istatistik.map(s => (
+          <div key={s.l} style={{
+            background:`${s.c}10`, borderRadius:10, padding:"12px 14px",
+            border:`1px solid ${s.c}30`, textAlign:"center"
+          }}>
+            <div style={{fontSize:24,fontWeight:700,color:s.c}}>{s.n}</div>
+            <div style={{fontSize:10,color:G.muted,marginTop:2}}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Sekmeler */}
+      <div style={{display:"flex",borderBottom:`2px solid ${G.border}`,marginBottom:20}}>
+        {[["makaleler","Makaleler & Hakem"],["degerlendirmeler","Değerlendirmeler"],["uyeler","Üyeler"]].map(([id,lbl]) => (
+          <button key={id} onClick={() => setSekme(id)} style={{
+            padding:"9px 18px", border:"none", background:"none",
+            fontSize:13, fontWeight:sekme===id?700:500,
+            color:sekme===id?G.rust:G.muted,
+            borderBottom:sekme===id?`2px solid ${G.gold}`:"2px solid transparent",
+            marginBottom:-2
+          }}>{lbl}</button>
+        ))}
+      </div>
+
+      {/* Makaleler */}
+      {sekme==="makaleler" && (
+        <div>
+          {articles.length === 0 ? (
+            <p style={{color:G.muted,fontStyle:"italic"}}>Henüz makale gönderilmedi.</p>
+          ) : articles.map(a => {
+            const d = DURUM[a.status]||{};
+            const aReviews = reviews.filter(r=>r.article_id===a.id);
+            const acik = acikMakale === a.id;
+            return (
+              <div key={a.id} style={{
+                border:`1px solid ${G.border}`, borderRadius:10, marginBottom:10,
+                overflow:"hidden", borderLeft:`4px solid ${d.renk||G.border}`
+              }}>
+                <div
+                  onClick={() => setAcikMakale(acik?null:a.id)}
+                  style={{
+                    padding:"13px 16px", background:G.white, cursor:"pointer",
+                    display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10
+                  }}
+                >
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:13,color:G.ink,marginBottom:3,lineHeight:1.4}}>{a.title}</div>
+                    <div style={{fontSize:11,color:G.muted,fontStyle:"italic"}}>
+                      {a.author} · {a.author_email} · {a.field} · {a.created_at?.split("T")[0]}
+                    </div>
+                    {aReviews.length > 0 && (
+                      <div style={{marginTop:5,display:"flex",gap:5,flexWrap:"wrap"}}>
+                        {aReviews.map(r => (
+                          <span key={r.id} style={{
+                            fontSize:10,padding:"2px 7px",borderRadius:20,fontWeight:700,
+                            background:r.status==="tamamlandi"?"#d1fae5":"#dbeafe",
+                            color:r.status==="tamamlandi"?"#065f46":"#1e40af"
+                          }}>⊕ {r.reviewer_name} — {r.status==="tamamlandi"?"Değerlendirdi":"Bekliyor"}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
+                    <span style={{fontSize:10,padding:"3px 10px",borderRadius:20,fontWeight:700,background:d.bg,color:d.renk,whiteSpace:"nowrap"}}>
+                      {d.tr||a.status}
+                    </span>
+                    <span style={{color:G.gold,fontSize:12}}>{acik?"▲":"▼"}</span>
+                  </div>
+                </div>
+
+                {acik && (
+                  <div style={{background:G.cream,borderTop:`1px solid ${G.border}`,padding:"14px 16px"}}>
+                    {a.abstract && (
+                      <p style={{fontSize:12,color:"#555",fontStyle:"italic",marginBottom:12,lineHeight:1.6}}>
+                        "{a.abstract.substring(0,250)}..."
+                      </p>
+                    )}
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
+                      {a.file_url && (
+                        <a href={a.file_url} target="_blank" style={{
+                          fontSize:12,color:G.white,background:G.teal,
+                          padding:"6px 14px",borderRadius:6,fontWeight:700
+                        }}>📄 İndir</a>
+                      )}
+                      <select
+                        value={a.status}
+                        onChange={e => durumGuncelle(a.id, e.target.value)}
+                        style={{fontSize:11,padding:"6px 10px",borderRadius:6,border:`1px solid ${G.border}`,background:G.white}}
+                      >
+                        {Object.entries(DURUM).map(([k,v]) => (
+                          <option key={k} value={k}>{v.tr}</option>
+                        ))}
+                      </select>
+                      <button onClick={() => setYazarNotMakale(a)} style={{
+                        fontSize:12,color:G.white,background:"#b45309",border:"none",
+                        padding:"6px 14px",borderRadius:6,fontWeight:700
+                      }}>✏ Yazara Not</button>
+                    </div>
+
+                    {/* Hakem atama */}
+                    <div style={{background:G.white,borderRadius:8,padding:"12px 14px",border:`1px solid ${G.border}`}}>
+                      <div style={{fontSize:10,color:G.teal,letterSpacing:1.5,fontWeight:700,marginBottom:8}}>HAKEM ATA</div>
+                      {hakemler.length === 0 ? (
+                        <p style={{fontSize:12,color:G.muted,fontStyle:"italic"}}>
+                          Sistemde kayıtlı hakem yok. Kullanıcılar hakem rolüyle kayıt olabilir.
+                        </p>
+                      ) : (
+                        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                          {hakemler
+                            .filter(h=>!aReviews.some(r=>r.reviewer_email===h.email))
+                            .map(h => (
+                              <button key={h.id} onClick={() => hakemAta(a,h.email)} style={{
+                                fontSize:11,padding:"5px 12px",borderRadius:6,
+                                background:G.teal,color:G.white,border:"none",fontWeight:700
+                              }}>+ {h.name}</button>
+                            ))
+                          }
+                          {hakemler.every(h=>aReviews.some(r=>r.reviewer_email===h.email)) && (
+                            <p style={{fontSize:12,color:G.muted,fontStyle:"italic"}}>Tüm hakemler atanmış.</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Gelen değerlendirmeler */}
+                      {aReviews.filter(r=>r.status==="tamamlandi").length > 0 && (
+                        <div style={{marginTop:12}}>
+                          <div style={{fontSize:10,color:"#6d28d9",letterSpacing:1.5,fontWeight:700,marginBottom:8}}>
+                            GELEN DEĞERLENDİRMELER
+                          </div>
+                          {aReviews.filter(r=>r.status==="tamamlandi").map(r => (
+                            <div key={r.id} style={{
+                              background:"#f3f4f6",borderRadius:8,padding:"10px 12px",marginBottom:6,
+                              border:"1px solid #e5e7eb"
+                            }}>
+                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                                <span style={{fontWeight:700,fontSize:12,color:G.ink}}>{r.reviewer_name}</span>
+                                <span style={{
+                                  fontSize:11,padding:"2px 9px",borderRadius:20,fontWeight:700,
+                                  background:r.decision==="kabul"?"#d1fae5":r.decision==="revizyon"?"#ede9fe":"#fee2e2",
+                                  color:r.decision==="kabul"?"#065f46":r.decision==="revizyon"?"#6d28d9":"#991b1b"
+                                }}>
+                                  {r.decision==="kabul"?"✓ Kabul":r.decision==="revizyon"?"↻ Revizyon":"✗ Red"}
+                                </span>
+                              </div>
+                              <p style={{fontSize:13,color:"#444",lineHeight:1.65,margin:0,
+                                background:G.white,borderRadius:6,padding:"8px 10px",border:"1px solid #e5e7eb"
+                              }}>{r.comments}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Değerlendirmeler */}
+      {sekme==="degerlendirmeler" && (
+        <div>
+          {reviews.length === 0 ? (
+            <div style={{textAlign:"center",padding:40,color:G.muted,fontStyle:"italic",background:G.cream,borderRadius:12,border:`1px solid ${G.border}`}}>
+              Henüz hakem değerlendirmesi yok.
+            </div>
+          ) : reviews.map(r => {
+            const art = articles.find(a=>a.id===r.article_id);
+            return (
+              <div key={r.id} style={{
+                border:`1px solid ${G.border}`,borderRadius:10,marginBottom:10,
+                overflow:"hidden",borderLeft:`4px solid ${r.status==="tamamlandi"?"#065f46":"#1e40af"}`
+              }}>
+                <div style={{padding:"13px 16px",background:G.white}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontWeight:700,fontSize:12,color:G.ink,marginBottom:2}}>{art?.title||"Makale yükleniyor..."}</div>
+                      <div style={{fontSize:11,color:G.muted}}>
+                        Hakem: <strong>{r.reviewer_name}</strong> · Atandı: {r.assigned_at?.split("T")[0]}
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize:10,padding:"3px 10px",borderRadius:20,fontWeight:700,whiteSpace:"nowrap",
+                      background:r.status==="tamamlandi"?"#d1fae5":"#dbeafe",
+                      color:r.status==="tamamlandi"?"#065f46":"#1e40af"
+                    }}>
+                      {r.status==="tamamlandi"?"✓ Tamamlandı":"⏳ Bekliyor"}
+                    </span>
+                  </div>
+                  {r.status==="tamamlandi" && r.comments && (
+                    <div style={{marginTop:10}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                        <span style={{fontSize:10,color:"#6d28d9",letterSpacing:1,fontWeight:700}}>DEĞERLENDİRME</span>
+                        <span style={{
+                          fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:700,
+                          background:r.decision==="kabul"?"#d1fae5":r.decision==="revizyon"?"#ede9fe":"#fee2e2",
+                          color:r.decision==="kabul"?"#065f46":r.decision==="revizyon"?"#6d28d9":"#991b1b"
+                        }}>
+                          {r.decision==="kabul"?"✓ Kabul":r.decision==="revizyon"?"↻ Revizyon":"✗ Red"}
+                        </span>
+                      </div>
+                      <p style={{fontSize:13,color:"#444",lineHeight:1.65,margin:0,
+                        background:"#f9f9f9",borderRadius:6,padding:"8px 10px",border:`1px solid ${G.border}`
+                      }}>{r.comments}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Üyeler */}
+      {sekme==="uyeler" && (
+        <div>
+          {users.length === 0 ? (
+            <p style={{color:G.muted,fontStyle:"italic"}}>Henüz kayıtlı üye yok.</p>
+          ) : users.map(u => (
+            <div key={u.id} style={{
+              border:`1px solid ${G.border}`,borderRadius:9,padding:"11px 16px",
+              marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"
+            }}>
+              <div>
+                <div style={{fontWeight:700,fontSize:13,color:G.ink}}>{u.name}</div>
+                <div style={{fontSize:12,color:G.muted,marginTop:2}}>{u.email} · {u.institution||"—"}</div>
+                {u.orcid && <div style={{fontSize:11,color:G.teal,marginTop:1}}>ORCID: {u.orcid}</div>}
+              </div>
+              <span style={{
+                fontSize:10,padding:"4px 12px",borderRadius:20,fontWeight:700,
+                background:u.role==="editor"?`${G.gold}20`:u.role==="hakem"?`${G.teal}20`:`${G.rust}10`,
+                color:u.role==="editor"?G.rust:u.role==="hakem"?G.teal:G.muted
+              }}>{u.role?.toUpperCase()||"YAZAR"}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Yazara not modal */}
+      {yazarNotMakale && (
+        <div onClick={() => setYazarNotMakale(null)} style={{
+          position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",
+          zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:20
+        }}>
+          <div onClick={e=>e.stopPropagation()} style={{
+            background:G.white,borderRadius:16,padding:"28px 32px",
+            width:"100%",maxWidth:460
+          }}>
+            <div style={{fontWeight:700,fontSize:15,color:G.ink,marginBottom:4}}>YAZARA NOT GÖNDER</div>
+            <div style={{fontSize:12,color:G.muted,fontStyle:"italic",marginBottom:4}}>{yazarNotMakale.title}</div>
+            <div style={{fontSize:12,color:G.muted,marginBottom:12}}>
+              Alıcı: <strong>{yazarNotMakale.author}</strong> ({yazarNotMakale.author_email})
+            </div>
+            <textarea ref={notRef} placeholder="Notunuzu yazın..." rows={5} style={{
+              width:"100%",padding:"10px 14px",border:`1.5px solid ${G.border}`,
+              borderRadius:8,fontSize:13,resize:"vertical",boxSizing:"border-box",marginBottom:12,lineHeight:1.7
+            }}/>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={yazaraNot} style={{
+                flex:1,background:"#b45309",color:G.white,border:"none",
+                padding:"11px 0",borderRadius:7,fontWeight:700,fontSize:12
+              }}>✏ NOTU GÖNDER</button>
+              <button onClick={() => setYazarNotMakale(null)} style={{
+                padding:"11px 20px",background:"none",border:`1px solid ${G.border}`,
+                borderRadius:7,fontSize:12,color:G.muted
+              }}>İptal</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── NAV ─────────────────────────────────────────────────────────────────────
+function Nav({page, setPage, user, setModal, lang, setLang, scrolled}) {
+  const navBtn = (id, lbl) => (
+    <button key={id} onClick={() => setPage(id)} style={{
+      background:"transparent", border:"none", color: page===id?"#c9a84c":"#c4b896",
+      cursor:"pointer", fontSize:12, fontWeight:600, padding:"8px 11px",
+      borderRadius:5, letterSpacing:1, textTransform:"uppercase",
+      borderBottom: page===id?"2px solid #c9a84c":"2px solid transparent"
+    }}>{lbl}</button>
+  );
+
+  const labels = {
+    tr:{home:"Ana Sayfa",archive:"Arşiv",about:"Hakkında",oa:"Açık Erişim",guide:"Yazım Kuralları",ethics:"Etik İlkeler",submit:"Makale Gönder"},
+    en:{home:"Home",archive:"Archive",about:"About",oa:"Open Access",guide:"Guidelines",ethics:"Ethics",submit:"Submit"},
+    el:{home:"Αρχική",archive:"Αρχείο",about:"Σχετικά",oa:"Ανοιχτή Πρόσβαση",guide:"Οδηγίες",ethics:"Δεοντολογία",submit:"Υποβολή"},
+  };
+  const t = labels[lang]||labels.tr;
+
+  return (
+    <nav style={{
+      position:"sticky", top:0, zIndex:200,
+      background: scrolled?"rgba(26,18,8,0.97)":"#1a1208",
+      borderBottom:"1px solid rgba(201,168,76,0.2)"
+    }}>
+      <div style={{maxWidth:1200,margin:"0 auto",padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between",height:64}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={()=>setPage("home")}>
+          <WaveLogo size={28}/>
+          <div>
+            <div style={{fontFamily:"serif",fontWeight:900,fontSize:20,color:"#c9a84c",letterSpacing:3,lineHeight:1}}>ARSİS</div>
+            <div style={{fontSize:8,color:"#8a7d60",letterSpacing:2,marginTop:1}}>MUSIC · MUSICOLOGY · ANTHROPOLOGY</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:1,alignItems:"center",flexWrap:"wrap"}}>
+          {navBtn("home",t.home)}
+          {navBtn("archive",t.archive)}
+          {navBtn("about",t.about)}
+          {navBtn("oa",t.oa)}
+          {navBtn("guide",t.guide)}
+          {navBtn("ethics",t.ethics)}
+          <button onClick={()=>user?setModal("makale"):setModal("login")} style={{
+            background:"transparent",color:"#e8d080",border:"1px solid rgba(201,168,76,0.4)",
+            padding:"7px 14px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:600,marginLeft:6
+          }}>{t.submit}</button>
+        </div>
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          <div style={{display:"flex",gap:3}}>
+            {["tr","en","el"].map(l => (
+              <button key={l} onClick={() => setLang(l)} style={{
+                background: lang===l?"#c9a84c":"transparent",
+                color: lang===l?"#1a1208":"#c4b896",
+                border:"1px solid rgba(201,168,76,0.4)",
+                padding:"3px 9px",borderRadius:4,cursor:"pointer",fontSize:11
+              }}>{l==="tr"?"TR":l==="en"?"EN":"ΕΛ"}</button>
+            ))}
+          </div>
+          {user ? (
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <button onClick={()=>{setPage("panel");}} style={{
+                background:"rgba(201,168,76,0.12)",color:"#e8d080",
+                border:"1px solid rgba(201,168,76,0.3)",padding:"6px 12px",
+                borderRadius:6,cursor:"pointer",fontSize:12
+              }}>♩ {user.name.split(" ")[0]}</button>
+              <button onClick={()=>setModal("cikis")} style={{
+                background:"transparent",color:"#7a6e5f",border:"none",
+                cursor:"pointer",fontSize:11,padding:"4px 8px"
+              }}>Çıkış</button>
+            </div>
+          ) : (
+            <div style={{display:"flex",gap:6}}>
+              <button onClick={()=>setModal("login")} style={{
+                background:"transparent",color:"#c4b896",border:"1px solid rgba(201,168,76,0.3)",
+                padding:"6px 12px",borderRadius:5,cursor:"pointer",fontSize:12
+              }}>Giriş</button>
+              <button onClick={()=>setModal("register")} style={{
+                background:"#c9a84c",color:"#1a1208",border:"none",
+                padding:"6px 12px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:700
+              }}>Kayıt</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+// ─── HOME SAYFASI ─────────────────────────────────────────────────────────────
+function HomePage({user, setModal, lang, articles}) {
+  const labels = {
+    tr:{tagline:"ἄρσις — YÜKSELIŞ",motto:"Müziği kültürle, sesi insanla, ritmi zamanla buluşturan hakemli akademik dergi",
+      btn1:"ARŞİVİ İNCELE",btn2:"Makale Gönder",call:"MAKALE ÇAĞRISI",
+      deadline:"Son gönderim: 30 Nisan 2026",scope:"KAPSAM ALANLARI"},
+    en:{tagline:"ἄρσις — ASCENT",motto:"A peer-reviewed academic journal uniting music with culture, sound with humanity, rhythm with time",
+      btn1:"VIEW ARCHIVE",btn2:"Submit Article",call:"CALL FOR PAPERS",
+      deadline:"Submission deadline: April 30, 2026",scope:"SCOPE"},
+    el:{tagline:"ἄρσις — ΑΝΟΔΟΣ",motto:"Επιστημονικό περιοδικό που ενώνει τη μουσική με τον πολιτισμό",
+      btn1:"ΑΡΧΕΙΟ",btn2:"Υποβολή",call:"ΠΡΟΣΚΛΗΣΗ ΆΡΘΡΩΝ",
+      deadline:"Προθεσμία: 30 Απριλίου 2026",scope:"ΠΕΔΊΟ"},
+  };
+  const t = labels[lang]||labels.tr;
+
+  const fields = [
+    {icon:"𝄞",name:"Etnomüzikoloji / Ethnomusicology",desc:"Kültürel bağlamda müziğin incelenmesi, saha araştırmaları"},
+    {icon:"♬",name:"Müzikoloji / Musicology",desc:"Müzik teorisi, tarihi ve analizi üzerine akademik çalışmalar"},
+    {icon:"◉",name:"Antropoloji / Anthropology",desc:"Kültürler arası müzik pratikleri ve toplumsal bağlamlar"},
+    {icon:"ψ",name:"Müzik Antropolojisi",desc:"Müziğin insanlık tarihi ve kültürel evrimle ilişkisi"},
+    {icon:"♦",name:"Organoloji & Çalgı Yapımı",desc:"Çalgı bilimi, yapım gelenekleri ve akustik araştırmalar"},
+    {icon:"♩",name:"Müzik Tarihi",desc:"Tarihsel müzik pratikleri ve dönemler arası karşılaştırmalı analizler"},
+  ];
+
+  const oncuIsimler = [
+    {isim:"Bruno Nettl",alan:"Etnomüzikoloji",kurum:"University of Illinois",eser:"The Study of Ethnomusicology (1983)",aciklama:"Etnomüzikolojinin teorik temellerini atan en etkili çalışmalardan biri.",renk:"#1D6A5E"},
+    {isim:"Alan Merriam",alan:"Müzik Antropolojisi",kurum:"Indiana University",eser:"The Anthropology of Music (1964)",aciklama:"Müziği toplumsal bir davranış olarak inceleyen kurucu metin.",renk:"#8B3A2A"},
+    {isim:"Curt Sachs",alan:"Organoloji",kurum:"New York University",eser:"The History of Musical Instruments (1940)",aciklama:"Hornbostel-Sachs sınıflandırma sistemiyle çalgı biliminin temeli.",renk:"#4a3a8a"},
+    {isim:"Martin Stokes",alan:"Müzik & Kimlik",kurum:"King's College London",eser:"Ethnicity, Identity and Music (1994)",aciklama:"Müziğin kimlik inşasındaki rolünü ele alan temel derleme.",renk:"#1e5a8a"},
+    {isim:"Karl Signell",alan:"Türk Müziği",kurum:"University of Maryland",eser:"Makam: Modal Practice in Turkish Art Music (1977)",aciklama:"Türk makam sisteminin İngilizce başvuru kaynağı.",renk:"#5a6a1a"},
+    {isim:"Cem Behar",alan:"Osmanlı Müziği",kurum:"Boğaziçi Üniversitesi",eser:"Aşk Olmayınca Meşk Olmaz (1992)",aciklama:"Osmanlı-Türk müziğinde öğretim geleneğini inceleyen özgün yapıt.",renk:"#8a4a1a"},
+  ];
+
+  return (
+    <div>
+      {/* Hero */}
+      <div style={{background:"#1a1208",padding:"80px 40px 70px",textAlign:"center",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-60,right:-60,width:280,height:280,borderRadius:"50%",border:"1px solid rgba(201,168,76,0.15)",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",bottom:-40,left:-40,width:220,height:220,borderRadius:"50%",border:"1px solid rgba(201,168,76,0.1)",pointerEvents:"none"}}/>
+        <div style={{position:"relative",maxWidth:780,margin:"0 auto",animation:"fadeUp 0.8s ease both"}}>
+          <div style={{display:"flex",justifyContent:"center",marginBottom:24}}><WaveLogo size={40}/></div>
+          <div style={{fontSize:11,color:"#c9a84c",letterSpacing:5,marginBottom:14,opacity:0.8}}>{t.tagline}</div>
+          <h1 style={{fontFamily:"serif",fontSize:52,fontWeight:900,color:"#f0e6cc",margin:"0 0 8px",letterSpacing:5,lineHeight:1.05}}>ARSİS</h1>
+          <p style={{fontSize:15,color:"#a09070",letterSpacing:2,margin:"0 0 24px"}}>Journal of Music, Musicology & Anthropology</p>
+          <p style={{fontSize:17,color:"#c4b896",maxWidth:520,margin:"0 auto 36px",lineHeight:1.75,fontStyle:"italic"}}>"{t.motto}"</p>
+          <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
+            <button style={{background:"#c9a84c",color:"#1a1208",border:"none",padding:"13px 28px",borderRadius:7,cursor:"pointer",fontSize:13,fontWeight:800,letterSpacing:1}}>{t.btn1}</button>
+            <button onClick={()=>user?setModal("makale"):setModal("login")} style={{background:"transparent",color:"#e8d080",border:"1.5px solid rgba(201,168,76,0.6)",padding:"13px 28px",borderRadius:7,cursor:"pointer",fontSize:13,fontWeight:600}}>{t.btn2}</button>
+          </div>
+        </div>
+      </div>
+
+      {/* İstatistik */}
+      <div style={{background:"#1a1208",borderBottom:"1px solid rgba(201,168,76,0.2)",display:"grid",gridTemplateColumns:"repeat(4,1fr)"}}>
+        {[["Haziran 2026","İlk Sayı"],["5","Kapsam Alanı"],["Açık Erişim","Ücretsiz"],["Çift Kör","Hakemli"]].map(([n,l],i) => (
+          <div key={i} style={{padding:"20px",textAlign:"center",borderRight:i<3?"1px solid rgba(201,168,76,0.1)":"none"}}>
+            <div style={{fontFamily:"serif",fontSize:18,fontWeight:700,color:"#c9a84c"}}>{n}</div>
+            <div style={{fontSize:11,color:"#7a6e5f",marginTop:3,letterSpacing:1}}>{l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Öncü İsimler */}
+      <div style={{background:"linear-gradient(135deg,#1a1208,#2a1f0a)",padding:"60px 28px",borderTop:"2px solid rgba(201,168,76,0.3)"}}>
+        <div style={{maxWidth:1100,margin:"0 auto"}}>
+          <div style={{display:"flex",alignItems:"baseline",gap:14,marginBottom:32}}>
+            <h2 style={{fontFamily:"serif",fontSize:22,fontWeight:700,color:"#f0e6cc",margin:0,letterSpacing:2}}>
+              {lang==="tr"?"ALANDA ÖNCÜ İSİMLER":lang==="en"?"PIONEERS IN THE FIELD":"ΠΡΩΤΟΠΌΡΟΙ"}
+            </h2>
+            <div style={{flex:1,height:1,background:"linear-gradient(to right,rgba(201,168,76,0.5),transparent)"}}/>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:18}}>
+            {oncuIsimler.map(k => (
+              <div key={k.isim} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"20px",border:"1px solid rgba(201,168,76,0.15)",borderTop:`3px solid ${k.renk}`}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                  <div style={{width:38,height:38,borderRadius:"50%",background:k.renk,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:14,fontWeight:700,flexShrink:0}}>
+                    {k.isim.split(" ").map(n=>n[0]).join("")}
+                  </div>
+                  <div>
+                    <div style={{fontFamily:"serif",fontSize:13,fontWeight:700,color:"#f0e6cc"}}>{k.isim}</div>
+                    <div style={{fontSize:10,color:"#c9a84c"}}>{k.alan}</div>
+                  </div>
+                </div>
+                <div style={{fontSize:10,color:"#8a7d60",marginBottom:5}}>{k.kurum}</div>
+                <div style={{fontSize:10.5,color:"#c4b896",marginBottom:6,fontStyle:"italic"}}>"{k.eser}"</div>
+                <p style={{fontSize:11.5,color:"#7a6e5f",margin:0,lineHeight:1.65}}>{k.aciklama}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Kapsam Alanları */}
+      <div style={{background:"#ede8dc",borderTop:"1px solid #d4c9b4",padding:"60px 28px"}}>
+        <div style={{maxWidth:1100,margin:"0 auto"}}>
+          <div style={{display:"flex",alignItems:"baseline",gap:14,marginBottom:32}}>
+            <h2 style={{fontFamily:"serif",fontSize:22,fontWeight:700,color:"#1a1208",margin:0,letterSpacing:2}}>{t.scope}</h2>
+            <div style={{flex:1,height:1,background:"linear-gradient(to right,rgba(201,168,76,0.7),transparent)"}}/>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}}>
+            {fields.map(f => (
+              <div key={f.name} style={{background:"#fff",borderRadius:10,padding:"22px 18px",border:"1px solid #d4c9b4",textAlign:"center"}}>
+                <div style={{fontFamily:"serif",fontSize:30,color:"#c9a84c",marginBottom:8}}>{f.icon}</div>
+                <div style={{fontFamily:"serif",fontSize:12,fontWeight:700,color:"#1a1208",letterSpacing:0.5,marginBottom:6}}>{f.name}</div>
+                <p style={{fontSize:12.5,color:"#7a6e5f",margin:0,lineHeight:1.6}}>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Makale Çağrısı */}
+      <div style={{background:"linear-gradient(135deg,#1a1208,#2a1f0a)",padding:"40px 40px",borderTop:"2px solid rgba(201,168,76,0.3)",textAlign:"center"}}>
+        <div style={{maxWidth:700,margin:"0 auto"}}>
+          <div style={{fontSize:10,color:"#c9a84c",letterSpacing:4,marginBottom:12}}>{t.call}</div>
+          <h3 style={{fontFamily:"serif",fontSize:20,color:"#f0e6cc",margin:"0 0 10px",letterSpacing:1}}>ARSİS — Cilt 1, Sayı 1 · Haziran 2026</h3>
+          <p style={{fontSize:14,color:"#a09070",margin:"0 0 20px",lineHeight:1.7}}>
+            Son gönderim tarihi: <strong style={{color:"#e8d080"}}>30 Nisan 2026</strong>
+          </p>
+          <button onClick={()=>user?setModal("makale"):setModal("login")} style={{
+            background:"#c9a84c",color:"#1a1208",border:"none",padding:"12px 28px",
+            borderRadius:7,cursor:"pointer",fontSize:13,fontWeight:800,letterSpacing:1
+          }}>MAKALE GÖNDER</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ARŞİV SAYFASI ───────────────────────────────────────────────────────────
+function ArchivePage({user, setModal, lang}) {
+  return (
+    <div style={{background:"#f5f0e8",minHeight:"70vh"}}>
+      <div style={{background:"#1a1208",padding:"48px",textAlign:"center"}}>
+        <h2 style={{fontFamily:"serif",fontSize:26,color:"#f0e6cc",margin:"0 0 10px",letterSpacing:3}}>
+          {lang==="tr"?"ARŞİV":lang==="en"?"ARCHIVE":"ΑΡΧΕΙΟ"}
+        </h2>
+        <p style={{fontSize:14,color:"#a09070",fontStyle:"italic"}}>Cilt 1, Sayı 1 · Haziran 2026</p>
+      </div>
+      <div style={{maxWidth:700,margin:"0 auto",padding:"60px 28px",textAlign:"center"}}>
+        <div style={{display:"flex",justifyContent:"center",gap:4,marginBottom:28}}>
+          {[0.5,0.9,0.6,1,0.7,1,0.5,0.8,0.6].map((h,i) => (
+            <div key={i} style={{width:4,background:"#c9a84c",borderRadius:2,height:h*40,opacity:0.4+h*0.5,animation:`wave 1.4s ease-in-out ${i*0.12}s infinite alternate`}}/>
+          ))}
+        </div>
+        <div style={{fontFamily:"serif",fontSize:11,color:"#c9a84c",letterSpacing:4,marginBottom:18}}>HAZİRAN 2026</div>
+        <h3 style={{fontFamily:"serif",fontSize:24,color:"#1a1208",margin:"0 0 16px",letterSpacing:1}}>İlk Ses Yükseliyor</h3>
+        <p style={{fontSize:15,color:"#7a6e5f",lineHeight:1.75,margin:"0 0 32px"}}>
+          ARSİS'in ilk sayısı Haziran 2026'da yayımlanacaktır. Makale gönderimlerinizi bekliyoruz.
+        </p>
+        <button onClick={()=>user?setModal("makale"):setModal("login")} style={{
+          background:"#c9a84c",color:"#1a1208",border:"none",padding:"12px 28px",
+          borderRadius:7,cursor:"pointer",fontFamily:"serif",fontSize:12,fontWeight:700,letterSpacing:2
+        }}>MAKALE GÖNDER</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── HAKKINDA SAYFASI ─────────────────────────────────────────────────────────
+function AboutPage({lang}) {
+  return (
+    <div style={{background:"#f5f0e8"}}>
+      <div style={{background:"#1a1208",padding:"48px",textAlign:"center"}}>
+        <div style={{fontSize:10,color:"#c9a84c",letterSpacing:5,marginBottom:10}}>ἄρσις</div>
+        <h2 style={{fontFamily:"serif",fontSize:28,color:"#f0e6cc",margin:"0 0 12px",letterSpacing:3}}>
+          {lang==="tr"?"ARSİS HAKKINDA":lang==="en"?"ABOUT ARSIS":"ΣΧΕΤΙΚΑ ΜΕ ΤΟ ΑΡΣΙΣ"}
+        </h2>
+        <p style={{fontSize:15,color:"#a09070",maxWidth:560,margin:"0 auto",lineHeight:1.75,fontStyle:"italic"}}>
+          Antik Yunanca'da "ἄρσις" — yükselen ses, ritmin güçlü vuruşu.
+        </p>
+      </div>
+      <div style={{maxWidth:900,margin:"0 auto",padding:"56px 28px",display:"grid",gridTemplateColumns:"2fr 1fr",gap:48}}>
+        <div>
+          {[
+            {baslik:"Amaç ve Kapsam",metin:"ARSİS, müzik, müzikoloji, antropoloji ve etnomüzikoloji alanlarında özgün araştırmaları yayımlayan çift kör hakemli açık erişim bir dergidir. Disiplinlerarası yaklaşımı benimseyen dergi, sahadan teoriye uzanan geniş bir yelpazede çalışmalara ev sahipliği yapar."},
+            {baslik:"Hakemlik Süreci",metin:"Çift kör hakem değerlendirmesi uygulanmaktadır. Her makale alanında uzman en az iki hakeme gönderilir. Değerlendirme süresi ortalama 45 gündür. COPE ilkeleri benimsenmiştir."},
+            {baslik:"Açık Erişim",metin:"ARSİS tamamen açık erişimli bir dergidir. Yazarlardan makale işlem ücreti (APC) alınmaz. Tüm makaleler Creative Commons CC BY 4.0 lisansı altında yayımlanır."},
+            {baslik:"Yapay Zeka Politikası",metin:"YZ araçlarının kullanımı dipnot veya teşekkür bölümünde açıkça belirtilmelidir. YZ araçları yazar olarak tanımlanamaz."},
+          ].map(s => (
+            <div key={s.baslik} style={{marginBottom:32,paddingLeft:20,borderLeft:`3px solid #c9a84c`}}>
+              <h3 style={{fontFamily:"serif",fontSize:14,fontWeight:700,color:"#1a1208",letterSpacing:1,marginBottom:8}}>{s.baslik.toUpperCase()}</h3>
+              <p style={{fontSize:15,color:"#555",lineHeight:1.8,margin:0}}>{s.metin}</p>
+            </div>
+          ))}
+        </div>
+        <div>
+          <div style={{background:"#1a1208",borderRadius:12,padding:"24px 20px",marginBottom:16}}>
+            <div style={{fontSize:10,color:"#c9a84c",letterSpacing:2,marginBottom:14,fontWeight:700}}>DERGİ BİLGİLERİ</div>
+            {[["ISSN (Online)","Başvuruda"],["İlk Sayı","Cilt 1 · Haz. 2026"],["Periyot","Yılda 2 sayı"],["Dil","TR / EN"],["Erişim","Açık Erişim"],["Lisans","CC BY 4.0"]].map(([k,v]) => (
+              <div key={k} style={{borderBottom:"1px solid rgba(201,168,76,0.1)",paddingBottom:8,marginBottom:8}}>
+                <div style={{fontSize:10,color:"#7a6e5f",marginBottom:2}}>{k}</div>
+                <div style={{fontSize:13,color:"#c4b896",fontWeight:600}}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{background:"#ede8dc",borderRadius:12,padding:"20px",border:"1px solid #d4c9b4"}}>
+            <div style={{fontSize:10,color:"#c9a84c",letterSpacing:2,marginBottom:12,fontWeight:700}}>İLETİŞİM</div>
+            <div style={{fontSize:13,color:"#1a1208",marginBottom:6}}>Doç. Dr. Mehmet Söylemez</div>
+            <div style={{fontSize:12,color:"#7a6e5f",marginBottom:4,fontStyle:"italic"}}>Ankara Müzik ve Güzel Sanatlar Üniversitesi</div>
+            <div style={{fontSize:12,color:"#1d6a5e",marginBottom:4}}>✉ arsisakademik@gmail.com</div>
+            <div style={{fontSize:12,color:"#7a6e5f"}}>📍 Ankara, Türkiye</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── AÇIK ERİŞİM SAYFASI ─────────────────────────────────────────────────────
+function OAPage({lang}) {
+  return (
+    <div style={{background:"#f5f0e8",minHeight:"70vh"}}>
+      <div style={{background:"#1a1208",padding:"48px",textAlign:"center"}}>
+        <h2 style={{fontFamily:"serif",fontSize:28,color:"#f0e6cc",margin:"0 0 12px",letterSpacing:3}}>
+          {lang==="tr"?"AÇIK ERİŞİM":lang==="en"?"OPEN ACCESS":"ΑΝΟΙΧΤΉ ΠΡΌΣΒΑΣΗ"}
+        </h2>
+        <p style={{fontSize:15,color:"#a09070",fontStyle:"italic"}}>Bilgi özgür olmalıdır. / Knowledge must be free.</p>
+      </div>
+      <div style={{maxWidth:800,margin:"0 auto",padding:"56px 28px"}}>
+        {[
+          {icon:"◎",baslik:"Ücretsiz Erişim",metin:"ARSİS'te yayımlanan tüm makaleler herhangi bir ücret, abonelik veya kayıt gerektirmeksizin erişilebilir durumdadır."},
+          {icon:"♩",baslik:"CC BY 4.0 Lisansı",metin:"Tüm içerikler Creative Commons Atıf 4.0 Uluslararası lisansı ile yayımlanır. Uygun atıf yapılmak kaydıyla serbestçe paylaşılabilir ve uyarlanabilir."},
+          {icon:"𝄞",baslik:"Yazar Hakları",metin:"Yazarlar eserlerinin telif hakkını elinde tutmakta, dergiye yalnızca ilk yayın hakkını devretmektedir."},
+          {icon:"◉",baslik:"APC Yok",metin:"ARSİS yazarlardan herhangi bir makale işlem ücreti (Article Processing Charge) talep etmemektedir."},
+        ].map(s => (
+          <div key={s.baslik} style={{display:"flex",gap:20,marginBottom:32,padding:"24px",background:"#fff",borderRadius:12,border:"1px solid #d4c9b4"}}>
+            <div style={{fontSize:28,color:"#c9a84c",flexShrink:0,marginTop:2}}>{s.icon}</div>
+            <div>
+              <h3 style={{fontFamily:"serif",fontSize:15,fontWeight:700,color:"#1a1208",marginBottom:8}}>{s.baslik}</h3>
+              <p style={{fontSize:14,color:"#555",lineHeight:1.75,margin:0}}>{s.metin}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── YAZIM KURALLARI ─────────────────────────────────────────────────────────
+function GuidePage({lang}) {
+  const sections = [
+    {baslik:"Genel Biçim",items:["Makaleler Microsoft Word (.docx) formatında gönderilmelidir.","Sayfa boyutu A4, kenar boşlukları 2,5 cm, satır aralığı 1,5 olmalıdır.","Yazı tipi Times New Roman 12 punto önerilir; başlıklar 14 punto kalın.","Makale uzunluğu 5.000–12.000 kelime arasında olmalıdır (kaynakça hariç)."]},
+    {baslik:"Başlık ve Özet",items:["Makalenin başlığı Türkçe ve İngilizce olarak verilmelidir.","Türkçe ve İngilizce özet 150–250 kelime arasında olmalıdır.","5–8 anahtar kelime, hem Türkçe hem İngilizce eklenmelidir."]},
+    {baslik:"Atıf ve Kaynakça",items:["ARSİS, Chicago Yazar-Tarih veya APA 7. Baskı formatını kabul etmektedir.","Metin içi atıflar parantez içinde verilmelidir: (Yazar Soyadı Yıl, sayfa).","Kaynakça makalenin sonunda alfabetik sırayla düzenlenmelidir."]},
+    {baslik:"Kör Değerlendirme İçin Hazırlık",items:["Metin yazarın kimliğini açığa çıkaran bilgilerden arındırılmalıdır.","Yazar bilgileri (ad, kurum, e-posta, ORCID) yalnızca başvuru formunda belirtilmelidir."]},
+  ];
+
+  return (
+    <div style={{background:"#f5f0e8",minHeight:"70vh"}}>
+      <div style={{background:"#1a1208",padding:"48px 48px 36px",textAlign:"center"}}>
+        <h2 style={{fontFamily:"serif",fontSize:28,color:"#f0e6cc",margin:"0 0 12px",letterSpacing:3}}>
+          {lang==="tr"?"YAZIM KURALLARI":lang==="en"?"AUTHOR GUIDELINES":"ΟΔΗΓΙΕΣ"}
+        </h2>
+      </div>
+      <div style={{maxWidth:860,margin:"0 auto",padding:"52px 28px"}}>
+        {/* Şablon indirme */}
+        <div style={{
+          background:"#fff",borderRadius:12,padding:"22px 28px",marginBottom:40,
+          border:"2px solid #c9a84c",display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,flexWrap:"wrap"
+        }}>
+          <div>
+            <div style={{fontSize:11,color:"#c9a84c",letterSpacing:2,fontWeight:700,marginBottom:6}}>MAKALE ŞABLONU</div>
+            <div style={{fontFamily:"serif",fontSize:14,fontWeight:700,color:"#1a1208",marginBottom:4}}>ARSİS_Makale_Sablonu.docx</div>
+            <p style={{fontSize:12.5,color:"#7a6e5f",margin:0}}>Times New Roman 12pt · Başlık, özet, atıf ve kaynakça biçimlendirmesi hazır.</p>
+          </div>
+          <a href="https://mehmetsoulemezz-dot.github.io/arsisakademik/ARSİS_Makale_Sablonu.docx"
+            download="ARSİS_Makale_Sablonu.docx"
+            style={{
+              background:"#c9a84c",color:"#1a1208",textDecoration:"none",
+              padding:"12px 24px",borderRadius:8,fontFamily:"serif",fontSize:12,fontWeight:800,letterSpacing:1,whiteSpace:"nowrap"
+            }}>⬇ ŞABLONU İNDİR</a>
+        </div>
+        {sections.map((s,i) => (
+          <div key={i} style={{marginBottom:36}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
+              <div style={{width:32,height:32,background:"#c9a84c",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",color:"#1a1208",fontSize:13,fontWeight:900,flexShrink:0}}>{i+1}</div>
+              <h3 style={{fontFamily:"serif",fontSize:14,fontWeight:700,color:"#1a1208",letterSpacing:0.5}}>{s.baslik.toUpperCase()}</h3>
+            </div>
+            <div style={{borderLeft:"3px solid rgba(201,168,76,0.4)",paddingLeft:22}}>
+              {s.items.map((item,j) => (
+                <div key={j} style={{display:"flex",gap:10,marginBottom:10,alignItems:"flex-start"}}>
+                  <span style={{color:"#c9a84c",fontWeight:800,fontSize:16,lineHeight:1.5,flexShrink:0}}>·</span>
+                  <p style={{margin:0,fontSize:14.5,color:"#444",lineHeight:1.8}}>{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+        <div style={{background:"#1a1208",borderRadius:12,padding:"24px 28px",textAlign:"center"}}>
+          <div style={{fontSize:11,color:"#c9a84c",letterSpacing:2,marginBottom:10}}>İLETİŞİM</div>
+          <p style={{fontSize:13.5,color:"#a09070",marginBottom:14}}>Sorularınız için editör ile iletişime geçebilirsiniz.</p>
+          <a href="mailto:arsisakademik@gmail.com" style={{color:"#c9a84c",fontFamily:"serif",fontSize:13,letterSpacing:1}}>arsisakademik@gmail.com</a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ETİK İLKELER ────────────────────────────────────────────────────────────
+function EthicsPage({lang}) {
+  const sections = [
+    {baslik:"Özgünlük ve İntihal",items:["Gönderilen makaleler özgün olmalı, başka bir yerde yayımlanmamış veya değerlendirme sürecinde olmamalıdır.","İntihal — kaynak göstermeksizin alıntı yapma — akademik etik ihlali olarak değerlendirilir.","ARSİS intihal tespit yazılımı kullanma hakkını saklı tutar."]},
+    {baslik:"Yazarlık ve Katkı",items:["Yazar olarak yer alan tüm kişiler çalışmaya entelektüel katkı sağlamış olmalıdır.","Yapay zeka araçlarının kullanımı dipnot veya teşekkür bölümünde belirtilmelidir.","Yazar sıralaması ortak kararla belirlenir."]},
+    {baslik:"Saha Araştırması Etiği",items:["İnsan katılımcılarla yürütülen araştırmalarda bilgilendirilmiş onam belgelenmelidir.","Ses, video ve fotoğraf kayıtları için yazılı izin alınmalıdır.","Geleneksel bilgi araştırmalarında topluluk onayı zorunludur."]},
+    {baslik:"Çıkar Çatışması",items:["Yazarlar olası çıkar çatışmalarını editöre bildirmelidir.","Hakemler çıkar çatışması olan makaleleri değerlendirmeyi reddetmelidir.","Editörün kararları yalnızca akademik kriterlere dayanır."]},
+    {baslik:"Düzeltme ve Geri Çekme",items:["Yayımlanan bir makalede ciddi hata saptanırsa editörle iletişime geçilmelidir.","Ciddi etik ihlali durumunda ARSİS makaleyi geri çekme hakkını saklı tutar.","Geri çekilen makaleler dijital arşivde 'Geri Çekildi' ibaresiyle kalır."]},
+  ];
+
+  return (
+    <div style={{background:"#f5f0e8",minHeight:"70vh"}}>
+      <div style={{background:"#1a1208",padding:"48px",textAlign:"center"}}>
+        <h2 style={{fontFamily:"serif",fontSize:28,color:"#f0e6cc",margin:"0 0 12px",letterSpacing:3}}>
+          {lang==="tr"?"ETİK İLKELER":lang==="en"?"ETHICS":"ΔΕΟΝΤΟΛΟΓΊΑ"}
+        </h2>
+        <p style={{fontSize:14,color:"#a09070",fontStyle:"italic"}}>ARSİS, COPE (Committee on Publication Ethics) ilkelerine bağlıdır.</p>
+      </div>
+      <div style={{maxWidth:860,margin:"0 auto",padding:"52px 28px"}}>
+        {sections.map((s,i) => (
+          <div key={i} style={{marginBottom:36}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
+              <div style={{width:32,height:32,background:"#1a1208",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",color:"#c9a84c",fontSize:13,fontWeight:900,flexShrink:0}}>{i+1}</div>
+              <h3 style={{fontFamily:"serif",fontSize:14,fontWeight:700,color:"#1a1208",letterSpacing:0.5}}>{s.baslik.toUpperCase()}</h3>
+            </div>
+            <div style={{borderLeft:"3px solid rgba(26,18,8,0.2)",paddingLeft:22}}>
+              {s.items.map((item,j) => (
+                <div key={j} style={{display:"flex",gap:10,marginBottom:10,alignItems:"flex-start"}}>
+                  <span style={{color:"#1a1208",fontWeight:800,fontSize:16,lineHeight:1.5,flexShrink:0}}>·</span>
+                  <p style={{margin:0,fontSize:14.5,color:"#444",lineHeight:1.8}}>{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── PANEL SAYFASI ────────────────────────────────────────────────────────────
+function PanelPage({user, setModal, toast_, lang, articles, users, loadArticles}) {
+  const [sekme, setSekme] = React.useState("makalelerim");
+  const myArticles = articles.filter(a => a.author_email === user?.email);
+
+  const SEKMELER = [
+    {id:"makalelerim", icon:"♩", label:"Makalelerim"},
+    {id:"mesajlar",    icon:"✉", label:"Mesajlar"},
+    {id:"profil",      icon:"◎", label:"Profilim"},
+    ...(user?.role==="editor" ? [{id:"yonetim",icon:"⚙",label:"Yönetim"}] : []),
+    ...(user?.role==="hakem"  ? [{id:"hakem",  icon:"⊕",label:"Hakem Paneli"}] : []),
+  ];
+
+  return (
+    <div style={{background:"#f5f0e8",minHeight:"80vh",padding:"36px 24px"}}>
+      <div style={{maxWidth:1080,margin:"0 auto",display:"grid",gridTemplateColumns:"220px 1fr",gap:24}}>
+
+        {/* Sol menü */}
+        <div>
+          <div style={{background:"#1a1208",borderRadius:12,padding:"22px 18px",marginBottom:14,textAlign:"center"}}>
+            <div style={{width:52,height:52,background:"#c9a84c",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",color:"#1a1208",fontSize:18,fontWeight:700,margin:"0 auto 12px"}}>
+              {user?.name?.[0]}
+            </div>
+            <div style={{fontFamily:"serif",fontWeight:700,fontSize:13,color:"#f0e6cc"}}>{user?.name}</div>
+            <div style={{fontSize:11,color:"#8a7d60",marginTop:2,fontStyle:"italic"}}>{user?.institution}</div>
+            <div style={{marginTop:8}}>
+              <span style={{fontSize:10,padding:"2px 10px",borderRadius:20,background:"rgba(201,168,76,0.25)",color:"#c9a84c",fontWeight:700}}>
+                {user?.role==="editor"?"EDİTÖR":user?.role==="hakem"?"HAKEM":"YAZAR"}
+              </span>
+            </div>
+          </div>
+          <div style={{background:"#fff",borderRadius:12,border:"1px solid #d4c9b4",overflow:"hidden"}}>
+            {SEKMELER.map(item => (
+              <button key={item.id} onClick={() => setSekme(item.id)} style={{
+                width:"100%",display:"flex",alignItems:"center",gap:10,padding:"12px 16px",
+                background:sekme===item.id?"rgba(201,168,76,0.1)":"transparent",
+                border:"none",cursor:"pointer",fontSize:13,fontWeight:sekme===item.id?700:500,
+                color:sekme===item.id?"#8b3a2a":"#1a1208",
+                borderLeft:sekme===item.id?"3px solid #c9a84c":"3px solid transparent",
+                textAlign:"left"
+              }}>
+                <span style={{color:"#c9a84c"}}>{item.icon}</span>{item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sağ içerik */}
+        <div style={{background:"#fff",borderRadius:12,border:"1px solid #d4c9b4",padding:"28px 32px",minHeight:400}}>
+
+          {/* MAKALELERİM */}
+          {sekme==="makalelerim" && (
+            <div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22}}>
+                <h3 style={{fontSize:16,letterSpacing:1,color:"#1a1208",fontWeight:700,margin:0}}>MAKALELERİM</h3>
+                <button onClick={() => setModal("makale")} style={{
+                  background:"#c9a84c",color:"#1a1208",border:"none",padding:"8px 18px",
+                  borderRadius:7,cursor:"pointer",fontFamily:"serif",fontSize:11,fontWeight:700,letterSpacing:1
+                }}>+ MAKALE GÖNDER</button>
+              </div>
+              {myArticles.length === 0 ? (
+                <div style={{textAlign:"center",padding:"50px 20px",color:"#7a6e5f"}}>
+                  <p style={{marginBottom:14,fontStyle:"italic"}}>Henüz makale göndermediniz.</p>
+                  <button onClick={() => setModal("makale")} style={{
+                    background:"#1a1208",color:"#c9a84c",border:"none",padding:"9px 20px",
+                    borderRadius:6,cursor:"pointer",fontFamily:"serif",fontSize:11
+                  }}>İLK MAKALENİZİ GÖNDERİN</button>
+                </div>
+              ) : myArticles.map(a => {
+                const d = DURUM[a.status]||{};
+                return (
+                  <div key={a.id} style={{border:"1px solid #d4c9b4",borderRadius:10,padding:"16px 20px",marginBottom:12}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                      <h4 style={{fontFamily:"serif",margin:"0 0 5px",fontSize:13.5,color:"#1a1208",flex:1,fontWeight:700}}>{a.title}</h4>
+                      <span style={{background:d.bg,color:d.renk,fontSize:10,padding:"3px 9px",borderRadius:20,fontWeight:700,whiteSpace:"nowrap"}}>
+                        {d.tr||a.status}
+                      </span>
+                    </div>
+                    <p style={{margin:"0 0 6px",fontSize:12,color:"#7a6e5f",fontStyle:"italic"}}>{a.created_at?.split("T")[0]} · {a.field}</p>
+                    <YazarNotlari articleId={a.id}/>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* MESAJLAR */}
+          {sekme==="mesajlar" && <MesajlarSekme user={user} toast_={toast_}/>}
+
+          {/* PROFİL */}
+          {sekme==="profil" && (
+            <div>
+              <h3 style={{fontSize:16,letterSpacing:1,color:"#1a1208",fontWeight:700,marginBottom:22}}>PROFİL BİLGİLERİM</h3>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                {[["Ad Soyad",user?.name],["E-posta",user?.email],["Kurum",user?.institution||"—"],["ORCID",user?.orcid||"—"],["Rol",user?.role],["Erişim","Açık Erişim"]].map(([k,v]) => (
+                  <div key={k} style={{background:"#ede8dc",borderRadius:8,padding:"12px 16px",border:"1px solid #d4c9b4"}}>
+                    <div style={{fontSize:9,color:"#7a6e5f",letterSpacing:1.5,marginBottom:4}}>{k.toUpperCase()}</div>
+                    <div style={{fontSize:14,color:"#1a1208",fontWeight:600}}>{v}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* YÖNETİM */}
+          {sekme==="yonetim" && user?.role==="editor" && (
+            <YonetimSekme articles={articles} users={users} toast_={toast_} loadArticles={loadArticles}/>
+          )}
+
+          {/* HAKEM */}
+          {sekme==="hakem" && user?.role==="hakem" && (
+            <HakemSekme user={user} toast_={toast_}/>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── FOOTER ──────────────────────────────────────────────────────────────────
+function Footer({setPage, lang}) {
+  const socialLinks = {
+    "ResearchGate":"https://www.researchgate.net",
+    "Academia.edu":"https://www.academia.edu",
+    "ORCID":"https://orcid.org",
+    "Google Scholar":"https://scholar.google.com",
+  };
+
+  return (
+    <footer style={{background:"#1a1208",borderTop:"2px solid rgba(201,168,76,0.3)"}}>
+      <div style={{maxWidth:1100,margin:"0 auto",padding:"40px 28px 24px",display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:32}}>
+        <div>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+            <WaveLogo size={20}/>
+            <div style={{fontFamily:"serif",fontWeight:900,fontSize:17,color:"#c9a84c",letterSpacing:3}}>ARSİS</div>
+          </div>
+          <p style={{fontSize:12,color:"#8a7d60",lineHeight:1.7,fontStyle:"italic",marginBottom:8}}>
+            "Müziği kültürle, sesi insanla buluşturan hakemli dergi"
+          </p>
+          <p style={{fontSize:11,color:"#5a4e3a"}}>Açık Erişim · CC BY 4.0</p>
+          <p style={{fontSize:11,color:"#5a4e3a",marginTop:4}}>✉ arsisakademik@gmail.com</p>
+          <p style={{fontSize:11,color:"#5a4e3a",marginTop:2}}>📍 Ankara, Türkiye</p>
+        </div>
+
+        {[
+          ["Dergi",["home","archive","oa","guide"].map((id,i)=>({id,lbl:["Ana Sayfa","Arşiv","Açık Erişim","Yazım Kuralları"][i]}))],
+          ["Politikalar",["ethics","about"].map((id,i)=>({id,lbl:["Etik İlkeler","Hakkında"][i]}))],
+        ].map(([title,items]) => (
+          <div key={title}>
+            <div style={{fontSize:10,color:"#c9a84c",letterSpacing:2,marginBottom:14,fontWeight:700}}>{title.toUpperCase()}</div>
+            {items.map(item => (
+              <div key={item.id} onClick={() => setPage(item.id)}
+                style={{fontSize:12.5,color:"#c4b896",marginBottom:7,cursor:"pointer"}}>
+                {item.lbl}
+              </div>
+            ))}
+          </div>
+        ))}
+
+        <div>
+          <div style={{fontSize:10,color:"#c9a84c",letterSpacing:2,marginBottom:14,fontWeight:700}}>SOSYAL</div>
+          {Object.entries(socialLinks).map(([name,url]) => (
+            <a key={name} href={url} target="_blank" rel="noopener noreferrer"
+              style={{display:"block",fontSize:12.5,color:"#c4b896",marginBottom:7,textDecoration:"none"}}>
+              {name} ↗
+            </a>
+          ))}
+        </div>
+      </div>
+      <div style={{borderTop:"1px solid rgba(201,168,76,0.1)",padding:"14px 28px",display:"flex",justifyContent:"space-between"}}>
+        <div style={{fontSize:10,color:"#5a4e3a",letterSpacing:1}}>© 2026 ARSİS · Journal of Music, Musicology & Anthropology</div>
+        <div style={{fontSize:11,color:"#5a4e3a",fontStyle:"italic"}}>ἄρσις</div>
+      </div>
+    </footer>
+  );
+}
+
+// ─── ANA APP ─────────────────────────────────────────────────────────────────
+function App() {
+  const [page, setPage]       = React.useState("home");
+  const [lang, setLang]       = React.useState("tr");
+  const [user, setUser]       = React.useState(null);
+  const [modal, setModal]     = React.useState(null);
+  const [toast, setToast]     = React.useState(null);
+  const [scrolled, setScrolled] = React.useState(false);
+  const [articles, setArticles] = React.useState([]);
+  const [users, setUsers]     = React.useState([]);
+
+  const toast_ = React.useCallback((msg, type="ok") => {
+    setToast({msg,type});
+    setTimeout(() => setToast(null), 3200);
+  }, []);
+
+  const loadArticles = React.useCallback(async () => {
+    const {data} = await supa.from("articles").select("*").order("created_at",{ascending:false});
+    if (data) setArticles(data);
+  }, []);
+
+  const loadUsers = React.useCallback(async () => {
+    const {data} = await supa.from("users").select("*");
+    if (data) setUsers(data);
+  }, []);
+
+  React.useEffect(() => {
+    loadArticles();
+    loadUsers();
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [loadArticles, loadUsers]);
+
+  // Login modal içeriği
+  const LoginForm = () => {
+    const emailRef = React.useRef(null);
+    const passRef  = React.useRef(null);
+    const [hata, setHata] = React.useState("");
+
+    const giris = async () => {
+      const email = emailRef.current?.value?.trim();
+      const pass  = passRef.current?.value?.trim();
+      if (!email || !pass) { setHata("E-posta ve şifre zorunludur."); return; }
+      const {data,error} = await supa.from("users").select("*").eq("email",email).eq("password",pass).single();
+      if (error || !data) { setHata("E-posta veya şifre hatalı."); return; }
+      setUser(data);
+      setModal(null);
+      toast_("ARSİS'e hoş geldiniz!");
+      setPage("panel");
+    };
+
+    return (
+      <div>
+        {hata && <div style={{background:"#fee2e2",color:"#991b1b",padding:"8px 12px",borderRadius:6,fontSize:13,marginBottom:12}}>{hata}</div>}
+        <input ref={emailRef} type="email" placeholder="E-posta *" style={inp}/>
+        <input ref={passRef}  type="password" placeholder="Şifre *" style={inp}/>
+        <button onClick={giris} style={btn_gold}>GİRİŞ YAP</button>
+        <div style={{textAlign:"center",marginTop:14,fontSize:13,color:"#7a6e5f"}}>
+          Hesabınız yok mu?{" "}
+          <span onClick={()=>setModal("register")} style={{color:"#c9a84c",cursor:"pointer",fontWeight:700}}>Kayıt olun</span>
+        </div>
+      </div>
+    );
+  };
+
+  // Register modal içeriği
+  const RegisterForm = () => {
+    const nameRef  = React.useRef(null);
+    const emailRef = React.useRef(null);
+    const instRef  = React.useRef(null);
+    const orcidRef = React.useRef(null);
+    const passRef  = React.useRef(null);
+    const roleRef  = React.useRef(null);
+    const [hata, setHata] = React.useState("");
+
+    const kayit = async () => {
+      const name  = nameRef.current?.value?.trim();
+      const email = emailRef.current?.value?.trim();
+      const pass  = passRef.current?.value?.trim();
+      const role  = roleRef.current?.value || "yazar";
+      if (!name || !email) { setHata("Ad ve e-posta zorunludur."); return; }
+      if (!pass) { setHata("Şifre zorunludur."); return; }
+      const {data,error} = await supa.from("users").insert([{
+        name, email, password:pass,
+        institution: instRef.current?.value?.trim()||null,
+        orcid: orcidRef.current?.value?.trim()||null,
+        role
+      }]).select().single();
+      if (error) { setHata("Bu e-posta zaten kayıtlı olabilir."); return; }
+      setUser(data);
+      setModal(null);
+      toast_("ARSİS'e hoş geldiniz!");
+      setPage("panel");
+    };
+
+    return (
+      <div>
+        {hata && <div style={{background:"#fee2e2",color:"#991b1b",padding:"8px 12px",borderRadius:6,fontSize:13,marginBottom:12}}>{hata}</div>}
+        <input ref={nameRef}  placeholder="Ad Soyad *" style={inp}/>
+        <input ref={emailRef} type="email" placeholder="E-posta *" style={inp}/>
+        <input ref={instRef}  placeholder="Kurum / Üniversite" style={inp}/>
+        <input ref={orcidRef} placeholder="ORCID ID (isteğe bağlı)" style={inp}/>
+        <input ref={passRef}  type="password" placeholder="Şifre *" style={inp}/>
+        <select ref={roleRef} style={{...inp,color:"#1a1208"}}>
+          <option value="yazar">Yazar / Araştırmacı</option>
+          <option value="hakem">Hakem</option>
+        </select>
+        <button onClick={kayit} style={btn_gold}>KAYIT OL</button>
+      </div>
+    );
+  };
+
+  // Makale gönder modal içeriği
+  const MakaleForm = () => {
+    const titleRef    = React.useRef(null);
+    const fieldRef    = React.useRef(null);
+    const abstractRef = React.useRef(null);
+    const keywordsRef = React.useRef(null);
+    const coauthRef   = React.useRef(null);
+    const fileRef     = React.useRef(null);
+    const [yukleniyor, setYukleniyor] = React.useState(false);
+    const [dosyaMsg, setDosyaMsg] = React.useState("");
+
+    const gonder = async () => {
+      const title    = titleRef.current?.value?.trim();
+      const field    = fieldRef.current?.value;
+      const abstract = abstractRef.current?.value?.trim();
+      if (!title || !abstract || !field) { toast_("Başlık, özet ve alan zorunludur.","err"); return; }
+      setYukleniyor(true);
+      let file_url = null;
+      const file = fileRef.current?.files?.[0];
+      if (file) {
+        setDosyaMsg("Dosya yükleniyor...");
+        const fname = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,"_")}`;
+        const {error:ue} = await supa.storage.from("makaleler").upload(fname, file, {upsert:true});
+        if (ue) { setDosyaMsg("Dosya yüklenemedi: "+ue.message); setYukleniyor(false); return; }
+        setDosyaMsg("✅ Dosya yüklendi!");
+        const {data:ud} = supa.storage.from("makaleler").getPublicUrl(fname);
+        file_url = ud?.publicUrl;
+      }
+      const {error} = await supa.from("articles").insert([{
+        title, field, abstract,
+        keywords: keywordsRef.current?.value?.trim()||null,
+        coauthors: coauthRef.current?.value?.trim()||null,
+        author:user.name, author_email:user.email,
+        status:"beklemede", file_url
+      }]);
+      setYukleniyor(false);
+      if (error) { toast_("Bir hata oluştu.","err"); return; }
+      await loadArticles();
+      setModal(null);
+      toast_("✓ Makaleniz ARSİS'e iletildi!");
+    };
+
+    return (
+      <div>
+        <input ref={titleRef} placeholder="Makale Başlığı *" style={inp}/>
+        <select ref={fieldRef} style={{...inp,color:"#1a1208"}}>
+          <option value="">Alan Seçin *</option>
+          {["Etnomüzikoloji","Müzikoloji","Müzik Antropolojisi","Antropoloji","Organoloji & Çalgı Yapımı","Müzik Tarihi"].map(f=>(
+            <option key={f} value={f}>{f}</option>
+          ))}
+        </select>
+        <input ref={coauthRef} placeholder="Ortak Yazarlar (isteğe bağlı)" style={inp}/>
+        <textarea ref={abstractRef} placeholder="Özet (min. 150 kelime) *" rows={5}
+          style={{...inp,resize:"vertical"}}/>
+        <input ref={keywordsRef} placeholder="Anahtar Kelimeler (virgülle ayırın)" style={inp}/>
+        <div style={{marginBottom:10}}>
+          <div style={{fontSize:11,color:"#7a6e5f",marginBottom:6,letterSpacing:1}}>MAKALE DOSYASI (PDF veya DOCX)</div>
+          <input ref={fileRef} type="file" accept=".pdf,.docx" style={{fontSize:13,color:"#444"}}/>
+          {dosyaMsg && <div style={{fontSize:12,color:dosyaMsg.includes("✅")?"#065f46":"#991b1b",marginTop:4}}>{dosyaMsg}</div>}
+        </div>
+        <button onClick={gonder} disabled={yukleniyor} style={{...btn_gold,opacity:yukleniyor?0.6:1}}>
+          {yukleniyor?"GÖNDERİLİYOR...":"MAKALEMİ GÖNDER"}
+        </button>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{background:"#f5f0e8",minHeight:"100vh"}}>
+      <Nav page={page} setPage={setPage} user={user} setModal={setModal} lang={lang} setLang={setLang} scrolled={scrolled}/>
+
+      {page==="home"    && <HomePage user={user} setModal={setModal} lang={lang} articles={articles}/>}
+      {page==="archive" && <ArchivePage user={user} setModal={setModal} lang={lang}/>}
+      {page==="about"   && <AboutPage lang={lang}/>}
+      {page==="oa"      && <OAPage lang={lang}/>}
+      {page==="guide"   && <GuidePage lang={lang}/>}
+      {page==="ethics"  && <EthicsPage lang={lang}/>}
+      {page==="panel"   && user && (
+        <PanelPage
+          user={user} setModal={setModal} toast_={toast_} lang={lang}
+          articles={articles} users={users} loadArticles={loadArticles}
+        />
+      )}
+
+      <Footer setPage={setPage} lang={lang}/>
+      <Toast msg={toast?.msg} type={toast?.type}/>
+
+      {/* MODALlar */}
+      {modal==="login" && (
+        <Modal title="ARSİS'E GİRİŞ" onClose={()=>setModal(null)}>
+          <LoginForm/>
+        </Modal>
+      )}
+      {modal==="register" && (
+        <Modal title="KAYIT OL" sub="Ücretsiz akademik hesap oluşturun" onClose={()=>setModal(null)}>
+          <RegisterForm/>
+        </Modal>
+      )}
+      {modal==="makale" && user && (
+        <Modal title="MAKALENİZİ GÖNDERİN" sub="ARSİS Cilt 1, Sayı 1 · Haziran 2026" onClose={()=>setModal(null)}>
+          <MakaleForm/>
+        </Modal>
+      )}
+      {modal==="cikis" && (
+        <Modal title="ÇIKIŞ" onClose={()=>setModal(null)}>
+          <p style={{fontSize:14,color:"#444",marginBottom:20}}>Hesabınızdan çıkış yapmak istiyor musunuz?</p>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>{setUser(null);setModal(null);setPage("home");toast_("Çıkış yapıldı.");}} style={{...btn_gold,flex:1}}>ÇIKIŞ YAP</button>
+            <button onClick={()=>setModal(null)} style={{flex:1,padding:"11px",borderRadius:7,border:"1px solid #d4c9b4",background:"none",fontSize:14,cursor:"pointer"}}>İptal</button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App/>);
 </script>
 </body>
 </html>
