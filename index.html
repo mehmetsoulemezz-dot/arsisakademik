@@ -7,7 +7,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{background:#f5f0e8;font-family:Georgia,serif}
@@ -24,57 +24,10 @@
 <div id="root"></div>
 <script type="text/babel">
 
-
-// MOCK SUPABASE - önizleme için
+// ─── SUPABASE ────────────────────────────────────────────────────────────────
 const SUPA_URL = "https://nivablklgvgykwauzbeo.supabase.co";
-const SUPA_KEY = "mock";
-const _mockData = {
-  articles:[
-    {id:1,title:"Doğu Karadeniz'de Kemençe Geleneği",author:"Ayşe Duman",author_email:"a.duman@ktu.edu.tr",field:"Etnomüzikoloji",status:"hakemde",abstract:"Bu çalışma kemençe geleneğini kültürel bellek kuramı perspektifinden ele almaktadır.",created_at:"2026-01-12T10:00:00Z",file_url:null,keywords:"kemençe; kültürel bellek",coauthors:"Ercan Yılmaz"},
-    {id:2,title:"Alevi Cem Törenlerinde Müziğin Ritüel Ekonomisi",author:"Mehmet Karahan",author_email:"m.karahan@hacettepe.edu.tr",field:"Müzik Antropolojisi",status:"baskida",abstract:"Cem töreninde müziğin toplumsal işlevleri üzerine bir araştırma.",created_at:"2026-01-18T10:00:00Z",file_url:null,keywords:"Alevilik; cem",coauthors:null},
-    {id:3,title:"Osmanlı Arşivlerinde Ud Yapımı",author:"Selin Arslan",author_email:"s.arslan@itu.edu.tr",field:"Organoloji & Çalgı Yapımı",status:"beklemede",abstract:"18. yüzyıl İstanbul luthieria pratiğine ilişkin arşiv bulguları.",created_at:"2026-01-22T10:00:00Z",file_url:null,keywords:"ud; Osmanlı",coauthors:"James Whitfield"},
-  ],
-  users:[
-    {id:1,name:"Mehmet Söylemez",email:"editor@arsis.tr",password:"1234",institution:"Ankara Müzik ve Güzel Sanatlar Üniversitesi",orcid:"0000-0001-0000-0001",role:"editor"},
-    {id:2,name:"Ayşe Duman",email:"a.duman@ktu.edu.tr",password:"1234",institution:"Karadeniz Teknik Üniversitesi",orcid:"0000-0001-2345-6789",role:"yazar"},
-    {id:3,name:"Prof. Dr. Ercan Yılmaz",email:"e.yilmaz@hacettepe.edu.tr",password:"1234",institution:"Hacettepe Üniversitesi",orcid:"0000-0002-3456-7890",role:"hakem"},
-  ],
-  forum_posts:[
-    {id:1,title:"Makale gönderme süreci hakkında",body:"Merhaba, makale gönderme sürecinde hangi formata uymalıyım?",author:"Ayşe Duman",author_email:"a.duman@ktu.edu.tr",created_at:"2026-02-10T09:00:00Z"},
-  ],
-  forum_replies:[
-    {id:1,post_id:1,body:"Merhaba! Yazım Kuralları sayfamızdaki şablonu kullanabilirsiniz. Times New Roman 12pt, APA 7 formatında.",author:"Mehmet Söylemez",author_email:"editor@arsis.tr",created_at:"2026-02-10T10:30:00Z"},
-  ],
-  reviews:[
-    {id:1,article_id:1,reviewer_email:"e.yilmaz@hacettepe.edu.tr",reviewer_name:"Prof. Dr. Ercan Yılmaz",status:"tamamlandi",decision:"kabul",comments:"Makale alanına özgün katkı sunmaktadır. Küçük düzeltmelerle yayımlanabilir.",assigned_at:"2026-01-20T10:00:00Z",completed_at:"2026-02-01T10:00:00Z"},
-  ],
-  article_notes:[],
-};
-
-const supa = {
-  from:(table)=>({
-    select:(cols)=>({
-      order:(col,opts)=>({then:(fn)=>fn({data:_mockData[table]||[]})}),
-      eq:(col,val)=>({
-        order:(c,o)=>({then:(fn)=>fn({data:(_mockData[table]||[]).filter(r=>r[col]===val)})}),
-        single:()=>({then:(fn)=>fn({data:(_mockData[table]||[]).find(r=>r[col]===val)||null})}),
-        then:(fn)=>fn({data:(_mockData[table]||[]).filter(r=>r[col]===val)}),
-      }),
-      in:(col,vals)=>({order:(c,o)=>({then:(fn)=>fn({data:(_mockData[table]||[]).filter(r=>vals.includes(r[col]))})}),then:(fn)=>fn({data:(_mockData[table]||[]).filter(r=>vals.includes(r[col]))})}),
-      single:()=>({then:(fn)=>fn({data:null})}),
-      then:(fn)=>fn({data:_mockData[table]||[]}),
-    }),
-    insert:(rows)=>({
-      select:()=>({single:()=>new Promise(res=>{const row={...rows[0],id:Date.now(),created_at:new Date().toISOString()};(_mockData[table]=_mockData[table]||[]).push(row);res({data:row,error:null});})}),
-      then:(fn)=>{ (_mockData[table]=_mockData[table]||[]).push(...rows.map(r=>({...r,id:Date.now(),created_at:new Date().toISOString()})));fn({error:null}); }
-    }),
-    update:(vals)=>({
-      eq:(col,val)=>({then:(fn)=>{(_mockData[table]||[]).forEach(r=>{if(r[col]===val)Object.assign(r,vals);});fn({error:null});}})
-    }),
-  }),
-  storage:{from:()=>({upload:()=>new Promise(res=>res({error:null})),getPublicUrl:()=>({data:{publicUrl:"#"}})})}
-};
-
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmFibGtsZ3ZneWt3YXV6YmVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTk5NTksImV4cCI6MjA4OTQ3NTk1OX0.Rv3qG_iOrqKewxnPReKZDnPaJYI3lTCeNA1IItqlzBU";
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // ─── RENKLER ────────────────────────────────────────────────────────────────
 const G = {
@@ -1562,9 +1515,10 @@ function App() {
       const email = emailRef.current?.value?.trim();
       const pass  = passRef.current?.value?.trim();
       if (!email || !pass) { setHata("E-posta ve şifre zorunludur."); return; }
-      const {data,error} = await supa.from("users").select("*").eq("email",email).eq("password",pass).single();
-      if (error || !data) { setHata("E-posta veya şifre hatalı."); return; }
-      setUser(data);
+      const {data,error} = await supa.from("users").select("*")
+        .eq("email",email).eq("password",pass);
+      if (error || !data || data.length === 0) { setHata("E-posta veya şifre hatalı."); return; }
+      setUser(data[0]);
       setModal(null);
       toast_("ARSİS'e hoş geldiniz!");
       setPage("panel");
@@ -1606,9 +1560,9 @@ function App() {
         institution: instRef.current?.value?.trim()||null,
         orcid: orcidRef.current?.value?.trim()||null,
         role
-      }]).select().single();
-      if (error) { setHata("Bu e-posta zaten kayıtlı olabilir."); return; }
-      setUser(data);
+      }]).select();
+      if (error || !data || data.length === 0) { setHata("Bu e-posta zaten kayıtlı olabilir."); return; }
+      setUser(data[0]);
       setModal(null);
       toast_("ARSİS'e hoş geldiniz!");
       setPage("panel");
