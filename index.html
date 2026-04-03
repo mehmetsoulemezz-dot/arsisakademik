@@ -472,278 +472,493 @@ function HakemMakaleKarti({review, makale, onDegerlendir}) {
 }
 
 // ─── HAKEM PANELİ SEKMESİ ────────────────────────────────────────────────────
+// ─── BİLDİRİM BADGE ─────────────────────────────────────────────────────────
+function BildirimBadge({count}) {
+  if (!count) return null;
+  return (
+    <span style={{
+      display:"inline-flex",alignItems:"center",justifyContent:"center",
+      background:"#dc2626",color:"#fff",borderRadius:"50%",
+      width:18,height:18,fontSize:10,fontWeight:700,marginLeft:6,flexShrink:0
+    }}>{count > 9 ? "9+" : count}</span>
+  );
+}
+
+// ─── HAKEM DEĞERLENDİRME FORMU ───────────────────────────────────────────────
+function HakemDegerlendirmeFormu({review, makale, onGonder}) {
+  const [puanlar, setPuanlar] = React.useState({ozgunluk:0,metodoloji:0,katki:0,yazim:0,alanyazin:0});
+  const [karar, setKarar] = React.useState("");
+  const yorumRef    = React.useRef(null);
+  const gucluRef    = React.useRef(null);
+  const zayifRef    = React.useRef(null);
+  const yazarNotRef = React.useRef(null);
+  const [gonderiyor, setGonderiyor] = React.useState(false);
+
+  const kriterler = [
+    {key:"ozgunluk",  lbl:"Özgünlük & Yenilik",     desc:"Araştırmanın alana yeni katkısı"},
+    {key:"metodoloji",lbl:"Metodolojik Sağlamlık",   desc:"Yöntemin uygunluğu, veri kalitesi"},
+    {key:"katki",     lbl:"Bilimsel Katkı & Etki",   desc:"Alanın ilerlemesine potansiyel katkı"},
+    {key:"yazim",     lbl:"Yazım & Sunum Kalitesi",  desc:"Akademik dil, yapı ve biçimsel uyum"},
+    {key:"alanyazin", lbl:"Alanyazın Kullanımı",     desc:"Kaynakların yeterliliği ve güncelliği"},
+  ];
+
+  const kararlar = [
+    {k:"kabul",          lbl:"✓ Kabul",                c:"#065f46",bg:"#d1fae5",desc:"Yayımlanmaya hazır"},
+    {k:"minor_revizyon", lbl:"↻ Küçük Revizyon",       c:"#1d4ed8",bg:"#dbeafe",desc:"Küçük düzeltmeler gerekli"},
+    {k:"major_revizyon", lbl:"↺ Kapsamlı Revizyon",    c:"#6d28d9",bg:"#ede9fe",desc:"Önemli revizyonlar gerekli"},
+    {k:"red",            lbl:"✗ Red",                  c:"#991b1b",bg:"#fee2e2",desc:"Yayımlanması önerilmez"},
+    {k:"baska_dergi",    lbl:"→ Başka Dergiye Yönlendir",c:"#b45309",bg:"#fef3c7",desc:"Kapsam dışı"},
+  ];
+
+  const ort = () => {
+    const vals = Object.values(puanlar).filter(v=>v>0);
+    return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : 0;
+  };
+
+  const gonder = async () => {
+    const yorum = yorumRef.current?.value?.trim();
+    if (!karar) { alert("Lütfen bir karar seçin."); return; }
+    if (!yorum || yorum.length < 50) { alert("Genel değerlendirme en az 50 karakter olmalıdır."); return; }
+    if (Object.values(puanlar).some(v=>v===0)) { alert("Lütfen tüm kriterleri puanlayın."); return; }
+    setGonderiyor(true);
+    const detay = `GENEL DEĞERLENDİRME:\n${yorum}\n\nGÜÇLÜ YÖNLER:\n${gucluRef.current?.value||"—"}\n\nZAYIF YÖNLER:\n${zayifRef.current?.value||"—"}\n\nYAZARA NOT:\n${yazarNotRef.current?.value||"—"}\n\nPUANLAR:\n${kriterler.map(k=>`${k.lbl}: ${puanlar[k.key]}/5`).join(" | ")}\nOrtalama: ${ort()}/5`;
+    const kmap = {kabul:"kabul",minor_revizyon:"revizyon",major_revizyon:"revizyon",red:"red",baska_dergi:"red"};
+    await onGonder(review.id, review.article_id, kmap[karar]||karar, detay);
+    setGonderiyor(false);
+  };
+
+  return (
+    <div style={{padding:"20px",background:"#f8fafc",borderTop:`1px solid ${G.border}`}}>
+      {makale?.abstract && (
+        <div style={{background:"#fff",borderRadius:8,padding:"12px 16px",marginBottom:18,border:`1px solid ${G.border}`,borderLeft:`3px solid ${G.gold}`}}>
+          <div style={{fontSize:10,color:G.gold,letterSpacing:1.5,fontWeight:700,marginBottom:5}}>MAKALE ÖZETİ</div>
+          <p style={{fontSize:12.5,color:"#555",lineHeight:1.65,margin:0}}>{makale.abstract}</p>
+        </div>
+      )}
+
+      <div style={{background:"#fff",borderRadius:10,padding:"16px",marginBottom:16,border:`1px solid ${G.border}`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <div style={{fontSize:11,fontWeight:700,color:G.ink,letterSpacing:0.5}}>DEĞERLENDİRME KRİTERLERİ (1–5)</div>
+          <div style={{fontSize:13,fontWeight:700,color:G.gold,background:`${G.gold}15`,padding:"3px 12px",borderRadius:20,border:`1px solid ${G.gold}33`}}>
+            Ort: {ort()}/5
+          </div>
+        </div>
+        {kriterler.map(kr => (
+          <div key={kr.key} style={{marginBottom:12}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+              <div>
+                <span style={{fontSize:13,fontWeight:700,color:G.ink}}>{kr.lbl}</span>
+                <span style={{fontSize:11,color:G.muted,marginLeft:8}}>{kr.desc}</span>
+              </div>
+              <div style={{display:"flex",gap:4}}>
+                {[1,2,3,4,5].map(n => (
+                  <button key={n} onClick={()=>setPuanlar(p=>({...p,[kr.key]:n}))} style={{
+                    width:30,height:30,borderRadius:5,border:`1.5px solid ${puanlar[kr.key]>=n?"#c9a84c":G.border}`,
+                    background:puanlar[kr.key]>=n?"#c9a84c":"#fff",
+                    color:puanlar[kr.key]>=n?"#1a1208":G.muted,fontWeight:700,fontSize:12,cursor:"pointer"
+                  }}>{n}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{height:3,background:"#f1f5f9",borderRadius:2}}>
+              <div style={{height:"100%",background:"#c9a84c",borderRadius:2,width:`${puanlar[kr.key]*20}%`,transition:"width 0.3s"}}/>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:"#065f46",marginBottom:4}}>GÜÇLÜ YÖNLER</div>
+          <textarea ref={gucluRef} placeholder="Makalenin güçlü yönleri..." rows={3} style={{
+            width:"100%",padding:"8px",border:"1.5px solid #d1fae5",borderRadius:7,fontSize:12.5,resize:"vertical",boxSizing:"border-box",background:"#f0fdf4"
+          }}/>
+        </div>
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:"#991b1b",marginBottom:4}}>ZAYIF YÖNLER</div>
+          <textarea ref={zayifRef} placeholder="Geliştirilmesi gerekenler..." rows={3} style={{
+            width:"100%",padding:"8px",border:"1.5px solid #fee2e2",borderRadius:7,fontSize:12.5,resize:"vertical",boxSizing:"border-box",background:"#fff7f7"
+          }}/>
+        </div>
+      </div>
+
+      <div style={{marginBottom:10}}>
+        <div style={{fontSize:11,fontWeight:700,color:G.ink,marginBottom:4}}>GENEL DEĞERLENDİRME (Editöre & Yazara) *</div>
+        <textarea ref={yorumRef} placeholder="Kapsamlı görüşünüzü yazın (min. 50 karakter)..." rows={5} style={{
+          width:"100%",padding:"10px 12px",border:`1.5px solid ${G.border}`,borderRadius:7,fontSize:13,resize:"vertical",lineHeight:1.65,boxSizing:"border-box"
+        }}/>
+      </div>
+
+      <div style={{marginBottom:16}}>
+        <div style={{fontSize:11,fontWeight:700,color:"#6d28d9",marginBottom:4}}>YAZARA ÖZEL NOT (isteğe bağlı)</div>
+        <textarea ref={yazarNotRef} placeholder="Yazara özel tavsiye veya kaynak önerileri..." rows={2} style={{
+          width:"100%",padding:"8px 12px",border:"1.5px solid #ede9fe",borderRadius:7,fontSize:12.5,resize:"vertical",boxSizing:"border-box",background:"#faf5ff"
+        }}/>
+      </div>
+
+      <div style={{marginBottom:16}}>
+        <div style={{fontSize:11,fontWeight:700,color:G.ink,marginBottom:8}}>EDİTÖRYEL KARAR *</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+          {kararlar.map(k => (
+            <div key={k.k} onClick={()=>setKarar(k.k)} style={{
+              border:`2px solid ${karar===k.k?k.c:G.border}`,borderRadius:8,padding:"9px 12px",
+              cursor:"pointer",background:karar===k.k?k.bg:"#fff",transition:"all 0.15s"
+            }}>
+              <div style={{fontWeight:700,fontSize:12.5,color:k.c,marginBottom:1}}>{k.lbl}</div>
+              <div style={{fontSize:10,color:G.muted}}>{k.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{display:"flex",gap:10,alignItems:"center",background:"#f8fafc",padding:"12px",borderRadius:8,border:`1px solid ${G.border}`}}>
+        <div style={{fontSize:11,color:G.muted,flex:1}}>Bu değerlendirme çift kör süreç kapsamında gizli tutulur.</div>
+        <button onClick={gonder} disabled={gonderiyor} style={{
+          background:G.teal,color:"#fff",border:"none",padding:"10px 22px",
+          borderRadius:7,fontWeight:700,fontSize:13,cursor:"pointer",opacity:gonderiyor?0.6:1,whiteSpace:"nowrap"
+        }}>{gonderiyor?"Gönderiliyor...":"DEĞERLENDİRMEYİ GÖNDER →"}</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── HAKEM PANELİ ─────────────────────────────────────────────────────────────
 function HakemSekme({user, toast_}) {
   const [atamalar, setAtamalar] = React.useState([]);
   const [makaleler, setMakaleler] = React.useState({});
+  const [acik, setAcik] = React.useState(null);
 
   const yukle = React.useCallback(async () => {
-    const {data} = await supa.from("reviews").select("*")
-      .eq("reviewer_email", user.email).order("assigned_at",{ascending:false});
+    const {data} = await supa.from("reviews").select("*").eq("reviewer_email",user.email).order("assigned_at",{ascending:false});
     if (!data) return;
     setAtamalar(data);
-    const ids = [...new Set(data.map(r=>r.article_id))];
-    if (ids.length > 0) {
-      const {data:arts} = await supa.from("articles").select("*").in("id",ids);
-      if (arts) {
-        const m = {};
-        arts.forEach(a => { m[a.id]=a; });
-        setMakaleler(m);
-      }
+    const ids=[...new Set(data.map(r=>r.article_id))];
+    if(ids.length>0){
+      const {data:arts}=await supa.from("articles").select("*").in("id",ids);
+      if(arts){const m={};arts.forEach(a=>{m[a.id]=a;});setMakaleler(m);}
     }
-  }, [user.email]);
+  },[user.email]);
 
-  React.useEffect(() => { yukle(); }, [yukle]);
+  React.useEffect(()=>{yukle();},[yukle]);
 
-  const degerlendir = React.useCallback(async (reviewId, articleId, karar, yorumRef) => {
-    const yorum = yorumRef.current?.value?.trim();
-    if (!yorum) { toast_("Lütfen değerlendirme yorumu yazın.", "err"); return; }
-    if (!karar) { toast_("Lütfen bir karar seçin.", "err"); return; }
-    await supa.from("reviews").update({
-      status:"tamamlandi", decision:karar,
-      comments:yorum, completed_at:new Date().toISOString()
-    }).eq("id", reviewId);
-    const yeniDurum = karar==="kabul"?"baskida":karar==="revizyon"?"revizyon":"reddedildi";
-    await supa.from("articles").update({status:yeniDurum}).eq("id",articleId);
-    toast_("✓ Değerlendirmeniz editöre iletildi!");
+  const degerlendir = React.useCallback(async(reviewId,articleId,karar,yorum)=>{
+    await supa.from("reviews").update({status:"tamamlandi",decision:karar,comments:yorum,completed_at:new Date().toISOString()}).eq("id",reviewId);
+    await supa.from("articles").update({status:karar==="kabul"?"baskida":karar==="revizyon"?"revizyon":"reddedildi"}).eq("id",articleId);
+    toast_("✓ Değerlendirmeniz editöre iletildi. Teşekkür ederiz!");
+    setAcik(null);
     yukle();
-  }, [yukle, toast_]);
+  },[yukle,toast_]);
+
+  const bekleyen = atamalar.filter(r=>r.status==="beklemede");
 
   return (
     <div>
-      <h3 style={{fontSize:17,letterSpacing:1,color:G.ink,fontWeight:700,marginBottom:6}}>HAKEM PANELİ</h3>
-      <p style={{fontSize:13,color:G.muted,marginBottom:24,fontStyle:"italic"}}>
-        Size atanan makaleler. Başlığa tıklayarak değerlendirmenizi girebilirsiniz.
-      </p>
-      {atamalar.length === 0 ? (
-        <div style={{
-          textAlign:"center",padding:"50px 20px",color:G.muted,
-          background:G.cream,borderRadius:12,border:`1px solid ${G.border}`
-        }}>
-          <div style={{fontSize:28,marginBottom:10}}>⊕</div>
-          <p style={{fontStyle:"italic"}}>Henüz size atanmış makale yok.</p>
-          <p style={{fontSize:12,marginTop:8}}>Editör atama yaptığında burada görünür.</p>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18}}>
+        <div>
+          <h3 style={{fontSize:17,fontWeight:700,color:G.ink,margin:0}}>HAKEM PANELİ</h3>
+          <p style={{fontSize:12,color:G.muted,margin:"3px 0 0",fontStyle:"italic"}}>Çift kör değerlendirme sistemi · COPE standartları</p>
         </div>
-      ) : atamalar.map(r => (
-        <HakemMakaleKarti key={r.id} review={r} makale={makaleler[r.article_id]} onDegerlendir={degerlendir}/>
-      ))}
+        <div style={{display:"flex",gap:8}}>
+          <div style={{textAlign:"center",background:"#dbeafe",borderRadius:8,padding:"7px 12px",border:"1px solid #bfdbfe"}}>
+            <div style={{fontSize:18,fontWeight:700,color:"#1e40af"}}>{bekleyen.length}</div>
+            <div style={{fontSize:10,color:"#1e40af"}}>Bekleyen</div>
+          </div>
+          <div style={{textAlign:"center",background:"#d1fae5",borderRadius:8,padding:"7px 12px",border:"1px solid #a7f3d0"}}>
+            <div style={{fontSize:18,fontWeight:700,color:"#065f46"}}>{atamalar.filter(r=>r.status==="tamamlandi").length}</div>
+            <div style={{fontSize:10,color:"#065f46"}}>Tamamlanan</div>
+          </div>
+        </div>
+      </div>
+
+      {bekleyen.length > 0 && (
+        <div style={{background:"linear-gradient(135deg,#fef3c7,#fde68a)",border:"1px solid #f59e0b",borderRadius:10,padding:"11px 15px",marginBottom:18,display:"flex",alignItems:"center",gap:10}}>
+          <div style={{fontSize:18}}>⚠</div>
+          <div>
+            <div style={{fontWeight:700,fontSize:13,color:"#92400e"}}>{bekleyen.length} makale değerlendirmenizi bekliyor</div>
+            <div style={{fontSize:11,color:"#b45309"}}>Lütfen 30 gün içinde değerlendirmenizi tamamlayınız.</div>
+          </div>
+        </div>
+      )}
+
+      {atamalar.length === 0 ? (
+        <div style={{textAlign:"center",padding:"50px 20px",color:G.muted,background:G.cream,borderRadius:12,border:`1px solid ${G.border}`}}>
+          <div style={{fontSize:28,marginBottom:10}}>⊕</div>
+          <p style={{fontStyle:"italic",marginBottom:6}}>Henüz size atanmış makale yok.</p>
+          <p style={{fontSize:12}}>Editör atama yaptığında burada görünür.</p>
+        </div>
+      ) : atamalar.map(r => {
+        const makale = makaleler[r.article_id];
+        const tamam = r.status==="tamamlandi";
+        const isAcik = acik===r.id;
+        return (
+          <div key={r.id} style={{border:`1px solid ${tamam?G.border:"#f59e0b"}`,borderRadius:12,marginBottom:12,overflow:"hidden",borderLeft:`4px solid ${tamam?"#065f46":"#f59e0b"}`}}>
+            <div onClick={()=>setAcik(isAcik?null:r.id)} style={{background:"#fff",padding:"14px 18px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:700,fontSize:13.5,color:G.ink,marginBottom:3,lineHeight:1.4}}>{makale?.title||"Yükleniyor..."}</div>
+                <div style={{fontSize:11,color:G.muted}}>{makale?.field} · Atandı: {r.assigned_at?.split("T")[0]}</div>
+                {!tamam && <span style={{display:"inline-block",marginTop:4,fontSize:9,padding:"2px 7px",borderRadius:20,background:"#fef3c7",color:"#92400e",fontWeight:700}}>DEĞERLENDİRME BEKLENİYOR</span>}
+                {tamam && r.decision && <div style={{marginTop:4,fontSize:10,display:"inline-block",padding:"2px 8px",borderRadius:20,background:r.decision==="kabul"?"#d1fae5":"#ede9fe",color:r.decision==="kabul"?"#065f46":"#6d28d9",fontWeight:700}}>Kararınız: {r.decision==="kabul"?"Kabul":"Revizyon"}</div>}
+              </div>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5,flexShrink:0}}>
+                <span style={{fontSize:10,padding:"3px 10px",borderRadius:20,fontWeight:700,background:tamam?"#d1fae5":"#fef3c7",color:tamam?"#065f46":"#92400e"}}>{tamam?"✓ Tamamlandı":"⏳ Bekliyor"}</span>
+                {makale?.file_url && !tamam && <a href={makale.file_url} target="_blank" onClick={e=>e.stopPropagation()} style={{fontSize:10,color:"#fff",background:G.teal,padding:"3px 10px",borderRadius:5,fontWeight:700}}>📄 İndir</a>}
+                <span style={{color:G.gold,fontSize:12}}>{isAcik?"▲":"▼"}</span>
+              </div>
+            </div>
+            {isAcik && !tamam && <HakemDegerlendirmeFormu review={r} makale={makale} onGonder={degerlendir}/>}
+            {isAcik && tamam && (
+              <div style={{padding:"16px 18px",background:"#f0fdf4",borderTop:`1px solid ${G.border}`}}>
+                <div style={{fontSize:11,fontWeight:700,color:"#065f46",marginBottom:8}}>TAMAMLANAN DEĞERLENDİRMENİZ</div>
+                <p style={{fontSize:13,color:"#444",lineHeight:1.7,margin:0,whiteSpace:"pre-line"}}>{r.comments}</p>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 // ─── YÖNETİM PANELİ ──────────────────────────────────────────────────────────
 function YonetimSekme({articles, users, toast_, loadArticles}) {
-  const [reviews, setReviews] = React.useState([]);
-  const [acikMakale, setAcikMakale] = React.useState(null);
-  const [sekme, setSekme] = React.useState("makaleler");
+  const [reviews, setReviews]           = React.useState([]);
+  const [acikMakale, setAcikMakale]     = React.useState(null);
+  const [sekme, setSekme]               = React.useState("dashboard");
   const [yazarNotMakale, setYazarNotMakale] = React.useState(null);
+  const [filtre, setFiltre]             = React.useState("tumu");
+  const [arama, setArama]               = React.useState("");
   const notRef = React.useRef(null);
 
-  const yukleReviews = React.useCallback(async () => {
-    const {data} = await supa.from("reviews").select("*").order("assigned_at",{ascending:false});
-    if (data) setReviews(data);
-  }, []);
+  const yukleReviews = React.useCallback(async()=>{
+    const{data}=await supa.from("reviews").select("*").order("assigned_at",{ascending:false});
+    if(data)setReviews(data);
+  },[]);
 
-  React.useEffect(() => { yukleReviews(); }, [yukleReviews]);
+  React.useEffect(()=>{yukleReviews();},[yukleReviews]);
 
-  const durumGuncelle = async (id, durum) => {
+  const durumGuncelle = async(id,durum)=>{
     await supa.from("articles").update({status:durum}).eq("id",id);
     await loadArticles();
-    toast_("✓ Durum güncellendi!");
+    toast_("✓ Makale durumu güncellendi!");
   };
 
-  const hakemAta = async (makale, hakemEmail) => {
-    const hakem = users.find(u=>u.email===hakemEmail);
-    if (!hakem) return;
-    const zaten = reviews.some(r=>r.article_id===makale.id&&r.reviewer_email===hakemEmail);
-    if (zaten) { toast_("Bu hakem zaten atanmış.","err"); return; }
-    await supa.from("reviews").insert([{
-      article_id:makale.id, reviewer_email:hakem.email,
-      reviewer_name:hakem.name, status:"beklemede"
-    }]);
+  const hakemAta = async(makale,hakemEmail)=>{
+    const hakem=users.find(u=>u.email===hakemEmail);
+    if(!hakem)return;
+    const zaten=reviews.some(r=>r.article_id===makale.id&&r.reviewer_email===hakemEmail);
+    if(zaten){toast_("Bu hakem zaten atanmış.","err");return;}
+    await supa.from("reviews").insert([{article_id:makale.id,reviewer_email:hakem.email,reviewer_name:hakem.name,status:"beklemede"}]);
     await supa.from("articles").update({status:"hakemde"}).eq("id",makale.id);
-    await loadArticles();
-    await yukleReviews();
-    toast_("✓ Hakem atandı!");
+    await loadArticles();await yukleReviews();
+    toast_(`✓ ${hakem.name} makaleye atandı!`);
   };
 
-  const yazaraNot = async () => {
-    const not = notRef.current?.value?.trim();
-    if (!not) { toast_("Not boş olamaz.","err"); return; }
-    await supa.from("article_notes").insert([{
-      article_id: yazarNotMakale.id,
-      to_email: yazarNotMakale.author_email,
-      from_name: "Editör",
-      content: not
-    }]);
-    toast_("✓ Not yazara iletildi!");
-    setYazarNotMakale(null);
+  const yazaraNot = async()=>{
+    const not=notRef.current?.value?.trim();
+    if(!not){toast_("Not boş olamaz.","err");return;}
+    await supa.from("article_notes").insert([{article_id:yazarNotMakale.id,to_email:yazarNotMakale.author_email,from_name:"Editör",content:not}]);
+    toast_("✓ Not yazara iletildi!");setYazarNotMakale(null);
   };
 
   const hakemler = users.filter(u=>u.role==="hakem");
-  const istatistik = [
-    {n:articles.length,          l:"Toplam Makale",    c:G.gold},
-    {n:articles.filter(a=>a.status==="beklemede").length, l:"Ön İncelemede", c:"#1e40af"},
-    {n:articles.filter(a=>a.status==="hakemde").length,   l:"Hakemde",       c:G.rust},
-    {n:reviews.filter(r=>r.status==="tamamlandi").length, l:"Değerlendirme", c:"#6d28d9"},
-    {n:articles.filter(a=>a.status==="baskida"||a.status==="yayinda").length, l:"Yayın", c:G.teal},
-    {n:users.length,             l:"Üye",              c:"#0891b2"},
+  const yeniMakaleler = articles.filter(a=>a.status==="beklemede");
+  const tamamlananDeg = reviews.filter(r=>r.status==="tamamlandi");
+  const toplamBildirim = yeniMakaleler.length + tamamlananDeg.length;
+
+  const filtreliMakaleler = articles.filter(a=>{
+    const df = filtre==="tumu"||a.status===filtre;
+    const af = !arama||a.title?.toLowerCase().includes(arama.toLowerCase())||a.author?.toLowerCase().includes(arama.toLowerCase());
+    return df&&af;
+  });
+
+  const istat = [
+    {n:articles.length,l:"Toplam",c:"#1a1208",bg:"#f5f0e8"},
+    {n:articles.filter(a=>a.status==="beklemede").length,l:"Ön İnceleme",c:"#1e40af",bg:"#eff6ff"},
+    {n:articles.filter(a=>a.status==="hakemde").length,l:"Hakemde",c:"#b45309",bg:"#fffbeb"},
+    {n:tamamlananDeg.length,l:"Değerlendirme",c:"#6d28d9",bg:"#f5f3ff"},
+    {n:articles.filter(a=>a.status==="baskida"||a.status==="yayinda").length,l:"Kabul/Yayın",c:"#065f46",bg:"#ecfdf5"},
+    {n:articles.filter(a=>a.status==="reddedildi").length,l:"Reddedilen",c:"#991b1b",bg:"#fff1f2"},
+  ];
+
+  const SEKMELER = [
+    {id:"dashboard",lbl:"Dashboard",icon:"▣"},
+    {id:"makaleler",lbl:"Makaleler",icon:"📄",badge:yeniMakaleler.length},
+    {id:"degerlendirmeler",lbl:"Değerlendirmeler",icon:"⊕",badge:tamamlananDeg.length},
+    {id:"uyeler",lbl:"Üyeler",icon:"◎"},
   ];
 
   return (
     <div>
-      <h3 style={{fontSize:17,letterSpacing:1,color:G.ink,fontWeight:700,marginBottom:20}}>YÖNETİM PANELİ</h3>
-
-      {/* İstatistik */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:24}}>
-        {istatistik.map(s => (
-          <div key={s.l} style={{
-            background:`${s.c}10`, borderRadius:10, padding:"12px 14px",
-            border:`1px solid ${s.c}30`, textAlign:"center"
-          }}>
-            <div style={{fontSize:24,fontWeight:700,color:s.c}}>{s.n}</div>
-            <div style={{fontSize:10,color:G.muted,marginTop:2}}>{s.l}</div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18,paddingBottom:14,borderBottom:`1px solid ${G.border}`}}>
+        <div>
+          <h3 style={{fontSize:17,fontWeight:700,color:G.ink,margin:0}}>EDİTÖR PANELİ</h3>
+          <p style={{fontSize:11,color:G.muted,margin:"3px 0 0"}}>ARSİS Journal Management System · {new Date().toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"})}</p>
+        </div>
+        {toplamBildirim > 0 && (
+          <div style={{background:"#dc2626",color:"#fff",borderRadius:8,padding:"8px 14px",display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:16}}>🔔</span>
+            <div>
+              <div style={{fontWeight:700,fontSize:12}}>{toplamBildirim} yeni bildirim</div>
+              <div style={{fontSize:10,opacity:0.9}}>Dikkat gerektiren işlemler var</div>
+            </div>
           </div>
+        )}
+      </div>
+
+      <div style={{display:"flex",gap:0,marginBottom:20,background:"#f8fafc",borderRadius:8,padding:4,border:`1px solid ${G.border}`}}>
+        {SEKMELER.map(s=>(
+          <button key={s.id} onClick={()=>setSekme(s.id)} style={{
+            flex:1,padding:"7px 10px",border:"none",borderRadius:6,cursor:"pointer",fontSize:12,
+            fontWeight:sekme===s.id?700:500,background:sekme===s.id?"#fff":"transparent",
+            color:sekme===s.id?G.ink:G.muted,
+            boxShadow:sekme===s.id?"0 1px 4px rgba(0,0,0,0.1)":"none",
+            display:"flex",alignItems:"center",justifyContent:"center",gap:4
+          }}>
+            {s.icon} {s.lbl}
+            {s.badge>0&&<BildirimBadge count={s.badge}/>}
+          </button>
         ))}
       </div>
 
-      {/* Sekmeler */}
-      <div style={{display:"flex",borderBottom:`2px solid ${G.border}`,marginBottom:20}}>
-        {[["makaleler","Makaleler & Hakem"],["degerlendirmeler","Değerlendirmeler"],["uyeler","Üyeler"]].map(([id,lbl]) => (
-          <button key={id} onClick={() => setSekme(id)} style={{
-            padding:"9px 18px", border:"none", background:"none",
-            fontSize:13, fontWeight:sekme===id?700:500,
-            color:sekme===id?G.rust:G.muted,
-            borderBottom:sekme===id?`2px solid ${G.gold}`:"2px solid transparent",
-            marginBottom:-2
-          }}>{lbl}</button>
-        ))}
-      </div>
+      {sekme==="dashboard" && (
+        <div>
+          {toplamBildirim > 0 && (
+            <div style={{marginBottom:18}}>
+              <div style={{fontSize:11,fontWeight:700,color:G.ink,letterSpacing:0.5,marginBottom:8}}>BİLDİRİMLER</div>
+              {yeniMakaleler.length > 0 && (
+                <div onClick={()=>setSekme("makaleler")} style={{background:"linear-gradient(135deg,#eff6ff,#dbeafe)",border:"1px solid #bfdbfe",borderRadius:10,padding:"11px 14px",marginBottom:7,cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:34,height:34,borderRadius:8,background:"#1e40af",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:15,flexShrink:0}}>📄</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:13,color:"#1e3a8a"}}>{yeniMakaleler.length} yeni makale — ön inceleme bekliyor</div>
+                    <div style={{fontSize:11,color:"#3b82f6"}}>Hemen incele →</div>
+                  </div>
+                </div>
+              )}
+              {tamamlananDeg.length > 0 && (
+                <div onClick={()=>setSekme("degerlendirmeler")} style={{background:"linear-gradient(135deg,#f5f3ff,#ede9fe)",border:"1px solid #c4b5fd",borderRadius:10,padding:"11px 14px",marginBottom:7,cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:34,height:34,borderRadius:8,background:"#6d28d9",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:15,flexShrink:0}}>⊕</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:13,color:"#4c1d95"}}>{tamamlananDeg.length} hakem değerlendirmesi tamamlandı</div>
+                    <div style={{fontSize:11,color:"#7c3aed"}}>Karar vermek için incele →</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
-      {/* Makaleler */}
+          <div style={{fontSize:11,fontWeight:700,color:G.ink,letterSpacing:0.5,marginBottom:8}}>İSTATİSTİKLER</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:9,marginBottom:20}}>
+            {istat.map(s=>(
+              <div key={s.l} style={{background:s.bg,borderRadius:10,padding:"12px 14px",border:`1px solid ${s.c}22`,textAlign:"center"}}>
+                <div style={{fontSize:26,fontWeight:700,color:s.c,lineHeight:1}}>{s.n}</div>
+                <div style={{fontSize:10,color:s.c,marginTop:3,fontWeight:600}}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{fontSize:11,fontWeight:700,color:G.ink,letterSpacing:0.5,marginBottom:8}}>EDİTÖRYEL İŞ AKIŞI</div>
+          <div style={{background:"#fff",borderRadius:10,border:`1px solid ${G.border}`,overflow:"hidden"}}>
+            {[
+              {a:"1",lbl:"Gönderim",desc:"Yazar makaleyi gönderdi",n:articles.length,c:"#1a1208"},
+              {a:"2",lbl:"Ön İnceleme",desc:"Editör kapsam & biçim denetimi",n:articles.filter(x=>x.status==="beklemede").length,c:"#1e40af"},
+              {a:"3",lbl:"Hakem İncelemesi",desc:"Çift kör değerlendirme",n:articles.filter(x=>x.status==="hakemde").length,c:"#6d28d9"},
+              {a:"4",lbl:"Editöryal Karar",desc:"Kabul / Revizyon / Red",n:tamamlananDeg.length,c:"#0891b2"},
+              {a:"5",lbl:"Yayın",desc:"Baskıya hazır veya yayında",n:articles.filter(x=>x.status==="baskida"||x.status==="yayinda").length,c:"#065f46"},
+            ].map((s,i,arr)=>(
+              <div key={s.a} style={{display:"flex",alignItems:"center",padding:"10px 14px",borderBottom:i<arr.length-1?`1px solid ${G.border}`:"none"}}>
+                <div style={{width:26,height:26,borderRadius:"50%",background:s.c,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,flexShrink:0}}>{s.a}</div>
+                <div style={{flex:1,marginLeft:10}}>
+                  <div style={{fontWeight:700,fontSize:12.5,color:G.ink}}>{s.lbl}</div>
+                  <div style={{fontSize:10,color:G.muted}}>{s.desc}</div>
+                </div>
+                <div style={{fontWeight:700,fontSize:18,color:s.c}}>{s.n}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {sekme==="makaleler" && (
         <div>
-          {articles.length === 0 ? (
-            <p style={{color:G.muted,fontStyle:"italic"}}>Henüz makale gönderilmedi.</p>
-          ) : articles.map(a => {
-            const d = DURUM[a.status]||{};
-            const aReviews = reviews.filter(r=>r.article_id===a.id);
-            const acik = acikMakale === a.id;
+          <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+            <input placeholder="Makale veya yazar ara..." onChange={e=>setArama(e.target.value)}
+              style={{flex:1,padding:"7px 11px",border:`1px solid ${G.border}`,borderRadius:6,fontSize:13,minWidth:160}}/>
+            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+              {[["tumu","Tümü"],["beklemede","Ön İnceleme"],["hakemde","Hakemde"],["revizyon","Revizyon"],["baskida","Kabul"],["reddedildi","Red"]].map(([k,l])=>(
+                <button key={k} onClick={()=>setFiltre(k)} style={{
+                  padding:"5px 10px",border:`1px solid ${filtre===k?G.gold:G.border}`,borderRadius:6,
+                  background:filtre===k?G.gold:"#fff",color:filtre===k?G.ink:G.muted,
+                  fontSize:11,fontWeight:filtre===k?700:500,cursor:"pointer"
+                }}>{l}</button>
+              ))}
+            </div>
+          </div>
+          {filtreliMakaleler.length===0?(
+            <div style={{textAlign:"center",padding:36,color:G.muted,fontStyle:"italic",background:G.cream,borderRadius:12,border:`1px solid ${G.border}`}}>Bu filtrede makale bulunamadı.</div>
+          ):filtreliMakaleler.map(a=>{
+            const d=DURUM[a.status]||{};
+            const aRev=reviews.filter(r=>r.article_id===a.id);
+            const acik=acikMakale===a.id;
             return (
-              <div key={a.id} style={{
-                border:`1px solid ${G.border}`, borderRadius:10, marginBottom:10,
-                overflow:"hidden", borderLeft:`4px solid ${d.renk||G.border}`
-              }}>
-                <div
-                  onClick={() => setAcikMakale(acik?null:a.id)}
-                  style={{
-                    padding:"13px 16px", background:G.white, cursor:"pointer",
-                    display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10
-                  }}
-                >
+              <div key={a.id} style={{border:`1px solid ${G.border}`,borderRadius:10,marginBottom:10,overflow:"hidden",borderLeft:`4px solid ${d.renk||G.border}`}}>
+                <div onClick={()=>setAcikMakale(acik?null:a.id)} style={{padding:"12px 15px",background:"#fff",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
                   <div style={{flex:1}}>
-                    <div style={{fontWeight:700,fontSize:13,color:G.ink,marginBottom:3,lineHeight:1.4}}>{a.title}</div>
-                    <div style={{fontSize:11,color:G.muted,fontStyle:"italic"}}>
-                      {a.author} · {a.author_email} · {a.field} · {a.created_at?.split("T")[0]}
+                    <div style={{fontWeight:700,fontSize:13,color:G.ink,marginBottom:2,lineHeight:1.4}}>{a.title}</div>
+                    <div style={{fontSize:11,color:G.muted}}><strong>{a.author}</strong> · {a.field} · {a.created_at?.split("T")[0]}</div>
+                    <div style={{marginTop:4,display:"flex",gap:4,flexWrap:"wrap"}}>
+                      {aRev.map(r=>(
+                        <span key={r.id} style={{fontSize:9,padding:"2px 6px",borderRadius:20,fontWeight:700,background:r.status==="tamamlandi"?"#d1fae5":"#dbeafe",color:r.status==="tamamlandi"?"#065f46":"#1e40af"}}>
+                          {r.status==="tamamlandi"?"✓":"⏳"} {r.reviewer_name}{r.decision?` (${r.decision==="kabul"?"K":r.decision==="revizyon"?"R":"X"})`:""}
+                        </span>
+                      ))}
                     </div>
-                    {aReviews.length > 0 && (
-                      <div style={{marginTop:5,display:"flex",gap:5,flexWrap:"wrap"}}>
-                        {aReviews.map(r => (
-                          <span key={r.id} style={{
-                            fontSize:10,padding:"2px 7px",borderRadius:20,fontWeight:700,
-                            background:r.status==="tamamlandi"?"#d1fae5":"#dbeafe",
-                            color:r.status==="tamamlandi"?"#065f46":"#1e40af"
-                          }}>⊕ {r.reviewer_name} — {r.status==="tamamlandi"?"Değerlendirdi":"Bekliyor"}</span>
-                        ))}
-                      </div>
-                    )}
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
-                    <span style={{fontSize:10,padding:"3px 10px",borderRadius:20,fontWeight:700,background:d.bg,color:d.renk,whiteSpace:"nowrap"}}>
-                      {d.tr||a.status}
-                    </span>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5,flexShrink:0}}>
+                    <span style={{fontSize:10,padding:"3px 10px",borderRadius:20,fontWeight:700,background:d.bg,color:d.renk,whiteSpace:"nowrap"}}>{d.tr||a.status}</span>
+                    {aRev.filter(r=>r.status==="tamamlandi").length>0&&<span style={{fontSize:9,padding:"2px 7px",borderRadius:20,background:"#d1fae5",color:"#065f46",fontWeight:700}}>{aRev.filter(r=>r.status==="tamamlandi").length} değerlendirme hazır</span>}
                     <span style={{color:G.gold,fontSize:12}}>{acik?"▲":"▼"}</span>
                   </div>
                 </div>
-
                 {acik && (
-                  <div style={{background:G.cream,borderTop:`1px solid ${G.border}`,padding:"14px 16px"}}>
-                    {a.abstract && (
-                      <p style={{fontSize:12,color:"#555",fontStyle:"italic",marginBottom:12,lineHeight:1.6}}>
-                        "{a.abstract.substring(0,250)}..."
-                      </p>
-                    )}
-                    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
-                      {a.file_url && (
-                        <a href={a.file_url} target="_blank" style={{
-                          fontSize:12,color:G.white,background:G.teal,
-                          padding:"6px 14px",borderRadius:6,fontWeight:700
-                        }}>📄 İndir</a>
-                      )}
-                      <select
-                        value={a.status}
-                        onChange={e => durumGuncelle(a.id, e.target.value)}
-                        style={{fontSize:11,padding:"6px 10px",borderRadius:6,border:`1px solid ${G.border}`,background:G.white}}
-                      >
-                        {Object.entries(DURUM).map(([k,v]) => (
-                          <option key={k} value={k}>{v.tr}</option>
-                        ))}
-                      </select>
-                      <button onClick={() => setYazarNotMakale(a)} style={{
-                        fontSize:12,color:G.white,background:"#b45309",border:"none",
-                        padding:"6px 14px",borderRadius:6,fontWeight:700
-                      }}>✏ Yazara Not</button>
-                    </div>
-
-                    {/* Hakem atama */}
-                    <div style={{background:G.white,borderRadius:8,padding:"12px 14px",border:`1px solid ${G.border}`}}>
-                      <div style={{fontSize:10,color:G.teal,letterSpacing:1.5,fontWeight:700,marginBottom:8}}>HAKEM ATA</div>
-                      {hakemler.length === 0 ? (
-                        <p style={{fontSize:12,color:G.muted,fontStyle:"italic"}}>
-                          Sistemde kayıtlı hakem yok. Kullanıcılar hakem rolüyle kayıt olabilir.
-                        </p>
-                      ) : (
-                        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                          {hakemler
-                            .filter(h=>!aReviews.some(r=>r.reviewer_email===h.email))
-                            .map(h => (
-                              <button key={h.id} onClick={() => hakemAta(a,h.email)} style={{
-                                fontSize:11,padding:"5px 12px",borderRadius:6,
-                                background:G.teal,color:G.white,border:"none",fontWeight:700
-                              }}>+ {h.name}</button>
-                            ))
-                          }
-                          {hakemler.every(h=>aReviews.some(r=>r.reviewer_email===h.email)) && (
-                            <p style={{fontSize:12,color:G.muted,fontStyle:"italic"}}>Tüm hakemler atanmış.</p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Gelen değerlendirmeler */}
-                      {aReviews.filter(r=>r.status==="tamamlandi").length > 0 && (
-                        <div style={{marginTop:12}}>
-                          <div style={{fontSize:10,color:"#6d28d9",letterSpacing:1.5,fontWeight:700,marginBottom:8}}>
-                            GELEN DEĞERLENDİRMELER
-                          </div>
-                          {aReviews.filter(r=>r.status==="tamamlandi").map(r => (
-                            <div key={r.id} style={{
-                              background:"#f3f4f6",borderRadius:8,padding:"10px 12px",marginBottom:6,
-                              border:"1px solid #e5e7eb"
-                            }}>
-                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                                <span style={{fontWeight:700,fontSize:12,color:G.ink}}>{r.reviewer_name}</span>
-                                <span style={{
-                                  fontSize:11,padding:"2px 9px",borderRadius:20,fontWeight:700,
-                                  background:r.decision==="kabul"?"#d1fae5":r.decision==="revizyon"?"#ede9fe":"#fee2e2",
-                                  color:r.decision==="kabul"?"#065f46":r.decision==="revizyon"?"#6d28d9":"#991b1b"
-                                }}>
-                                  {r.decision==="kabul"?"✓ Kabul":r.decision==="revizyon"?"↻ Revizyon":"✗ Red"}
-                                </span>
-                              </div>
-                              <p style={{fontSize:13,color:"#444",lineHeight:1.65,margin:0,
-                                background:G.white,borderRadius:6,padding:"8px 10px",border:"1px solid #e5e7eb"
-                              }}>{r.comments}</p>
+                  <div style={{background:"#f8fafc",borderTop:`1px solid ${G.border}`,padding:"14px"}}>
+                    {a.abstract&&<div style={{background:"#fff",borderRadius:8,padding:"10px 12px",marginBottom:12,border:`1px solid ${G.border}`}}><div style={{fontSize:10,color:G.gold,fontWeight:700,marginBottom:4}}>ÖZET</div><p style={{fontSize:12.5,color:"#555",lineHeight:1.65,margin:0}}>{a.abstract}</p></div>}
+                    {aRev.filter(r=>r.status==="tamamlandi").length>0&&(
+                      <div style={{background:"#fff",borderRadius:8,padding:"12px",marginBottom:12,border:"1px solid #c4b5fd"}}>
+                        <div style={{fontSize:10,fontWeight:700,color:"#6d28d9",marginBottom:10}}>HAKEM DEĞERLENDİRMELERİ</div>
+                        {aRev.filter(r=>r.status==="tamamlandi").map(r=>(
+                          <div key={r.id} style={{background:"#faf5ff",borderRadius:7,padding:"10px",marginBottom:7,border:"1px solid #ede9fe"}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                              <span style={{fontWeight:700,fontSize:12,color:"#4c1d95"}}>{r.reviewer_name}</span>
+                              <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:700,background:r.decision==="kabul"?"#d1fae5":r.decision==="revizyon"?"#ede9fe":"#fee2e2",color:r.decision==="kabul"?"#065f46":r.decision==="revizyon"?"#6d28d9":"#991b1b"}}>{r.decision==="kabul"?"✓ Kabul":r.decision==="revizyon"?"↻ Revizyon":"✗ Red"}</span>
                             </div>
-                          ))}
+                            <p style={{fontSize:12,color:"#444",lineHeight:1.65,margin:0,whiteSpace:"pre-line"}}>{r.comments}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+                      <div style={{background:"#fff",borderRadius:8,padding:"11px",border:`1px solid ${G.border}`}}>
+                        <div style={{fontSize:10,fontWeight:700,color:G.ink,marginBottom:7}}>DURUM GÜNCELLE</div>
+                        <select value={a.status} onChange={e=>durumGuncelle(a.id,e.target.value)} style={{width:"100%",padding:"7px",border:`1px solid ${G.border}`,borderRadius:6,fontSize:12,background:"#fff"}}>
+                          {Object.entries(DURUM).map(([k,v])=><option key={k} value={k}>{v.tr}</option>)}
+                        </select>
+                      </div>
+                      <div style={{background:"#fff",borderRadius:8,padding:"11px",border:`1px solid ${G.border}`}}>
+                        <div style={{fontSize:10,fontWeight:700,color:G.ink,marginBottom:7}}>EYLEMLER</div>
+                        <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                          {a.file_url&&<a href={a.file_url} target="_blank" style={{fontSize:11,color:"#fff",background:G.teal,padding:"5px 10px",borderRadius:5,fontWeight:700,textAlign:"center"}}>📄 Makaleyi İndir</a>}
+                          <button onClick={()=>setYazarNotMakale(a)} style={{fontSize:11,color:"#fff",background:"#b45309",border:"none",padding:"5px 10px",borderRadius:5,fontWeight:700,cursor:"pointer"}}>✏ Yazara Not Gönder</button>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{background:"#fff",borderRadius:8,padding:"11px",border:`1px solid ${G.border}`}}>
+                      <div style={{fontSize:10,fontWeight:700,color:G.teal,marginBottom:7}}>HAKEM ATA ({aRev.length} atanmış)</div>
+                      {hakemler.length===0?<p style={{fontSize:12,color:G.muted,fontStyle:"italic",margin:0}}>Sistemde hakem yok.</p>:(
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                          {hakemler.map(h=>{
+                            const at=aRev.some(r=>r.reviewer_email===h.email);
+                            return <button key={h.id} onClick={()=>!at&&hakemAta(a,h.email)} style={{fontSize:11,padding:"5px 10px",borderRadius:6,cursor:at?"default":"pointer",background:at?"#f3f4f6":"#fff",color:at?G.muted:G.teal,border:`1px solid ${at?G.border:G.teal}`,fontWeight:700,opacity:at?0.7:1}}>{at?"✓ ":""}{h.name}</button>;
+                          })}
                         </div>
                       )}
                     </div>
@@ -755,53 +970,26 @@ function YonetimSekme({articles, users, toast_, loadArticles}) {
         </div>
       )}
 
-      {/* Değerlendirmeler */}
       {sekme==="degerlendirmeler" && (
         <div>
-          {reviews.length === 0 ? (
-            <div style={{textAlign:"center",padding:40,color:G.muted,fontStyle:"italic",background:G.cream,borderRadius:12,border:`1px solid ${G.border}`}}>
-              Henüz hakem değerlendirmesi yok.
-            </div>
-          ) : reviews.map(r => {
-            const art = articles.find(a=>a.id===r.article_id);
+          {reviews.length===0?(
+            <div style={{textAlign:"center",padding:36,color:G.muted,fontStyle:"italic",background:G.cream,borderRadius:12,border:`1px solid ${G.border}`}}>Henüz hakem değerlendirmesi yok.</div>
+          ):reviews.map(r=>{
+            const art=articles.find(a=>a.id===r.article_id);
             return (
-              <div key={r.id} style={{
-                border:`1px solid ${G.border}`,borderRadius:10,marginBottom:10,
-                overflow:"hidden",borderLeft:`4px solid ${r.status==="tamamlandi"?"#065f46":"#1e40af"}`
-              }}>
-                <div style={{padding:"13px 16px",background:G.white}}>
+              <div key={r.id} style={{border:`1px solid ${G.border}`,borderRadius:10,marginBottom:10,overflow:"hidden",borderLeft:`4px solid ${r.status==="tamamlandi"?"#065f46":"#f59e0b"}`}}>
+                <div style={{padding:"12px 15px",background:"#fff"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
                     <div style={{flex:1}}>
-                      <div style={{fontWeight:700,fontSize:12,color:G.ink,marginBottom:2}}>{art?.title||"Makale yükleniyor..."}</div>
-                      <div style={{fontSize:11,color:G.muted}}>
-                        Hakem: <strong>{r.reviewer_name}</strong> · Atandı: {r.assigned_at?.split("T")[0]}
-                      </div>
+                      <div style={{fontWeight:700,fontSize:12.5,color:G.ink,marginBottom:2,lineHeight:1.4}}>{art?.title||"Yükleniyor..."}</div>
+                      <div style={{fontSize:11,color:G.muted}}>Hakem: <strong>{r.reviewer_name}</strong> · {r.assigned_at?.split("T")[0]}{r.completed_at&&` → ${r.completed_at.split("T")[0]}`}</div>
                     </div>
-                    <span style={{
-                      fontSize:10,padding:"3px 10px",borderRadius:20,fontWeight:700,whiteSpace:"nowrap",
-                      background:r.status==="tamamlandi"?"#d1fae5":"#dbeafe",
-                      color:r.status==="tamamlandi"?"#065f46":"#1e40af"
-                    }}>
-                      {r.status==="tamamlandi"?"✓ Tamamlandı":"⏳ Bekliyor"}
-                    </span>
+                    <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5,flexShrink:0}}>
+                      <span style={{fontSize:10,padding:"3px 10px",borderRadius:20,fontWeight:700,background:r.status==="tamamlandi"?"#d1fae5":"#fef3c7",color:r.status==="tamamlandi"?"#065f46":"#92400e"}}>{r.status==="tamamlandi"?"✓ Tamamlandı":"⏳ Bekliyor"}</span>
+                      {r.decision&&<span style={{fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:700,background:r.decision==="kabul"?"#d1fae5":r.decision==="revizyon"?"#ede9fe":"#fee2e2",color:r.decision==="kabul"?"#065f46":r.decision==="revizyon"?"#6d28d9":"#991b1b"}}>{r.decision==="kabul"?"✓ Kabul":r.decision==="revizyon"?"↻ Revizyon":"✗ Red"}</span>}
+                    </div>
                   </div>
-                  {r.status==="tamamlandi" && r.comments && (
-                    <div style={{marginTop:10}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                        <span style={{fontSize:10,color:"#6d28d9",letterSpacing:1,fontWeight:700}}>DEĞERLENDİRME</span>
-                        <span style={{
-                          fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:700,
-                          background:r.decision==="kabul"?"#d1fae5":r.decision==="revizyon"?"#ede9fe":"#fee2e2",
-                          color:r.decision==="kabul"?"#065f46":r.decision==="revizyon"?"#6d28d9":"#991b1b"
-                        }}>
-                          {r.decision==="kabul"?"✓ Kabul":r.decision==="revizyon"?"↻ Revizyon":"✗ Red"}
-                        </span>
-                      </div>
-                      <p style={{fontSize:13,color:"#444",lineHeight:1.65,margin:0,
-                        background:"#f9f9f9",borderRadius:6,padding:"8px 10px",border:`1px solid ${G.border}`
-                      }}>{r.comments}</p>
-                    </div>
-                  )}
+                  {r.comments&&<div style={{marginTop:10,background:"#f8fafc",borderRadius:7,padding:"10px",border:`1px solid ${G.border}`}}><div style={{fontSize:10,fontWeight:700,color:"#6d28d9",marginBottom:5}}>DEĞERLENDİRME RAPORU</div><p style={{fontSize:12.5,color:"#444",lineHeight:1.65,margin:0,whiteSpace:"pre-line"}}>{r.comments}</p></div>}
                 </div>
               </div>
             );
@@ -809,59 +997,43 @@ function YonetimSekme({articles, users, toast_, loadArticles}) {
         </div>
       )}
 
-      {/* Üyeler */}
       {sekme==="uyeler" && (
         <div>
-          {users.length === 0 ? (
-            <p style={{color:G.muted,fontStyle:"italic"}}>Henüz kayıtlı üye yok.</p>
-          ) : users.map(u => (
-            <div key={u.id} style={{
-              border:`1px solid ${G.border}`,borderRadius:9,padding:"11px 16px",
-              marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"
-            }}>
-              <div>
-                <div style={{fontWeight:700,fontSize:13,color:G.ink}}>{u.name}</div>
-                <div style={{fontSize:12,color:G.muted,marginTop:2}}>{u.email} · {u.institution||"—"}</div>
-                {u.orcid && <div style={{fontSize:11,color:G.teal,marginTop:1}}>ORCID: {u.orcid}</div>}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:9,marginBottom:14}}>
+            {[{n:users.filter(u=>u.role==="editor").length,l:"Editör",c:"#b45309",bg:"#fef3c7"},{n:users.filter(u=>u.role==="hakem").length,l:"Hakem",c:G.teal,bg:"#ecfdf5"},{n:users.filter(u=>!u.role||u.role==="yazar").length,l:"Yazar",c:"#6d28d9",bg:"#f5f3ff"}].map(s=>(
+              <div key={s.l} style={{background:s.bg,borderRadius:8,padding:"11px",textAlign:"center",border:`1px solid ${s.c}22`}}>
+                <div style={{fontSize:22,fontWeight:700,color:s.c}}>{s.n}</div>
+                <div style={{fontSize:11,color:s.c,fontWeight:600}}>{s.l}</div>
               </div>
-              <span style={{
-                fontSize:10,padding:"4px 12px",borderRadius:20,fontWeight:700,
-                background:u.role==="editor"?`${G.gold}20`:u.role==="hakem"?`${G.teal}20`:`${G.rust}10`,
-                color:u.role==="editor"?G.rust:u.role==="hakem"?G.teal:G.muted
-              }}>{u.role?.toUpperCase()||"YAZAR"}</span>
+            ))}
+          </div>
+          {users.map(u=>(
+            <div key={u.id} style={{border:`1px solid ${G.border}`,borderRadius:9,padding:"11px 15px",marginBottom:7,display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fff"}}>
+              <div style={{display:"flex",alignItems:"center",gap:11}}>
+                <div style={{width:34,height:34,borderRadius:"50%",background:u.role==="editor"?"#fef3c7":u.role==="hakem"?"#ecfdf5":"#f5f3ff",border:`2px solid ${u.role==="editor"?"#b45309":u.role==="hakem"?G.teal:"#6d28d9"}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14,color:u.role==="editor"?"#b45309":u.role==="hakem"?G.teal:"#6d28d9"}}>{u.name?.[0]}</div>
+                <div>
+                  <div style={{fontWeight:700,fontSize:13,color:G.ink}}>{u.name}</div>
+                  <div style={{fontSize:11,color:G.muted}}>{u.email}</div>
+                  {u.institution&&<div style={{fontSize:10,color:G.muted,fontStyle:"italic"}}>{u.institution}</div>}
+                  {u.orcid&&<div style={{fontSize:10,color:G.teal}}>ORCID: {u.orcid}</div>}
+                </div>
+              </div>
+              <span style={{fontSize:10,padding:"4px 12px",borderRadius:20,fontWeight:700,background:u.role==="editor"?"#fef3c7":u.role==="hakem"?"#ecfdf5":"#f5f3ff",color:u.role==="editor"?"#b45309":u.role==="hakem"?G.teal:"#6d28d9"}}>{u.role?.toUpperCase()||"YAZAR"}</span>
             </div>
           ))}
         </div>
       )}
 
-      {/* Yazara not modal */}
       {yazarNotMakale && (
-        <div onClick={() => setYazarNotMakale(null)} style={{
-          position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",
-          zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:20
-        }}>
-          <div onClick={e=>e.stopPropagation()} style={{
-            background:G.white,borderRadius:16,padding:"28px 32px",
-            width:"100%",maxWidth:460
-          }}>
-            <div style={{fontWeight:700,fontSize:15,color:G.ink,marginBottom:4}}>YAZARA NOT GÖNDER</div>
-            <div style={{fontSize:12,color:G.muted,fontStyle:"italic",marginBottom:4}}>{yazarNotMakale.title}</div>
-            <div style={{fontSize:12,color:G.muted,marginBottom:12}}>
-              Alıcı: <strong>{yazarNotMakale.author}</strong> ({yazarNotMakale.author_email})
-            </div>
-            <textarea ref={notRef} placeholder="Notunuzu yazın..." rows={5} style={{
-              width:"100%",padding:"10px 14px",border:`1.5px solid ${G.border}`,
-              borderRadius:8,fontSize:13,resize:"vertical",boxSizing:"border-box",marginBottom:12,lineHeight:1.7
-            }}/>
+        <div onClick={()=>setYazarNotMakale(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,padding:"26px 30px",width:"100%",maxWidth:460}}>
+            <div style={{fontWeight:700,fontSize:14,color:G.ink,marginBottom:4}}>✏ YAZARA EDİTÖR NOTU</div>
+            <div style={{fontSize:11,color:G.muted,fontStyle:"italic",marginBottom:3}}>{yazarNotMakale.title}</div>
+            <div style={{fontSize:11,color:G.muted,marginBottom:12,padding:"7px 10px",background:"#f8fafc",borderRadius:6,border:`1px solid ${G.border}`}}>Alıcı: <strong>{yazarNotMakale.author}</strong> &lt;{yazarNotMakale.author_email}&gt;</div>
+            <textarea ref={notRef} placeholder="Editör notunuzu yazın..." rows={5} style={{width:"100%",padding:"9px 12px",border:`1.5px solid ${G.border}`,borderRadius:8,fontSize:13,resize:"vertical",boxSizing:"border-box",marginBottom:12,lineHeight:1.7}}/>
             <div style={{display:"flex",gap:10}}>
-              <button onClick={yazaraNot} style={{
-                flex:1,background:"#b45309",color:G.white,border:"none",
-                padding:"11px 0",borderRadius:7,fontWeight:700,fontSize:12
-              }}>✏ NOTU GÖNDER</button>
-              <button onClick={() => setYazarNotMakale(null)} style={{
-                padding:"11px 20px",background:"none",border:`1px solid ${G.border}`,
-                borderRadius:7,fontSize:12,color:G.muted
-              }}>İptal</button>
+              <button onClick={yazaraNot} style={{flex:1,background:"#b45309",color:"#fff",border:"none",padding:"10px 0",borderRadius:7,fontWeight:700,fontSize:12,cursor:"pointer"}}>✏ NOTU GÖNDER</button>
+              <button onClick={()=>setYazarNotMakale(null)} style={{padding:"10px 18px",background:"none",border:`1px solid ${G.border}`,borderRadius:7,fontSize:12,color:G.muted,cursor:"pointer"}}>İptal</button>
             </div>
           </div>
         </div>
