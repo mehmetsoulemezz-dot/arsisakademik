@@ -1806,7 +1806,7 @@ function EthicsPage({lang}) {
 }
 
 // ─── PANEL SAYFASI ────────────────────────────────────────────────────────────
-function PanelPage({user, setModal, toast_, lang, articles, users, loadArticles}) {
+function PanelPage({user, setModal, toast_, lang, articles, users, loadArticles, loadUsers}) {
   const [sekme, setSekme] = React.useState("makalelerim");
   const myArticles = articles.filter(a => a.author_email === user?.email);
 
@@ -2267,7 +2267,7 @@ function App() {
       {page==="panel"   && user && (
         <PanelPage
           user={user} setModal={setModal} toast_={toast_} lang={lang}
-          articles={articles} users={users} loadArticles={loadArticles}
+          articles={articles} users={users} loadArticles={loadArticles} loadUsers={loadUsers}
         />
       )}
 
