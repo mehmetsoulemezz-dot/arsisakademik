@@ -486,137 +486,379 @@ function BildirimBadge({count}) {
 
 // ─── HAKEM DEĞERLENDİRME FORMU ───────────────────────────────────────────────
 function HakemDegerlendirmeFormu({review, makale, onGonder}) {
-  const [puanlar, setPuanlar] = React.useState({ozgunluk:0,metodoloji:0,katki:0,yazim:0,alanyazin:0});
-  const [karar, setKarar] = React.useState("");
-  const yorumRef    = React.useRef(null);
-  const gucluRef    = React.useRef(null);
-  const zayifRef    = React.useRef(null);
-  const yazarNotRef = React.useRef(null);
-  const [gonderiyor, setGonderiyor] = React.useState(false);
-
+  // Uluslararası standart 8 kriter (PNAS, ACM, Wiley, Elsevier standartları)
   const kriterler = [
-    {key:"ozgunluk",  lbl:"Özgünlük & Yenilik",     desc:"Araştırmanın alana yeni katkısı"},
-    {key:"metodoloji",lbl:"Metodolojik Sağlamlık",   desc:"Yöntemin uygunluğu, veri kalitesi"},
-    {key:"katki",     lbl:"Bilimsel Katkı & Etki",   desc:"Alanın ilerlemesine potansiyel katkı"},
-    {key:"yazim",     lbl:"Yazım & Sunum Kalitesi",  desc:"Akademik dil, yapı ve biçimsel uyum"},
-    {key:"alanyazin", lbl:"Alanyazın Kullanımı",     desc:"Kaynakların yeterliliği ve güncelliği"},
+    {key:"ozgunluk",   lbl:"Özgünlük & Yenilik",          desc:"Araştırmanın alana özgün katkısı; alanyazında mevcut olmayan bulgu veya yaklaşım", max:5},
+    {key:"metodoloji", lbl:"Metodolojik Sağlamlık",        desc:"Yöntemin araştırma sorusuna uygunluğu, veri toplama kalitesi, analiz geçerliliği", max:5},
+    {key:"kuram",      lbl:"Kuramsal Çerçeve",             desc:"Kavramsal temel, alanyazınla diyalog, kuramsal tutarlılık", max:5},
+    {key:"bulgular",   lbl:"Bulguların Güvenilirliği",     desc:"Sonuçların verilerle desteklenme düzeyi, içsel tutarlılık", max:5},
+    {key:"katki",      lbl:"Bilimsel Katkı & Etki",        desc:"Alanın ilerlemesine katkı, disiplinlerarası açılım potansiyeli", max:5},
+    {key:"yazim",      lbl:"Yazım, Yapı & Sunum",          desc:"Akademik dil kalitesi, makale yapısı, şekil ve tablo kalitesi", max:5},
+    {key:"alanyazin",  lbl:"Alanyazın Kapsamı",            desc:"Birincil kaynakların yeterliliği, güncelliği ve doğru atıf kullanımı", max:5},
+    {key:"etik",       lbl:"Etik & Araştırma Standartları",desc:"Araştırma etiğine uyum, veri şeffaflığı, çıkar çatışması beyanı", max:5},
   ];
 
   const kararlar = [
-    {k:"kabul",          lbl:"✓ Kabul",                c:"#065f46",bg:"#d1fae5",desc:"Yayımlanmaya hazır"},
-    {k:"minor_revizyon", lbl:"↻ Küçük Revizyon",       c:"#1d4ed8",bg:"#dbeafe",desc:"Küçük düzeltmeler gerekli"},
-    {k:"major_revizyon", lbl:"↺ Kapsamlı Revizyon",    c:"#6d28d9",bg:"#ede9fe",desc:"Önemli revizyonlar gerekli"},
-    {k:"red",            lbl:"✗ Red",                  c:"#991b1b",bg:"#fee2e2",desc:"Yayımlanması önerilmez"},
-    {k:"baska_dergi",    lbl:"→ Başka Dergiye Yönlendir",c:"#b45309",bg:"#fef3c7",desc:"Kapsam dışı"},
+    {k:"kabul",          lbl:"Accept",                         lbl_tr:"Kabul",                   c:"#065f46", bg:"#d1fae5",
+     desc:"Makale mevcut haliyle yayımlanabilir. Yalnızca küçük yazım/biçim düzeltmeleri önerilir."},
+    {k:"minor_revision", lbl:"Minor Revision",                  lbl_tr:"Küçük Revizyon",          c:"#1d4ed8", bg:"#dbeafe",
+     desc:"Sınırlı değişiklikler yeterlidir; hakem tekrar inceleme yapmaksızın editör onayı beklenir."},
+    {k:"major_revision", lbl:"Major Revision",                  lbl_tr:"Kapsamlı Revizyon",       c:"#6d28d9", bg:"#ede9fe",
+     desc:"Önemli metodolojik, kuramsal veya içerik revizyonları gereklidir; revize metin yeniden hakeme gönderilir."},
+    {k:"reject_resubmit",lbl:"Reject & Resubmit",               lbl_tr:"Red & Yeniden Gönder",    c:"#b45309", bg:"#fef3c7",
+     desc:"Mevcut form yayımlanamaz; ancak kapsamlı yeniden yazım sonrası yeni gönderi olarak değerlendirilebilir."},
+    {k:"red",            lbl:"Reject",                          lbl_tr:"Red",                     c:"#991b1b", bg:"#fee2e2",
+     desc:"Temel metodolojik/kuramsal sorunlar nedeniyle yayımlanması mümkün değildir."},
+    {k:"transfer",       lbl:"Transfer to Another Journal",      lbl_tr:"Başka Dergiye Yönlendir", c:"#0891b2", bg:"#e0f2fe",
+     desc:"Çalışma ARSİS kapsamı dışında; başka bir dergiye yönlendirilmesi önerilir."},
   ];
+
+  const [puanlar, setPuanlar]   = React.useState(() => Object.fromEntries(kriterler.map(k=>[k.key,0])));
+  const [karar, setKarar]       = React.useState("");
+  const [gonderiyor, setGonderiyor] = React.useState(false);
+  const [ekDosyaMsg, setEkDosyaMsg] = React.useState("");
+  const [adim, setAdim]         = React.useState(1); // 1=puanlar, 2=yorumlar, 3=karar
+
+  // Refs - hepsi ayrı ayrı
+  const editoreRef     = React.useRef(null); // Sadece editör görür
+  const yazaraRef      = React.useRef(null); // Editör + Yazar görür
+  const gucluRef       = React.useRef(null);
+  const zayifRef       = React.useRef(null);
+  const ekDosyaRef     = React.useRef(null);
 
   const ort = () => {
     const vals = Object.values(puanlar).filter(v=>v>0);
-    return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : 0;
+    return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : "—";
+  };
+
+  const ortRenk = () => {
+    const v = parseFloat(ort());
+    if (v >= 4.0) return "#065f46";
+    if (v >= 3.0) return "#1d4ed8";
+    if (v >= 2.0) return "#b45309";
+    return "#991b1b";
   };
 
   const gonder = async () => {
-    const yorum = yorumRef.current?.value?.trim();
+    const editoreNot  = editoreRef.current?.value?.trim();
+    const yazaraNot   = yazaraRef.current?.value?.trim();
     if (!karar) { alert("Lütfen bir karar seçin."); return; }
-    if (!yorum || yorum.length < 50) { alert("Genel değerlendirme en az 50 karakter olmalıdır."); return; }
-    if (Object.values(puanlar).some(v=>v===0)) { alert("Lütfen tüm kriterleri puanlayın."); return; }
+    if (!editoreNot || editoreNot.length < 80) { alert("Editöre gizli not en az 80 karakter olmalıdır."); return; }
+    if (!yazaraNot || yazaraNot.length < 80)   { alert("Yazara açık değerlendirme en az 80 karakter olmalıdır."); return; }
+    if (Object.values(puanlar).some(v=>v===0)) { alert("Lütfen tüm 8 kriteri puanlayın."); return; }
+
     setGonderiyor(true);
-    const detay = `GENEL DEĞERLENDİRME:\n${yorum}\n\nGÜÇLÜ YÖNLER:\n${gucluRef.current?.value||"—"}\n\nZAYIF YÖNLER:\n${zayifRef.current?.value||"—"}\n\nYAZARA NOT:\n${yazarNotRef.current?.value||"—"}\n\nPUANLAR:\n${kriterler.map(k=>`${k.lbl}: ${puanlar[k.key]}/5`).join(" | ")}\nOrtalama: ${ort()}/5`;
-    const kmap = {kabul:"kabul",minor_revizyon:"revizyon",major_revizyon:"revizyon",red:"red",baska_dergi:"red"};
-    await onGonder(review.id, review.article_id, kmap[karar]||karar, detay);
+
+    // Ek dosya yükleme
+    let ekDosyaUrl = null;
+    const ekDosya = ekDosyaRef.current?.files?.[0];
+    if (ekDosya) {
+      setEkDosyaMsg("Ek dosya yükleniyor...");
+      const fname = `review_${review.id}_${Date.now()}_${ekDosya.name.replace(/[^a-zA-Z0-9._-]/g,"_")}`;
+      const {error:ue} = await supa.storage.from("makaleler").upload(fname, ekDosya, {upsert:true});
+      if (ue) { setEkDosyaMsg("Dosya yüklenemedi: " + ue.message); setGonderiyor(false); return; }
+      setEkDosyaMsg("✓ Dosya yüklendi");
+      const {data:ud} = supa.storage.from("makaleler").getPublicUrl(fname);
+      ekDosyaUrl = ud?.publicUrl;
+    }
+
+    // Karar kodu → Türkçe
+    const secilenKarar = kararlar.find(k=>k.k===karar);
+    const kmap = {kabul:"kabul",minor_revision:"revizyon",major_revision:"revizyon",reject_resubmit:"revizyon",red:"red",transfer:"red"};
+
+    // Yapılandırılmış rapor — editöre (gizli) + yazara (açık) ayrı tutulur
+    const raporEditore = [
+      "═══════════════════════════════════════",
+      "HAKEM DEĞERLENDİRME RAPORU",
+      "Gizli — Yalnızca Editör Görür",
+      "═══════════════════════════════════════",
+      "",
+      `Makale: ${makale?.title||"—"}`,
+      `Değerlendirme Tarihi: ${new Date().toLocaleDateString("tr-TR")}`,
+      `Karar: ${secilenKarar?.lbl_tr} (${secilenKarar?.lbl})`,
+      "",
+      "─── PUANLAMA KRİTERLERİ ───────────────",
+      ...kriterler.map(k=>`${k.lbl.padEnd(35)} : ${puanlar[k.key]}/5`),
+      `${"GENEL ORTALAMA".padEnd(35)} : ${ort()}/5`,
+      "",
+      "─── GÜÇLÜ YÖNLER ──────────────────────",
+      gucluRef.current?.value || "—",
+      "",
+      "─── ZAYIF YÖNLER / GELİŞTİRİLMESİ GEREKENLER ─",
+      zayifRef.current?.value || "—",
+      "",
+      "─── EDİTÖRE GİZLİ NOT ─────────────────",
+      editoreNot,
+      ekDosyaUrl ? `\nEk Dosya: ${ekDosyaUrl}` : "",
+    ].join("\n");
+
+    const raporYazara = [
+      "═══════════════════════════════════════",
+      "HAKEM DEĞERLENDİRMESİ",
+      "Çift Kör Süreç — Hakem Kimliği Gizlidir",
+      "═══════════════════════════════════════",
+      "",
+      `Makale: ${makale?.title||"—"}`,
+      `Tarih: ${new Date().toLocaleDateString("tr-TR")}`,
+      "",
+      "─── PUANLAMA ──────────────────────────",
+      ...kriterler.map(k=>`${k.lbl.padEnd(35)} : ${puanlar[k.key]}/5`),
+      `${"GENEL ORTALAMA".padEnd(35)} : ${ort()}/5`,
+      "",
+      "─── GÜÇLÜ YÖNLER ──────────────────────",
+      gucluRef.current?.value || "—",
+      "",
+      "─── GELİŞTİRİLMESİ ÖNERILEN NOKTALAR ─",
+      zayifRef.current?.value || "—",
+      "",
+      "─── DEĞERLENDİRME & ÖNERİLER ─────────",
+      yazaraNot,
+      "",
+      `KARAR: ${secilenKarar?.lbl_tr} (${secilenKarar?.lbl})`,
+    ].join("\n");
+
+    // reviews tablosuna kaydet — iki ayrı alan
+    await supa.from("reviews").update({
+      status: "tamamlandi",
+      decision: kmap[karar] || karar,
+      comments: raporYazara,           // yazar görebilir
+      editor_notes: raporEditore,      // sadece editör
+      review_file_url: ekDosyaUrl,
+      completed_at: new Date().toISOString()
+    }).eq("id", review.id);
+
+    const yeniDurum = kmap[karar]==="kabul"?"baskida":kmap[karar]==="revizyon"?"revizyon":"reddedildi";
+    await supa.from("articles").update({status:yeniDurum}).eq("id", review.article_id);
+
+    await onGonder(review.id, review.article_id, kmap[karar]||karar, raporYazara);
     setGonderiyor(false);
   };
 
-  return (
-    <div style={{padding:"20px",background:"#f8fafc",borderTop:`1px solid ${G.border}`}}>
-      {makale?.abstract && (
-        <div style={{background:"#fff",borderRadius:8,padding:"12px 16px",marginBottom:18,border:`1px solid ${G.border}`,borderLeft:`3px solid ${G.gold}`}}>
-          <div style={{fontSize:10,color:G.gold,letterSpacing:1.5,fontWeight:700,marginBottom:5}}>MAKALE ÖZETİ</div>
-          <p style={{fontSize:12.5,color:"#555",lineHeight:1.65,margin:0}}>{makale.abstract}</p>
-        </div>
-      )}
+  const adimRengi = (n) => adim===n?"#1a1208":adim>n?"#065f46":"#94a3b8";
+  const adimBg    = (n) => adim===n?"#c9a84c":adim>n?"#d1fae5":"#f1f5f9";
 
-      <div style={{background:"#fff",borderRadius:10,padding:"16px",marginBottom:16,border:`1px solid ${G.border}`}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-          <div style={{fontSize:11,fontWeight:700,color:G.ink,letterSpacing:0.5}}>DEĞERLENDİRME KRİTERLERİ (1–5)</div>
-          <div style={{fontSize:13,fontWeight:700,color:G.gold,background:`${G.gold}15`,padding:"3px 12px",borderRadius:20,border:`1px solid ${G.gold}33`}}>
-            Ort: {ort()}/5
-          </div>
-        </div>
-        {kriterler.map(kr => (
-          <div key={kr.key} style={{marginBottom:12}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-              <div>
-                <span style={{fontSize:13,fontWeight:700,color:G.ink}}>{kr.lbl}</span>
-                <span style={{fontSize:11,color:G.muted,marginLeft:8}}>{kr.desc}</span>
+  return (
+    <div style={{background:"#f8fafc",borderTop:`2px solid ${G.border}`}}>
+
+      {/* Adım göstergesi */}
+      <div style={{background:"#1a1208",padding:"12px 20px",display:"flex",alignItems:"center",gap:0}}>
+        {[
+          {n:1,lbl:"Puanlama"},
+          {n:2,lbl:"Değerlendirme"},
+          {n:3,lbl:"Karar & Gönder"},
+        ].map((s,i,arr) => (
+          <React.Fragment key={s.n}>
+            <div onClick={()=>setAdim(s.n)} style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer"}}>
+              <div style={{width:24,height:24,borderRadius:"50%",background:adimBg(s.n),color:adimRengi(s.n),display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,flexShrink:0}}>
+                {adim>s.n?"✓":s.n}
               </div>
-              <div style={{display:"flex",gap:4}}>
-                {[1,2,3,4,5].map(n => (
-                  <button key={n} onClick={()=>setPuanlar(p=>({...p,[kr.key]:n}))} style={{
-                    width:30,height:30,borderRadius:5,border:`1.5px solid ${puanlar[kr.key]>=n?"#c9a84c":G.border}`,
-                    background:puanlar[kr.key]>=n?"#c9a84c":"#fff",
-                    color:puanlar[kr.key]>=n?"#1a1208":G.muted,fontWeight:700,fontSize:12,cursor:"pointer"
-                  }}>{n}</button>
-                ))}
-              </div>
+              <span style={{fontSize:11,color:adim===s.n?"#c9a84c":adim>s.n?"#6ee7b7":"#64748b",fontWeight:adim===s.n?700:500}}>{s.lbl}</span>
             </div>
-            <div style={{height:3,background:"#f1f5f9",borderRadius:2}}>
-              <div style={{height:"100%",background:"#c9a84c",borderRadius:2,width:`${puanlar[kr.key]*20}%`,transition:"width 0.3s"}}/>
-            </div>
-          </div>
+            {i<arr.length-1&&<div style={{flex:1,height:1,background:"rgba(255,255,255,0.15)",margin:"0 10px"}}/>}
+          </React.Fragment>
         ))}
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-        <div>
-          <div style={{fontSize:11,fontWeight:700,color:"#065f46",marginBottom:4}}>GÜÇLÜ YÖNLER</div>
-          <textarea ref={gucluRef} placeholder="Makalenin güçlü yönleri..." rows={3} style={{
-            width:"100%",padding:"8px",border:"1.5px solid #d1fae5",borderRadius:7,fontSize:12.5,resize:"vertical",boxSizing:"border-box",background:"#f0fdf4"
-          }}/>
+      {/* Makale özeti */}
+      {makale && (
+        <div style={{padding:"12px 20px",background:"#fff",borderBottom:`1px solid ${G.border}`,display:"flex",gap:12,alignItems:"flex-start"}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:11,color:G.gold,fontWeight:700,letterSpacing:1,marginBottom:3}}>DEĞERLENDİRDİĞİNİZ MAKALE</div>
+            <div style={{fontSize:13,fontWeight:700,color:G.ink,lineHeight:1.4}}>{makale.title}</div>
+            <div style={{fontSize:11,color:G.muted,marginTop:2}}>{makale.field} · {makale.keywords}</div>
+          </div>
+          {makale.file_url && (
+            <a href={makale.file_url} target="_blank" style={{fontSize:11,color:"#fff",background:G.teal,padding:"5px 12px",borderRadius:5,fontWeight:700,whiteSpace:"nowrap",flexShrink:0}}>📄 Makaleyi İndir</a>
+          )}
         </div>
-        <div>
-          <div style={{fontSize:11,fontWeight:700,color:"#991b1b",marginBottom:4}}>ZAYIF YÖNLER</div>
-          <textarea ref={zayifRef} placeholder="Geliştirilmesi gerekenler..." rows={3} style={{
-            width:"100%",padding:"8px",border:"1.5px solid #fee2e2",borderRadius:7,fontSize:12.5,resize:"vertical",boxSizing:"border-box",background:"#fff7f7"
-          }}/>
-        </div>
-      </div>
+      )}
 
-      <div style={{marginBottom:10}}>
-        <div style={{fontSize:11,fontWeight:700,color:G.ink,marginBottom:4}}>GENEL DEĞERLENDİRME (Editöre & Yazara) *</div>
-        <textarea ref={yorumRef} placeholder="Kapsamlı görüşünüzü yazın (min. 50 karakter)..." rows={5} style={{
-          width:"100%",padding:"10px 12px",border:`1.5px solid ${G.border}`,borderRadius:7,fontSize:13,resize:"vertical",lineHeight:1.65,boxSizing:"border-box"
-        }}/>
-      </div>
+      <div style={{padding:"20px"}}>
 
-      <div style={{marginBottom:16}}>
-        <div style={{fontSize:11,fontWeight:700,color:"#6d28d9",marginBottom:4}}>YAZARA ÖZEL NOT (isteğe bağlı)</div>
-        <textarea ref={yazarNotRef} placeholder="Yazara özel tavsiye veya kaynak önerileri..." rows={2} style={{
-          width:"100%",padding:"8px 12px",border:"1.5px solid #ede9fe",borderRadius:7,fontSize:12.5,resize:"vertical",boxSizing:"border-box",background:"#faf5ff"
-        }}/>
-      </div>
-
-      <div style={{marginBottom:16}}>
-        <div style={{fontSize:11,fontWeight:700,color:G.ink,marginBottom:8}}>EDİTÖRYEL KARAR *</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-          {kararlar.map(k => (
-            <div key={k.k} onClick={()=>setKarar(k.k)} style={{
-              border:`2px solid ${karar===k.k?k.c:G.border}`,borderRadius:8,padding:"9px 12px",
-              cursor:"pointer",background:karar===k.k?k.bg:"#fff",transition:"all 0.15s"
-            }}>
-              <div style={{fontWeight:700,fontSize:12.5,color:k.c,marginBottom:1}}>{k.lbl}</div>
-              <div style={{fontSize:10,color:G.muted}}>{k.desc}</div>
+        {/* ADIM 1: PUANLAMA */}
+        {adim===1 && (
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div>
+                <div style={{fontSize:13,fontWeight:700,color:G.ink}}>KRİTER BAZLI PUANLAMA</div>
+                <div style={{fontSize:11,color:G.muted,marginTop:2}}>PNAS · Wiley · Elsevier standartları · Her kriter için 1–5 puan</div>
+              </div>
+              {parseFloat(ort())>0 && (
+                <div style={{textAlign:"center",background:"#fff",borderRadius:10,padding:"8px 16px",border:`2px solid ${ortRenk()}`}}>
+                  <div style={{fontSize:20,fontWeight:700,color:ortRenk()}}>{ort()}</div>
+                  <div style={{fontSize:9,color:G.muted}}>/ 5.00 Ort.</div>
+                </div>
+              )}
             </div>
-          ))}
-        </div>
-      </div>
 
-      <div style={{display:"flex",gap:10,alignItems:"center",background:"#f8fafc",padding:"12px",borderRadius:8,border:`1px solid ${G.border}`}}>
-        <div style={{fontSize:11,color:G.muted,flex:1}}>Bu değerlendirme çift kör süreç kapsamında gizli tutulur.</div>
-        <button onClick={gonder} disabled={gonderiyor} style={{
-          background:G.teal,color:"#fff",border:"none",padding:"10px 22px",
-          borderRadius:7,fontWeight:700,fontSize:13,cursor:"pointer",opacity:gonderiyor?0.6:1,whiteSpace:"nowrap"
-        }}>{gonderiyor?"Gönderiliyor...":"DEĞERLENDİRMEYİ GÖNDER →"}</button>
+            {kriterler.map((kr,i) => (
+              <div key={kr.key} style={{marginBottom:14,background:"#fff",borderRadius:8,padding:"12px 14px",border:`1px solid ${puanlar[kr.key]>0?"#c9a84c44":G.border}`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:700,color:G.ink,marginBottom:2}}>
+                      <span style={{color:G.muted,marginRight:6,fontSize:11}}>{i+1}.</span>{kr.lbl}
+                    </div>
+                    <div style={{fontSize:11,color:G.muted}}>{kr.desc}</div>
+                  </div>
+                  <div style={{display:"flex",gap:4,flexShrink:0}}>
+                    {[1,2,3,4,5].map(n => {
+                      const lbls=["","Yetersiz","Zayıf","Orta","İyi","Mükemmel"];
+                      return (
+                        <div key={n} style={{textAlign:"center"}}>
+                          <button onClick={()=>setPuanlar(p=>({...p,[kr.key]:n}))} title={lbls[n]} style={{
+                            width:32,height:32,borderRadius:6,
+                            border:`2px solid ${puanlar[kr.key]===n?"#1a1208":puanlar[kr.key]>=n?"#c9a84c":G.border}`,
+                            background:puanlar[kr.key]===n?"#1a1208":puanlar[kr.key]>n?"#c9a84c":"#fff",
+                            color:puanlar[kr.key]>=n?"#fff":G.muted,
+                            fontWeight:700,fontSize:12,cursor:"pointer",display:"block"
+                          }}>{n}</button>
+                          <div style={{fontSize:8,color:G.muted,marginTop:2,width:32,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{lbls[n]}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div style={{height:3,background:"#f1f5f9",borderRadius:2,marginTop:10}}>
+                  <div style={{height:"100%",background:puanlar[kr.key]>=4?"#065f46":puanlar[kr.key]>=3?"#c9a84c":"#ef4444",borderRadius:2,width:`${puanlar[kr.key]*20}%`,transition:"width 0.3s"}}/>
+                </div>
+              </div>
+            ))}
+
+            {/* Genel skor özeti */}
+            {Object.values(puanlar).every(v=>v>0) && (
+              <div style={{background:"linear-gradient(135deg,#1a1208,#2a1f0a)",borderRadius:10,padding:"14px 18px",marginBottom:14}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div style={{color:"#f0e6cc",fontSize:13,fontWeight:700}}>Genel Ortalama Puan</div>
+                  <div style={{fontSize:22,fontWeight:700,color:"#c9a84c"}}>{ort()} / 5.00</div>
+                </div>
+                <div style={{marginTop:8,height:6,background:"rgba(255,255,255,0.1)",borderRadius:3}}>
+                  <div style={{height:"100%",background:"#c9a84c",borderRadius:3,width:`${(parseFloat(ort())/5)*100}%`,transition:"width 0.4s"}}/>
+                </div>
+                <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+                  <span style={{fontSize:9,color:"#8a7d60"}}>1.0 Yetersiz</span>
+                  <span style={{fontSize:9,color:"#8a7d60"}}>3.0 Kabul Edilebilir</span>
+                  <span style={{fontSize:9,color:"#8a7d60"}}>5.0 Mükemmel</span>
+                </div>
+              </div>
+            )}
+
+            <button onClick={()=>setAdim(2)} style={{width:"100%",background:G.teal,color:"#fff",border:"none",padding:"12px",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>
+              Değerlendirmeye Devam Et →
+            </button>
+          </div>
+        )}
+
+        {/* ADIM 2: YORUMLAR */}
+        {adim===2 && (
+          <div>
+            {/* Güçlü / Zayıf */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+              <div>
+                <div style={{fontSize:11,fontWeight:700,color:"#065f46",marginBottom:5,display:"flex",alignItems:"center",gap:5}}>
+                  <span style={{background:"#d1fae5",color:"#065f46",padding:"1px 7px",borderRadius:10,fontSize:10}}>Editör & Yazar Görür</span>
+                  GÜÇLÜ YÖNLER *
+                </div>
+                <textarea ref={gucluRef} placeholder="Makalenin özgün katkısı, metodolojisinin sağlamlığı, alanyazına katkısı vb. güçlü yönleri..." rows={5} style={{width:"100%",padding:"9px",border:"1.5px solid #d1fae5",borderRadius:7,fontSize:12.5,resize:"vertical",boxSizing:"border-box",background:"#f0fdf4",lineHeight:1.6}}/>
+              </div>
+              <div>
+                <div style={{fontSize:11,fontWeight:700,color:"#991b1b",marginBottom:5,display:"flex",alignItems:"center",gap:5}}>
+                  <span style={{background:"#fee2e2",color:"#991b1b",padding:"1px 7px",borderRadius:10,fontSize:10}}>Editör & Yazar Görür</span>
+                  ZAYIF YÖNLER *
+                </div>
+                <textarea ref={zayifRef} placeholder="Geliştirilmesi gereken noktalar, metodolojik eksiklikler, eksik alanyazın, düzeltilmesi gereken ifadeler..." rows={5} style={{width:"100%",padding:"9px",border:"1.5px solid #fee2e2",borderRadius:7,fontSize:12.5,resize:"vertical",boxSizing:"border-box",background:"#fff7f7",lineHeight:1.6}}/>
+              </div>
+            </div>
+
+            {/* Yazara açık değerlendirme */}
+            <div style={{marginBottom:14,background:"#fff",borderRadius:8,padding:"14px",border:"1.5px solid #bfdbfe"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <div style={{fontSize:12,fontWeight:700,color:"#1e40af"}}>✉ YAZARA AÇIK DEĞERLENDİRME *</div>
+                <span style={{background:"#dbeafe",color:"#1e40af",padding:"2px 10px",borderRadius:20,fontSize:10,fontWeight:700}}>Editör + Yazar Görür</span>
+              </div>
+              <div style={{fontSize:11,color:G.muted,marginBottom:8}}>Yazara iletilecek kapsamlı değerlendirme, revizyon önerileri, kaynak tavsiyeleri ve yapıcı geri bildirimler. (Min. 80 karakter)</div>
+              <textarea ref={yazaraRef} placeholder="Sevgili yazar, makalenizi değerlendirdim. Çalışmanız... [Yapıcı, nesnel ve gelişime odaklı yazın]" rows={7} style={{width:"100%",padding:"10px 12px",border:"1.5px solid #bfdbfe",borderRadius:6,fontSize:13,resize:"vertical",lineHeight:1.7,boxSizing:"border-box",background:"#f0f9ff"}}/>
+            </div>
+
+            {/* Editöre gizli not */}
+            <div style={{marginBottom:14,background:"#fff",borderRadius:8,padding:"14px",border:"1.5px solid #c4b5fd"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <div style={{fontSize:12,fontWeight:700,color:"#6d28d9"}}>🔒 EDİTÖRE GİZLİ NOT *</div>
+                <span style={{background:"#ede9fe",color:"#6d28d9",padding:"2px 10px",borderRadius:20,fontSize:10,fontWeight:700}}>Yalnızca Editör Görür</span>
+              </div>
+              <div style={{fontSize:11,color:G.muted,marginBottom:8}}>Yalnızca editörün göreceği gizli değerlendirme. Çıkar çatışması, intihal şüphesi, yazar kimliğine ilişkin tahmin, yayın kararı önerisi. (Min. 80 karakter)</div>
+              <textarea ref={editoreRef} placeholder="Editör'e: Bu çalışma hakkında kamuoyuna açıklanmamasını istediğim görüşlerim şunlardır..." rows={5} style={{width:"100%",padding:"10px 12px",border:"1.5px solid #c4b5fd",borderRadius:6,fontSize:13,resize:"vertical",lineHeight:1.7,boxSizing:"border-box",background:"#faf5ff"}}/>
+            </div>
+
+            {/* Ek dosya */}
+            <div style={{marginBottom:14,background:"#fff",borderRadius:8,padding:"14px",border:`1px solid ${G.border}`}}>
+              <div style={{fontSize:12,fontWeight:700,color:G.ink,marginBottom:5}}>📎 EK DOSYA (İsteğe bağlı)</div>
+              <div style={{fontSize:11,color:G.muted,marginBottom:8}}>Notlandırılmış makale, referans listesi, tablo düzeltmeleri veya ek analiz dosyası yükleyebilirsiniz. (PDF, DOCX, XLSX — max 10MB)</div>
+              <input ref={ekDosyaRef} type="file" accept=".pdf,.docx,.doc,.xlsx,.xls" style={{fontSize:13,color:"#444"}}/>
+              {ekDosyaMsg && <div style={{fontSize:12,color:ekDosyaMsg.includes("✓")?"#065f46":"#991b1b",marginTop:6,fontWeight:600}}>{ekDosyaMsg}</div>}
+            </div>
+
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setAdim(1)} style={{padding:"10px 20px",background:"#fff",border:`1px solid ${G.border}`,borderRadius:7,fontSize:12,color:G.muted,cursor:"pointer"}}>← Geri</button>
+              <button onClick={()=>setAdim(3)} style={{flex:1,background:G.teal,color:"#fff",border:"none",padding:"11px",borderRadius:7,fontWeight:700,fontSize:13,cursor:"pointer"}}>Karara Geç →</button>
+            </div>
+          </div>
+        )}
+
+        {/* ADIM 3: KARAR */}
+        {adim===3 && (
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:G.ink,marginBottom:4}}>EDİTÖRYEL KARAR</div>
+            <div style={{fontSize:11,color:G.muted,marginBottom:14}}>Uluslararası dergi standartlarına uygun karar seçenekleri. Kararınız, gizli notunuzla birlikte editöre iletilecektir.</div>
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20}}>
+              {kararlar.map(k => (
+                <div key={k.k} onClick={()=>setKarar(k.k)} style={{
+                  border:`2px solid ${karar===k.k?k.c:G.border}`,borderRadius:10,padding:"12px 14px",
+                  cursor:"pointer",background:karar===k.k?k.bg:"#fff",transition:"all 0.15s"
+                }}>
+                  <div style={{fontWeight:700,fontSize:12,color:k.c,marginBottom:2}}>
+                    {k.lbl_tr}
+                    <span style={{fontWeight:400,color:G.muted,marginLeft:6,fontSize:10}}>({k.lbl})</span>
+                  </div>
+                  <div style={{fontSize:10.5,color:G.muted,lineHeight:1.5}}>{k.desc}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Özet */}
+            <div style={{background:"#fff",borderRadius:10,padding:"14px",border:`1px solid ${G.border}`,marginBottom:14}}>
+              <div style={{fontSize:11,fontWeight:700,color:G.ink,marginBottom:10,letterSpacing:0.5}}>DEĞERLENDİRME ÖZETİ</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                {kriterler.map(kr=>(
+                  <div key={kr.key} style={{display:"flex",justifyContent:"space-between",fontSize:11,padding:"4px 0",borderBottom:`1px solid ${G.border}22`}}>
+                    <span style={{color:G.muted}}>{kr.lbl}</span>
+                    <span style={{fontWeight:700,color:puanlar[kr.key]>=4?"#065f46":puanlar[kr.key]>=3?"#b45309":"#991b1b"}}>{puanlar[kr.key]}/5</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:`2px solid ${G.border}`}}>
+                <span style={{fontSize:12,fontWeight:700,color:G.ink}}>Genel Ortalama</span>
+                <span style={{fontSize:14,fontWeight:700,color:ortRenk()}}>{ort()} / 5.00</span>
+              </div>
+            </div>
+
+            {/* Gizlilik uyarısı */}
+            <div style={{background:"#fffbeb",borderRadius:8,padding:"10px 14px",marginBottom:14,border:"1px solid #fde68a",fontSize:11,color:"#92400e"}}>
+              ⚠ <strong>Gizlilik:</strong> Editöre gizli notunuz yalnızca editör tarafından görülebilir. Yazara açık değerlendirmeniz ve puanlarınız yazara iletilir. Hakem kimliğiniz her iki taraftan da gizli tutulur (COPE Çift Kör Hakem Süreci).
+            </div>
+
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setAdim(2)} style={{padding:"10px 20px",background:"#fff",border:`1px solid ${G.border}`,borderRadius:7,fontSize:12,color:G.muted,cursor:"pointer"}}>← Geri</button>
+              <button onClick={gonder} disabled={gonderiyor||!karar} style={{
+                flex:1,background:karar?G.teal:"#94a3b8",color:"#fff",border:"none",padding:"12px",
+                borderRadius:7,fontWeight:700,fontSize:13,cursor:karar?"pointer":"not-allowed",
+                opacity:gonderiyor?0.6:1
+              }}>
+                {gonderiyor?"Gönderiliyor...":"✓ DEĞERLENDİRMEYİ TAMAMLA & GÖNDER"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
