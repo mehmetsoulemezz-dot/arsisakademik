@@ -544,8 +544,6 @@ function HakemDegerlendirmeFormu({review, makale, onGonder}) {
     const editoreNot  = editoreRef.current?.value?.trim();
     const yazaraNot   = yazaraRef.current?.value?.trim();
     if (!karar) { alert("Lütfen bir karar seçin."); return; }
-    if (!editoreNot || editoreNot.length < 80) { alert("Editöre gizli not en az 80 karakter olmalıdır."); return; }
-    if (!yazaraNot || yazaraNot.length < 80)   { alert("Yazara açık değerlendirme en az 80 karakter olmalıdır."); return; }
     if (Object.values(puanlar).some(v=>v===0)) { alert("Lütfen tüm 8 kriteri puanlayın."); return; }
 
     setGonderiyor(true);
@@ -567,56 +565,52 @@ function HakemDegerlendirmeFormu({review, makale, onGonder}) {
     const secilenKarar = kararlar.find(k=>k.k===karar);
     const kmap = {kabul:"kabul",minor_revision:"revizyon",major_revision:"revizyon",reject_resubmit:"revizyon",red:"red",transfer:"red"};
 
-    // Yapılandırılmış rapor — editöre (gizli) + yazara (açık) ayrı tutulur
-    const raporEditore = [
-      "═══════════════════════════════════════",
-      "HAKEM DEĞERLENDİRME RAPORU",
-      "Gizli — Yalnızca Editör Görür",
-      "═══════════════════════════════════════",
+    // Yazara giden rapor — hakem kimliği KESİNLİKLE GİZLİ
+    const raporYazara = [
+      "═══════════════════════════════════════════════",
+      "HAKEM DEĞERLENDİRMESİ",
+      "Çift Kör Süreç — Hakem Kimliği Gizlidir",
+      "═══════════════════════════════════════════════",
       "",
       `Makale: ${makale?.title||"—"}`,
       `Değerlendirme Tarihi: ${new Date().toLocaleDateString("tr-TR")}`,
-      `Karar: ${secilenKarar?.lbl_tr} (${secilenKarar?.lbl})`,
       "",
-      "─── PUANLAMA KRİTERLERİ ───────────────",
-      ...kriterler.map(k=>`${k.lbl.padEnd(35)} : ${puanlar[k.key]}/5`),
-      `${"GENEL ORTALAMA".padEnd(35)} : ${ort()}/5`,
+      "─── PUANLAMA ─────────────────────────────────",
+      ...kriterler.map(k=>`${k.lbl.padEnd(35)}: ${puanlar[k.key]}/5`),
+      `${"Genel Ortalama".padEnd(35)}: ${ort()}/5`,
       "",
-      "─── GÜÇLÜ YÖNLER ──────────────────────",
-      gucluRef.current?.value || "—",
+      gucluRef.current?.value ? `─── GÜÇLÜ YÖNLER ─────────────────────────────\n${gucluRef.current.value}` : "",
       "",
-      "─── ZAYIF YÖNLER / GELİŞTİRİLMESİ GEREKENLER ─",
-      zayifRef.current?.value || "—",
+      zayifRef.current?.value ? `─── GELİŞTİRİLMESİ ÖNERILEN NOKTALAR ────────\n${zayifRef.current.value}` : "",
       "",
-      "─── EDİTÖRE GİZLİ NOT ─────────────────",
-      editoreNot,
-      ekDosyaUrl ? `\nEk Dosya: ${ekDosyaUrl}` : "",
-    ].join("\n");
+      yazaraNot ? `─── DEĞERLENDİRME & ÖNERİLER ────────────────\n${yazaraNot}` : "",
+      "",
+      `KARAR: ${secilenKarar?.lbl_tr} (${secilenKarar?.lbl})`,
+    ].filter(l=>l!=="").join("\n");
 
-    const raporYazara = [
-      "═══════════════════════════════════════",
-      "HAKEM DEĞERLENDİRMESİ",
-      "Çift Kör Süreç — Hakem Kimliği Gizlidir",
-      "═══════════════════════════════════════",
+    // Editöre giden rapor — tüm detaylar + gizli notlar
+    const raporEditore = [
+      "═══════════════════════════════════════════════",
+      "HAKEM DEĞERLENDİRME RAPORU — EDİTÖRE GİZLİ",
+      "═══════════════════════════════════════════════",
       "",
       `Makale: ${makale?.title||"—"}`,
       `Tarih: ${new Date().toLocaleDateString("tr-TR")}`,
+      `Karar: ${secilenKarar?.lbl_tr} (${secilenKarar?.lbl})`,
       "",
-      "─── PUANLAMA ──────────────────────────",
-      ...kriterler.map(k=>`${k.lbl.padEnd(35)} : ${puanlar[k.key]}/5`),
-      `${"GENEL ORTALAMA".padEnd(35)} : ${ort()}/5`,
+      "─── PUANLAMA ─────────────────────────────────",
+      ...kriterler.map(k=>`${k.lbl.padEnd(35)}: ${puanlar[k.key]}/5`),
+      `${"Genel Ortalama".padEnd(35)}: ${ort()}/5`,
       "",
-      "─── GÜÇLÜ YÖNLER ──────────────────────",
-      gucluRef.current?.value || "—",
+      gucluRef.current?.value ? `─── GÜÇLÜ YÖNLER ─────────────────────────────\n${gucluRef.current.value}` : "",
       "",
-      "─── GELİŞTİRİLMESİ ÖNERILEN NOKTALAR ─",
-      zayifRef.current?.value || "—",
+      zayifRef.current?.value ? `─── ZAYIF YÖNLER ──────────────────────────────\n${zayifRef.current.value}` : "",
       "",
-      "─── DEĞERLENDİRME & ÖNERİLER ─────────",
-      yazaraNot,
+      yazaraNot ? `─── YAZARA AÇIK DEĞERLENDİRME ────────────────\n${yazaraNot}` : "",
       "",
-      `KARAR: ${secilenKarar?.lbl_tr} (${secilenKarar?.lbl})`,
-    ].join("\n");
+      editoreNot ? `─── EDİTÖRE GİZLİ NOT ────────────────────────\n${editoreNot}` : "",
+      ekDosyaUrl ? `\nEk Dosya: ${ekDosyaUrl}` : "",
+    ].filter(l=>l!=="").join("\n");
 
     // reviews tablosuna kaydet — iki ayrı alan
     await supa.from("reviews").update({
@@ -776,7 +770,7 @@ function HakemDegerlendirmeFormu({review, makale, onGonder}) {
                 <div style={{fontSize:12,fontWeight:700,color:"#1e40af"}}>✉ YAZARA AÇIK DEĞERLENDİRME *</div>
                 <span style={{background:"#dbeafe",color:"#1e40af",padding:"2px 10px",borderRadius:20,fontSize:10,fontWeight:700}}>Editör + Yazar Görür</span>
               </div>
-              <div style={{fontSize:11,color:G.muted,marginBottom:8}}>Yazara iletilecek kapsamlı değerlendirme, revizyon önerileri, kaynak tavsiyeleri ve yapıcı geri bildirimler. (Min. 80 karakter)</div>
+              <div style={{fontSize:11,color:G.muted,marginBottom:8}}>Yazara iletilecek değerlendirme, revizyon önerileri ve yapıcı geri bildirimler. (İsteğe bağlı)</div>
               <textarea ref={yazaraRef} placeholder="Sevgili yazar, makalenizi değerlendirdim. Çalışmanız... [Yapıcı, nesnel ve gelişime odaklı yazın]" rows={7} style={{width:"100%",padding:"10px 12px",border:"1.5px solid #bfdbfe",borderRadius:6,fontSize:13,resize:"vertical",lineHeight:1.7,boxSizing:"border-box",background:"#f0f9ff"}}/>
             </div>
 
@@ -786,7 +780,7 @@ function HakemDegerlendirmeFormu({review, makale, onGonder}) {
                 <div style={{fontSize:12,fontWeight:700,color:"#6d28d9"}}>🔒 EDİTÖRE GİZLİ NOT *</div>
                 <span style={{background:"#ede9fe",color:"#6d28d9",padding:"2px 10px",borderRadius:20,fontSize:10,fontWeight:700}}>Yalnızca Editör Görür</span>
               </div>
-              <div style={{fontSize:11,color:G.muted,marginBottom:8}}>Yalnızca editörün göreceği gizli değerlendirme. Çıkar çatışması, intihal şüphesi, yazar kimliğine ilişkin tahmin, yayın kararı önerisi. (Min. 80 karakter)</div>
+              <div style={{fontSize:11,color:G.muted,marginBottom:8}}>Yalnızca editörün göreceği gizli not. Çıkar çatışması, intihal şüphesi veya yayın kararı önerisi. (İsteğe bağlı)</div>
               <textarea ref={editoreRef} placeholder="Editör'e: Bu çalışma hakkında kamuoyuna açıklanmamasını istediğim görüşlerim şunlardır..." rows={5} style={{width:"100%",padding:"10px 12px",border:"1.5px solid #c4b5fd",borderRadius:6,fontSize:13,resize:"vertical",lineHeight:1.7,boxSizing:"border-box",background:"#faf5ff"}}/>
             </div>
 
@@ -1920,7 +1914,54 @@ function PanelPage({user, setModal, toast_, lang, articles, users, loadArticles}
                         {zatenGeriCekildi?"✕ Geri Çekildi":d.tr||a.status}
                       </span>
                     </div>
-                    <p style={{margin:"0 0 8px",fontSize:12,color:"#7a6e5f",fontStyle:"italic"}}>{a.created_at?.split("T")[0]} · {a.field}</p>
+                    <p style={{margin:"0 0 8px",fontSize:12,color:"#7a6e5f",fontStyle:"italic"}}>
+                      {a.created_at?.split("T")[0]} · {a.field}
+                      {a.coauthors && <span> · Ortak: {a.coauthors}</span>}
+                    </p>
+
+                    {/* Süreç durumu — hakem ismi KESİNLİKLE GİZLİ */}
+                    {a.status==="hakemde" && (
+                      <div style={{
+                        background:"#fffbeb",borderRadius:6,padding:"7px 12px",
+                        marginBottom:8,border:"1px solid #fde68a",fontSize:11,color:"#92400e"
+                      }}>
+                        ⏳ Makaleniz hakem incelemesindedir. Hakem kimliği çift kör süreç gereği gizlidir.
+                      </div>
+                    )}
+                    {a.status==="revizyon" && (
+                      <div style={{
+                        background:"#ede9fe",borderRadius:6,padding:"7px 12px",
+                        marginBottom:8,border:"1px solid #c4b5fd",fontSize:11,color:"#6d28d9"
+                      }}>
+                        ↻ Makaleniz revizyon aşamasındadır. Editör notlarını inceleyiniz.
+                      </div>
+                    )}
+                    {a.status==="baskida" && (
+                      <div style={{
+                        background:"#d1fae5",borderRadius:6,padding:"7px 12px",
+                        marginBottom:8,border:"1px solid #a7f3d0",fontSize:11,color:"#065f46",fontWeight:700
+                      }}>
+                        ✓ Makaleniz kabul edilmiştir. Baskı sürecindedir.
+                      </div>
+                    )}
+                    {a.status==="yayinda" && (
+                      <div style={{
+                        background:"#d1fae5",borderRadius:6,padding:"7px 12px",
+                        marginBottom:8,border:"1px solid #a7f3d0",fontSize:11,color:"#065f46",fontWeight:700
+                      }}>
+                        🎉 Makaleniz yayımlanmıştır.
+                      </div>
+                    )}
+                    {a.status==="reddedildi" && (
+                      <div style={{
+                        background:"#fee2e2",borderRadius:6,padding:"7px 12px",
+                        marginBottom:8,border:"1px solid #fca5a5",fontSize:11,color:"#991b1b"
+                      }}>
+                        ✗ Makaleniz reddedilmiştir. Editör notlarını inceleyiniz.
+                      </div>
+                    )}
+
+                    {/* Editörden gelen notlar */}
                     <YazarNotlari articleId={a.id}/>
 
                     {/* Geri çekme butonu */}
@@ -1929,9 +1970,7 @@ function PanelPage({user, setModal, toast_, lang, articles, users, loadArticles}
                         <button onClick={async()=>{
                           if(!confirm("Makalenizi geri çekmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz. Editöre bildirim gönderilecektir."))return;
                           await supa.from("articles").update({status:"geri_cekildi"}).eq("id",a.id);
-                          // Bekleyen hakem atamalarını da iptal et
                           await supa.from("reviews").update({status:"geri_cekildi"}).eq("article_id",a.id).eq("status","beklemede");
-                          // Editöre not ekle
                           await supa.from("article_notes").insert([{
                             article_id:a.id,
                             to_email:"editor@arsis.tr",
