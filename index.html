@@ -760,7 +760,7 @@ function YonetimSekme({articles, users, toast_, loadArticles}) {
     toast_("✓ Not yazara iletildi!");setYazarNotMakale(null);
   };
 
-  const hakemler = users.filter(u=>u.role==="hakem");
+  const hakemler = users.filter(u=>u.role==="hakem"||u.role==="yazar-hakem");
   const yeniMakaleler = articles.filter(a=>a.status==="beklemede");
   const tamamlananDeg = reviews.filter(r=>r.status==="tamamlandi");
   const toplamBildirim = yeniMakaleler.length + tamamlananDeg.length;
@@ -999,28 +999,78 @@ function YonetimSekme({articles, users, toast_, loadArticles}) {
 
       {sekme==="uyeler" && (
         <div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:9,marginBottom:14}}>
-            {[{n:users.filter(u=>u.role==="editor").length,l:"Editör",c:"#b45309",bg:"#fef3c7"},{n:users.filter(u=>u.role==="hakem").length,l:"Hakem",c:G.teal,bg:"#ecfdf5"},{n:users.filter(u=>!u.role||u.role==="yazar").length,l:"Yazar",c:"#6d28d9",bg:"#f5f3ff"}].map(s=>(
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:9,marginBottom:14}}>
+            {[
+              {n:users.filter(u=>u.role==="editor").length,     l:"Editör",       c:"#b45309", bg:"#fef3c7"},
+              {n:users.filter(u=>u.role==="hakem"||u.role==="yazar-hakem").length, l:"Hakem",  c:G.teal,    bg:"#ecfdf5"},
+              {n:users.filter(u=>u.role==="yazar"||u.role==="yazar-hakem"||!u.role).length, l:"Yazar", c:"#6d28d9", bg:"#f5f3ff"},
+              {n:users.length, l:"Toplam Üye", c:"#1a1208", bg:"#f5f0e8"},
+            ].map(s=>(
               <div key={s.l} style={{background:s.bg,borderRadius:8,padding:"11px",textAlign:"center",border:`1px solid ${s.c}22`}}>
                 <div style={{fontSize:22,fontWeight:700,color:s.c}}>{s.n}</div>
                 <div style={{fontSize:11,color:s.c,fontWeight:600}}>{s.l}</div>
               </div>
             ))}
           </div>
-          {users.map(u=>(
-            <div key={u.id} style={{border:`1px solid ${G.border}`,borderRadius:9,padding:"11px 15px",marginBottom:7,display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fff"}}>
-              <div style={{display:"flex",alignItems:"center",gap:11}}>
-                <div style={{width:34,height:34,borderRadius:"50%",background:u.role==="editor"?"#fef3c7":u.role==="hakem"?"#ecfdf5":"#f5f3ff",border:`2px solid ${u.role==="editor"?"#b45309":u.role==="hakem"?G.teal:"#6d28d9"}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14,color:u.role==="editor"?"#b45309":u.role==="hakem"?G.teal:"#6d28d9"}}>{u.name?.[0]}</div>
-                <div>
-                  <div style={{fontWeight:700,fontSize:13,color:G.ink}}>{u.name}</div>
-                  <div style={{fontSize:11,color:G.muted}}>{u.email}</div>
-                  {u.institution&&<div style={{fontSize:10,color:G.muted,fontStyle:"italic"}}>{u.institution}</div>}
-                  {u.orcid&&<div style={{fontSize:10,color:G.teal}}>ORCID: {u.orcid}</div>}
+
+          {/* Gruplu liste */}
+          {[
+            {lbl:"HAKEMLER", icon:"⊕", filter:(u)=>u.role==="hakem"||u.role==="yazar-hakem", c:G.teal, bg:"#ecfdf5", bc:"#a7f3d0"},
+            {lbl:"YAZARLAR", icon:"♩", filter:(u)=>u.role==="yazar"||u.role==="yazar-hakem"||(!u.role), c:"#6d28d9", bg:"#f5f3ff", bc:"#c4b5fd"},
+          ].map(grup => {
+            const grupUyeler = users.filter(grup.filter).filter(u=>u.role!=="editor");
+            if (grupUyeler.length === 0) return null;
+            return (
+              <div key={grup.lbl} style={{marginBottom:20}}>
+                <div style={{
+                  display:"flex",alignItems:"center",gap:8,marginBottom:10,
+                  padding:"8px 12px",background:grup.bg,borderRadius:8,border:`1px solid ${grup.bc}`
+                }}>
+                  <span style={{color:grup.c,fontSize:14}}>{grup.icon}</span>
+                  <span style={{fontWeight:700,fontSize:12,color:grup.c,letterSpacing:0.5}}>{grup.lbl}</span>
+                  <span style={{
+                    background:grup.c,color:"#fff",borderRadius:"50%",
+                    width:20,height:20,display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:11,fontWeight:700
+                  }}>{grupUyeler.length}</span>
                 </div>
+                {grupUyeler.map(u => {
+                  const isHakem = u.role==="hakem"||u.role==="yazar-hakem";
+                  const isYazar = u.role==="yazar"||u.role==="yazar-hakem"||!u.role;
+                  const rolRenk = u.role==="yazar-hakem" ? "#0891b2" : isHakem ? G.teal : "#6d28d9";
+                  const rolBg   = u.role==="yazar-hakem" ? "#e0f2fe" : isHakem ? "#ecfdf5" : "#f5f3ff";
+                  const rolLbl  = u.role==="yazar-hakem" ? "YAZAR & HAKEM" : isHakem ? "HAKEM" : "YAZAR";
+                  return (
+                    <div key={u.id} style={{border:`1px solid ${G.border}`,borderRadius:9,padding:"11px 15px",marginBottom:7,display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fff"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:11}}>
+                        <div style={{
+                          width:36,height:36,borderRadius:"50%",
+                          background:rolBg,border:`2px solid ${rolRenk}`,
+                          display:"flex",alignItems:"center",justifyContent:"center",
+                          fontWeight:700,fontSize:15,color:rolRenk,flexShrink:0
+                        }}>{u.name?.[0]}</div>
+                        <div>
+                          <div style={{fontWeight:700,fontSize:13,color:G.ink}}>{u.name}</div>
+                          <div style={{fontSize:11,color:G.muted}}>{u.email}</div>
+                          {u.institution && <div style={{fontSize:10,color:G.muted,fontStyle:"italic"}}>{u.institution}</div>}
+                          {u.orcid && <div style={{fontSize:10,color:G.teal}}>ORCID: {u.orcid}</div>}
+                        </div>
+                      </div>
+                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5}}>
+                        <span style={{
+                          fontSize:10,padding:"4px 12px",borderRadius:20,fontWeight:700,
+                          background:rolBg,color:rolRenk,whiteSpace:"nowrap"
+                        }}>{rolLbl}</span>
+                        {u.role==="yazar-hakem" && (
+                          <span style={{fontSize:9,color:"#0891b2"}}>Her iki rolde aktif</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <span style={{fontSize:10,padding:"4px 12px",borderRadius:20,fontWeight:700,background:u.role==="editor"?"#fef3c7":u.role==="hakem"?"#ecfdf5":"#f5f3ff",color:u.role==="editor"?"#b45309":u.role==="hakem"?G.teal:"#6d28d9"}}>{u.role?.toUpperCase()||"YAZAR"}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -1476,7 +1526,7 @@ function PanelPage({user, setModal, toast_, lang, articles, users, loadArticles}
     {id:"mesajlar",    icon:"✉", label:"Mesajlar"},
     {id:"profil",      icon:"◎", label:"Profilim"},
     ...(user?.role==="editor" ? [{id:"yonetim",icon:"⚙",label:"Yönetim"}] : []),
-    ...(user?.role==="hakem"  ? [{id:"hakem",  icon:"⊕",label:"Hakem Paneli"}] : []),
+    ...(user?.role==="hakem"||user?.role==="yazar-hakem"  ? [{id:"hakem",  icon:"⊕",label:"Hakem Paneli"}] : []),
   ];
 
   return (
@@ -1493,7 +1543,7 @@ function PanelPage({user, setModal, toast_, lang, articles, users, loadArticles}
             <div style={{fontSize:11,color:"#8a7d60",marginTop:2,fontStyle:"italic"}}>{user?.institution}</div>
             <div style={{marginTop:8}}>
               <span style={{fontSize:10,padding:"2px 10px",borderRadius:20,background:"rgba(201,168,76,0.25)",color:"#c9a84c",fontWeight:700}}>
-                {user?.role==="editor"?"EDİTÖR":user?.role==="hakem"?"HAKEM":"YAZAR"}
+                {user?.role==="editor"?"EDİTÖR":user?.role==="hakem"?"HAKEM":user?.role==="yazar-hakem"?"YAZAR & HAKEM":"YAZAR"}
               </span>
             </div>
           </div>
@@ -1576,7 +1626,7 @@ function PanelPage({user, setModal, toast_, lang, articles, users, loadArticles}
           )}
 
           {/* HAKEM */}
-          {sekme==="hakem" && user?.role==="hakem" && (
+          {sekme==="hakem" && (user?.role==="hakem"||user?.role==="yazar-hakem") && (
             <HakemSekme user={user} toast_={toast_}/>
           )}
         </div>
@@ -1751,6 +1801,7 @@ function App() {
         <select ref={roleRef} style={{...inp,color:"#1a1208"}}>
           <option value="yazar">Yazar / Araştırmacı</option>
           <option value="hakem">Hakem</option>
+          <option value="yazar-hakem">Yazar & Hakem</option>
         </select>
         <button onClick={kayit} style={btn_gold}>KAYIT OL</button>
       </div>
