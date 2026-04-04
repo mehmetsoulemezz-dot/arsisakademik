@@ -957,11 +957,12 @@ function HakemSekme({user, toast_}) {
 }
 
 // ─── YÖNETİM PANELİ ──────────────────────────────────────────────────────────
-function YonetimSekme({articles, users, toast_, loadArticles}) {
+function YonetimSekme({articles, users, toast_, loadArticles, loadUsers}) {
   const [reviews, setReviews]           = React.useState([]);
-  const [acikMakale, setAcikMakale]     = React.useState(null);
   const [sekme, setSekme]               = React.useState("dashboard");
+  const [acikMakale, setAcikMakale]     = React.useState(null);
   const [yazarNotMakale, setYazarNotMakale] = React.useState(null);
+  const [rolDegistirUye, setRolDegistirUye] = React.useState(null);
   const [filtre, setFiltre]             = React.useState("tumu");
   const [arama, setArama]               = React.useState("");
   const notRef = React.useRef(null);
@@ -970,303 +971,285 @@ function YonetimSekme({articles, users, toast_, loadArticles}) {
     const{data}=await supa.from("reviews").select("*").order("assigned_at",{ascending:false});
     if(data)setReviews(data);
   },[]);
-
-  React.useEffect(()=>{yukleReviews();},[yukleReviews]);
+  React.useEffect(()=>{ yukleReviews(); },[yukleReviews]);
 
   const durumGuncelle = async(id,durum)=>{
     await supa.from("articles").update({status:durum}).eq("id",id);
-    await loadArticles();
-    toast_("✓ Makale durumu güncellendi!");
+    await loadArticles(); toast_("✓ Durum güncellendi!");
   };
-
   const hakemAta = async(makale,hakemEmail)=>{
     const hakem=users.find(u=>u.email===hakemEmail);
     if(!hakem)return;
-    const zaten=reviews.some(r=>r.article_id===makale.id&&r.reviewer_email===hakemEmail);
+    const zaten=reviews.some(r=>r.article_id===makale.id&&r.reviewer_email===hakemEmail&&r.status!=="geri_cekildi");
     if(zaten){toast_("Bu hakem zaten atanmış.","err");return;}
     await supa.from("reviews").insert([{article_id:makale.id,reviewer_email:hakem.email,reviewer_name:hakem.name,status:"beklemede"}]);
     await supa.from("articles").update({status:"hakemde"}).eq("id",makale.id);
-    await loadArticles();await yukleReviews();
+    await loadArticles(); await yukleReviews();
     toast_(`✓ ${hakem.name} makaleye atandı!`);
   };
-
+  const hakemGeriCek = async(reviewId,articleId)=>{
+    await supa.from("reviews").update({status:"geri_cekildi"}).eq("id",reviewId);
+    const aktif=reviews.filter(r=>r.article_id===articleId&&r.id!==reviewId&&r.status==="beklemede");
+    if(aktif.length===0){await supa.from("articles").update({status:"beklemede"}).eq("id",articleId);await loadArticles();}
+    await yukleReviews(); toast_("✓ Hakem ataması geri çekildi.");
+  };
   const yazaraNot = async()=>{
     const not=notRef.current?.value?.trim();
     if(!not){toast_("Not boş olamaz.","err");return;}
     await supa.from("article_notes").insert([{article_id:yazarNotMakale.id,to_email:yazarNotMakale.author_email,from_name:"Editör",content:not}]);
-    toast_("✓ Not yazara iletildi!");setYazarNotMakale(null);
+    toast_("✓ Not yazara iletildi!"); setYazarNotMakale(null);
+  };
+  const rolGuncelle = async(userId,yeniRol)=>{
+    await supa.from("users").update({role:yeniRol}).eq("id",userId);
+    if(loadUsers) await loadUsers();
+    toast_(`✓ Rol güncellendi: ${yeniRol}`); setRolDegistirUye(null);
   };
 
-  const hakemler = users.filter(u=>u.role==="hakem"||u.role==="yazar-hakem");
-  const yeniMakaleler = articles.filter(a=>a.status==="beklemede");
-  const tamamlananDeg = reviews.filter(r=>r.status==="tamamlandi");
-  const toplamBildirim = yeniMakaleler.length + tamamlananDeg.length;
+  const hakemler       = users.filter(u=>u.role==="hakem"||u.role==="yazar-hakem");
+  const yeniMakaleler  = articles.filter(a=>a.status==="beklemede");
+  const tamamlananDeg  = reviews.filter(r=>r.status==="tamamlandi");
+  const yeniUyeler     = users.filter(u=>{ try{ return (Date.now()-new Date(u.created_at).getTime())<7*24*3600*1000; }catch{return false;} });
+  const toplamBildirim = yeniMakaleler.length + tamamlananDeg.length + yeniUyeler.length;
 
   const filtreliMakaleler = articles.filter(a=>{
-    const df = filtre==="tumu"||a.status===filtre;
-    const af = !arama||a.title?.toLowerCase().includes(arama.toLowerCase())||a.author?.toLowerCase().includes(arama.toLowerCase());
-    return df&&af;
+    if(filtre!=="tumu"&&a.status!==filtre) return false;
+    if(arama&&!a.title?.toLowerCase().includes(arama.toLowerCase())&&!a.author?.toLowerCase().includes(arama.toLowerCase())) return false;
+    return true;
   });
 
   const istat = [
     {n:articles.length,l:"Toplam",c:"#1a1208",bg:"#f5f0e8"},
-    {n:articles.filter(a=>a.status==="beklemede").length,l:"Ön İnceleme",c:"#1e40af",bg:"#eff6ff"},
+    {n:yeniMakaleler.length,l:"Ön İnceleme",c:"#1e40af",bg:"#eff6ff"},
     {n:articles.filter(a=>a.status==="hakemde").length,l:"Hakemde",c:"#b45309",bg:"#fffbeb"},
     {n:tamamlananDeg.length,l:"Değerlendirme",c:"#6d28d9",bg:"#f5f3ff"},
     {n:articles.filter(a=>a.status==="baskida"||a.status==="yayinda").length,l:"Kabul/Yayın",c:"#065f46",bg:"#ecfdf5"},
     {n:articles.filter(a=>a.status==="reddedildi").length,l:"Reddedilen",c:"#991b1b",bg:"#fff1f2"},
   ];
-
   const SEKMELER = [
-    {id:"dashboard",lbl:"Dashboard",icon:"▣"},
+    {id:"dashboard",lbl:"Ana Sayfa",icon:"▣"},
     {id:"makaleler",lbl:"Makaleler",icon:"📄",badge:yeniMakaleler.length},
     {id:"degerlendirmeler",lbl:"Değerlendirmeler",icon:"⊕",badge:tamamlananDeg.length},
-    {id:"uyeler",lbl:"Üyeler",icon:"◎"},
+    {id:"uyeler",lbl:"Üyeler",icon:"◎",badge:yeniUyeler.length},
   ];
+  const ROL_SEC = [
+    {v:"yazar",lbl:"Yazar",desc:"Makale gönderir, süreç takibi yapar",c:"#6d28d9",bg:"#f5f3ff"},
+    {v:"hakem",lbl:"Hakem",desc:"Atanan makaleleri değerlendirir",c:G.teal,bg:"#ecfdf5"},
+    {v:"yazar-hakem",lbl:"Yazar & Hakem",desc:"Her iki rolde aktif",c:"#0891b2",bg:"#e0f2fe"},
+    {v:"editor",lbl:"Editör / Yardımcı Editör",desc:"Makale kararları, hakem atama, tüm yetkiler",c:"#b45309",bg:"#fef3c7"},
+  ];
+  const rR=(r)=>r==="editor"?"#b45309":r==="hakem"?"#1d6a5e":r==="yazar-hakem"?"#0891b2":"#6d28d9";
+  const rB=(r)=>r==="editor"?"#fef3c7":r==="hakem"?"#ecfdf5":r==="yazar-hakem"?"#e0f2fe":"#f5f3ff";
+  const rL=(r)=>r==="editor"?"EDİTÖR":r==="hakem"?"HAKEM":r==="yazar-hakem"?"YAZAR & HAKEM":"YAZAR";
 
   return (
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18,paddingBottom:14,borderBottom:`1px solid ${G.border}`}}>
+      {/* Üst başlık */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,paddingBottom:12,borderBottom:`1px solid ${G.border}`}}>
         <div>
           <h3 style={{fontSize:17,fontWeight:700,color:G.ink,margin:0}}>EDİTÖR PANELİ</h3>
-          <p style={{fontSize:11,color:G.muted,margin:"3px 0 0"}}>ARSİS Journal Management System · {new Date().toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"})}</p>
+          <p style={{fontSize:11,color:G.muted,margin:"2px 0 0"}}>ARSİS · {new Date().toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"})}</p>
         </div>
-        {toplamBildirim > 0 && (
-          <div style={{background:"#dc2626",color:"#fff",borderRadius:8,padding:"8px 14px",display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontSize:16}}>🔔</span>
+        {toplamBildirim>0&&(
+          <div onClick={()=>setSekme("dashboard")} style={{background:"#dc2626",color:"#fff",borderRadius:10,padding:"9px 14px",display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+            <span style={{fontSize:17}}>🔔</span>
             <div>
               <div style={{fontWeight:700,fontSize:12}}>{toplamBildirim} yeni bildirim</div>
-              <div style={{fontSize:10,opacity:0.9}}>Dikkat gerektiren işlemler var</div>
+              <div style={{fontSize:10,opacity:0.85}}>Tıkla, incele →</div>
             </div>
           </div>
         )}
       </div>
 
-      <div style={{display:"flex",gap:0,marginBottom:20,background:"#f8fafc",borderRadius:8,padding:4,border:`1px solid ${G.border}`}}>
+      {/* Sekme çubuğu */}
+      <div style={{display:"flex",gap:3,marginBottom:18,background:"#f1f5f9",borderRadius:10,padding:4}}>
         {SEKMELER.map(s=>(
           <button key={s.id} onClick={()=>setSekme(s.id)} style={{
-            flex:1,padding:"7px 10px",border:"none",borderRadius:6,cursor:"pointer",fontSize:12,
+            flex:1,padding:"8px 4px",border:"none",borderRadius:7,cursor:"pointer",fontSize:12,
             fontWeight:sekme===s.id?700:500,background:sekme===s.id?"#fff":"transparent",
             color:sekme===s.id?G.ink:G.muted,
-            boxShadow:sekme===s.id?"0 1px 4px rgba(0,0,0,0.1)":"none",
+            boxShadow:sekme===s.id?"0 1px 6px rgba(0,0,0,0.1)":"none",
             display:"flex",alignItems:"center",justifyContent:"center",gap:4
           }}>
-            {s.icon} {s.lbl}
-            {s.badge>0&&<BildirimBadge count={s.badge}/>}
+            {s.icon} {s.lbl} {s.badge>0&&<BildirimBadge count={s.badge}/>}
           </button>
         ))}
       </div>
 
-      {sekme==="dashboard" && (
+      {/* ── DASHBOARD ── */}
+      {sekme==="dashboard"&&(
         <div>
-          {toplamBildirim > 0 && (
+          {toplamBildirim>0&&(
             <div style={{marginBottom:18}}>
-              <div style={{fontSize:11,fontWeight:700,color:G.ink,letterSpacing:0.5,marginBottom:8}}>BİLDİRİMLER</div>
-              {yeniMakaleler.length > 0 && (
-                <div onClick={()=>setSekme("makaleler")} style={{background:"linear-gradient(135deg,#eff6ff,#dbeafe)",border:"1px solid #bfdbfe",borderRadius:10,padding:"11px 14px",marginBottom:7,cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
+              <div style={{fontSize:11,fontWeight:700,color:G.ink,marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
+                <span style={{background:"#dc2626",color:"#fff",borderRadius:"50%",width:18,height:18,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700}}>{toplamBildirim}</span>
+                BEKLEYEN BİLDİRİMLER
+              </div>
+              {yeniMakaleler.length>0&&(
+                <div onClick={()=>setSekme("makaleler")} style={{background:"#fff",border:"1px solid #bfdbfe",borderLeft:"4px solid #1e40af",borderRadius:10,padding:"11px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,marginBottom:7}}>
                   <div style={{width:34,height:34,borderRadius:8,background:"#1e40af",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:15,flexShrink:0}}>📄</div>
                   <div style={{flex:1}}>
-                    <div style={{fontWeight:700,fontSize:13,color:"#1e3a8a"}}>{yeniMakaleler.length} yeni makale — ön inceleme bekliyor</div>
-                    <div style={{fontSize:11,color:"#3b82f6"}}>Hemen incele →</div>
+                    <div style={{fontWeight:700,fontSize:13,color:"#1e3a8a"}}>{yeniMakaleler.length} yeni makale ön inceleme bekliyor</div>
+                    <div style={{fontSize:11,color:"#3b82f6",marginTop:1}}>{yeniMakaleler.slice(0,2).map(a=>a.title).join(" · ")}{yeniMakaleler.length>2?` +${yeniMakaleler.length-2} daha`:""}</div>
                   </div>
+                  <span style={{color:"#1e40af",fontSize:15}}>→</span>
                 </div>
               )}
-              {tamamlananDeg.length > 0 && (
-                <div onClick={()=>setSekme("degerlendirmeler")} style={{background:"linear-gradient(135deg,#f5f3ff,#ede9fe)",border:"1px solid #c4b5fd",borderRadius:10,padding:"11px 14px",marginBottom:7,cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
+              {tamamlananDeg.length>0&&(
+                <div onClick={()=>setSekme("degerlendirmeler")} style={{background:"#fff",border:"1px solid #c4b5fd",borderLeft:"4px solid #6d28d9",borderRadius:10,padding:"11px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,marginBottom:7}}>
                   <div style={{width:34,height:34,borderRadius:8,background:"#6d28d9",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:15,flexShrink:0}}>⊕</div>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:700,fontSize:13,color:"#4c1d95"}}>{tamamlananDeg.length} hakem değerlendirmesi tamamlandı</div>
-                    <div style={{fontSize:11,color:"#7c3aed"}}>Karar vermek için incele →</div>
+                    <div style={{fontSize:11,color:"#7c3aed",marginTop:1}}>Karar vermek için incele</div>
                   </div>
+                  <span style={{color:"#6d28d9",fontSize:15}}>→</span>
+                </div>
+              )}
+              {yeniUyeler.length>0&&(
+                <div onClick={()=>setSekme("uyeler")} style={{background:"#fff",border:"1px solid #a7f3d0",borderLeft:"4px solid #065f46",borderRadius:10,padding:"11px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,marginBottom:7}}>
+                  <div style={{width:34,height:34,borderRadius:8,background:"#065f46",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:15,flexShrink:0}}>◎</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:13,color:"#064e3b"}}>{yeniUyeler.length} yeni üye bu hafta kayıt oldu</div>
+                    <div style={{fontSize:11,color:"#059669",marginTop:1}}>{yeniUyeler.slice(0,3).map(u=>u.name).join(", ")}</div>
+                  </div>
+                  <span style={{color:"#065f46",fontSize:15}}>→</span>
                 </div>
               )}
             </div>
           )}
-
-          <div style={{fontSize:11,fontWeight:700,color:G.ink,letterSpacing:0.5,marginBottom:8}}>İSTATİSTİKLER</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:9,marginBottom:20}}>
+          <div style={{fontSize:11,fontWeight:700,color:G.ink,marginBottom:8}}>GENEL DURUM</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:18}}>
             {istat.map(s=>(
-              <div key={s.l} style={{background:s.bg,borderRadius:10,padding:"12px 14px",border:`1px solid ${s.c}22`,textAlign:"center"}}>
+              <div key={s.l} style={{background:s.bg,borderRadius:10,padding:"12px 14px",border:`1px solid ${s.c}22`,textAlign:"center",cursor:"pointer"}}
+                onClick={()=>s.l==="Ön İnceleme"||s.l==="Hakemde"?setSekme("makaleler"):s.l==="Değerlendirme"?setSekme("degerlendirmeler"):null}>
                 <div style={{fontSize:26,fontWeight:700,color:s.c,lineHeight:1}}>{s.n}</div>
                 <div style={{fontSize:10,color:s.c,marginTop:3,fontWeight:600}}>{s.l}</div>
               </div>
             ))}
           </div>
-
-          <div style={{fontSize:11,fontWeight:700,color:G.ink,letterSpacing:0.5,marginBottom:8}}>EDİTÖRYEL İŞ AKIŞI</div>
+          <div style={{fontSize:11,fontWeight:700,color:G.ink,marginBottom:8}}>EDİTÖRYEL İŞ AKIŞI</div>
           <div style={{background:"#fff",borderRadius:10,border:`1px solid ${G.border}`,overflow:"hidden"}}>
             {[
-              {a:"1",lbl:"Gönderim",desc:"Yazar makaleyi gönderdi",n:articles.length,c:"#1a1208"},
-              {a:"2",lbl:"Ön İnceleme",desc:"Editör kapsam & biçim denetimi",n:articles.filter(x=>x.status==="beklemede").length,c:"#1e40af"},
-              {a:"3",lbl:"Hakem İncelemesi",desc:"Çift kör değerlendirme",n:articles.filter(x=>x.status==="hakemde").length,c:"#6d28d9"},
-              {a:"4",lbl:"Editöryal Karar",desc:"Kabul / Revizyon / Red",n:tamamlananDeg.length,c:"#0891b2"},
-              {a:"5",lbl:"Yayın",desc:"Baskıya hazır veya yayında",n:articles.filter(x=>x.status==="baskida"||x.status==="yayinda").length,c:"#065f46"},
+              {n:"1",lbl:"Gönderim",desc:"Yazar makale yükledi",val:articles.length,c:"#1a1208"},
+              {n:"2",lbl:"Ön İnceleme",desc:"Kapsam & biçim denetimi",val:yeniMakaleler.length,c:"#1e40af"},
+              {n:"3",lbl:"Hakem",desc:"Çift kör değerlendirme",val:articles.filter(a=>a.status==="hakemde").length,c:"#6d28d9"},
+              {n:"4",lbl:"Karar",desc:"Editöryal karar",val:tamamlananDeg.length,c:"#0891b2"},
+              {n:"5",lbl:"Yayın",desc:"Baskı veya yayında",val:articles.filter(a=>a.status==="baskida"||a.status==="yayinda").length,c:"#065f46"},
             ].map((s,i,arr)=>(
-              <div key={s.a} style={{display:"flex",alignItems:"center",padding:"10px 14px",borderBottom:i<arr.length-1?`1px solid ${G.border}`:"none"}}>
-                <div style={{width:26,height:26,borderRadius:"50%",background:s.c,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,flexShrink:0}}>{s.a}</div>
-                <div style={{flex:1,marginLeft:10}}>
-                  <div style={{fontWeight:700,fontSize:12.5,color:G.ink}}>{s.lbl}</div>
-                  <div style={{fontSize:10,color:G.muted}}>{s.desc}</div>
+              <div key={s.n} style={{display:"flex",alignItems:"center",padding:"9px 14px",borderBottom:i<arr.length-1?`1px solid ${G.border}22`:"none",gap:10}}>
+                <div style={{width:24,height:24,borderRadius:"50%",background:s.c,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,flexShrink:0}}>{s.n}</div>
+                <div style={{flex:1}}>
+                  <span style={{fontWeight:700,fontSize:12.5,color:G.ink}}>{s.lbl}</span>
+                  <span style={{fontSize:11,color:G.muted,marginLeft:8}}>{s.desc}</span>
                 </div>
-                <div style={{fontWeight:700,fontSize:18,color:s.c}}>{s.n}</div>
+                <div style={{fontWeight:700,fontSize:18,color:s.c}}>{s.val}</div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {sekme==="makaleler" && (
+      {/* ── MAKALELER ── */}
+      {sekme==="makaleler"&&(
         <div>
-          <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-            <input placeholder="Makale veya yazar ara..." onChange={e=>setArama(e.target.value)}
-              style={{flex:1,padding:"7px 11px",border:`1px solid ${G.border}`,borderRadius:6,fontSize:13,minWidth:160}}/>
-            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-              {[["tumu","Tümü"],["beklemede","Ön İnceleme"],["hakemde","Hakemde"],["revizyon","Revizyon"],["baskida","Kabul"],["reddedildi","Red"]].map(([k,l])=>(
-                <button key={k} onClick={()=>setFiltre(k)} style={{
-                  padding:"5px 10px",border:`1px solid ${filtre===k?G.gold:G.border}`,borderRadius:6,
-                  background:filtre===k?G.gold:"#fff",color:filtre===k?G.ink:G.muted,
-                  fontSize:11,fontWeight:filtre===k?700:500,cursor:"pointer"
-                }}>{l}</button>
+          <div style={{display:"flex",gap:7,marginBottom:11,flexWrap:"wrap"}}>
+            <input placeholder="🔍 Makale veya yazar ara..." onChange={e=>setArama(e.target.value)}
+              style={{flex:1,padding:"7px 11px",border:`1px solid ${G.border}`,borderRadius:7,fontSize:13,minWidth:150,outline:"none"}}/>
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+              {[["tumu","Tümü"],["beklemede","Ön İnceleme"],["hakemde","Hakemde"],["revizyon","Revizyon"],["baskida","Kabul"],["reddedildi","Red"],["geri_cekildi","Geri Çekildi"]].map(([k,l])=>(
+                <button key={k} onClick={()=>setFiltre(k)} style={{padding:"5px 9px",border:`1px solid ${filtre===k?G.gold:G.border}`,borderRadius:6,background:filtre===k?G.gold:"#fff",color:filtre===k?G.ink:G.muted,fontSize:11,fontWeight:filtre===k?700:500,cursor:"pointer"}}>{l}</button>
               ))}
             </div>
           </div>
           {filtreliMakaleler.length===0?(
-            <div style={{textAlign:"center",padding:36,color:G.muted,fontStyle:"italic",background:G.cream,borderRadius:12,border:`1px solid ${G.border}`}}>Bu filtrede makale bulunamadı.</div>
+            <div style={{textAlign:"center",padding:32,color:G.muted,fontStyle:"italic",background:G.cream,borderRadius:12,border:`1px solid ${G.border}`}}>Bu filtrede makale bulunamadı.</div>
           ):filtreliMakaleler.map(a=>{
             const d=DURUM[a.status]||{};
             const aRev=reviews.filter(r=>r.article_id===a.id);
+            const aktifRev=aRev.filter(r=>r.status!=="geri_cekildi");
             const acik=acikMakale===a.id;
             return (
-              <div key={a.id} style={{border:`1px solid ${G.border}`,borderRadius:10,marginBottom:10,overflow:"hidden",borderLeft:`4px solid ${d.renk||G.border}`}}>
-                <div onClick={()=>setAcikMakale(acik?null:a.id)} style={{padding:"12px 15px",background:"#fff",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+              <div key={a.id} style={{border:`1px solid ${G.border}`,borderRadius:10,marginBottom:9,overflow:"hidden",borderLeft:`4px solid ${d.renk||G.border}`}}>
+                <div onClick={()=>setAcikMakale(acik?null:a.id)} style={{padding:"11px 15px",background:"#fff",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:700,fontSize:13,color:G.ink,marginBottom:2,lineHeight:1.4}}>{a.title}</div>
                     <div style={{fontSize:11,color:G.muted}}><strong>{a.author}</strong> · {a.field} · {a.created_at?.split("T")[0]}</div>
-                    <div style={{marginTop:4,display:"flex",gap:4,flexWrap:"wrap"}}>
-                      {aRev.map(r=>(
-                        <span key={r.id} style={{fontSize:9,padding:"2px 6px",borderRadius:20,fontWeight:700,background:r.status==="tamamlandi"?"#d1fae5":"#dbeafe",color:r.status==="tamamlandi"?"#065f46":"#1e40af"}}>
-                          {r.status==="tamamlandi"?"✓":"⏳"} {r.reviewer_name}{r.decision?` (${r.decision==="kabul"?"K":r.decision==="revizyon"?"R":"X"})`:""}
-                        </span>
-                      ))}
-                    </div>
+                    {aktifRev.length>0&&(
+                      <div style={{marginTop:4,display:"flex",gap:4,flexWrap:"wrap"}}>
+                        {aktifRev.map((r,idx)=>(
+                          <span key={r.id} style={{fontSize:9,padding:"2px 7px",borderRadius:20,fontWeight:700,background:r.status==="tamamlandi"?"#d1fae5":r.status==="beklemede"?"#dbeafe":"#f3f4f6",color:r.status==="tamamlandi"?"#065f46":r.status==="beklemede"?"#1e40af":"#6b7280"}}>
+                            {r.status==="tamamlandi"?"✓":"⏳"} Hakem {idx+1}{r.decision?` — ${r.decision==="kabul"?"Kabul":r.decision==="revizyon"?"Revizyon":"Red"}`:""}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5,flexShrink:0}}>
-                    <span style={{fontSize:10,padding:"3px 10px",borderRadius:20,fontWeight:700,background:d.bg,color:d.renk,whiteSpace:"nowrap"}}>{d.tr||a.status}</span>
-                    {aRev.filter(r=>r.status==="tamamlandi").length>0&&<span style={{fontSize:9,padding:"2px 7px",borderRadius:20,background:"#d1fae5",color:"#065f46",fontWeight:700}}>{aRev.filter(r=>r.status==="tamamlandi").length} değerlendirme hazır</span>}
-                    <span style={{color:G.gold,fontSize:12}}>{acik?"▲":"▼"}</span>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,flexShrink:0}}>
+                    <span style={{fontSize:10,padding:"3px 9px",borderRadius:20,fontWeight:700,background:d.bg,color:d.renk,whiteSpace:"nowrap"}}>{d.tr||a.status}</span>
+                    {aktifRev.length>0&&<span style={{fontSize:9,color:G.muted}}>{aktifRev.filter(r=>r.status==="tamamlandi").length}/{aktifRev.length} değerlendirdi</span>}
+                    <span style={{color:G.gold,fontSize:11}}>{acik?"▲":"▼"}</span>
                   </div>
                 </div>
-                {acik && (
-                  <div style={{background:"#f8fafc",borderTop:`1px solid ${G.border}`,padding:"14px"}}>
-                    {a.abstract&&<div style={{background:"#fff",borderRadius:8,padding:"10px 12px",marginBottom:12,border:`1px solid ${G.border}`}}><div style={{fontSize:10,color:G.gold,fontWeight:700,marginBottom:4}}>ÖZET</div><p style={{fontSize:12.5,color:"#555",lineHeight:1.65,margin:0}}>{a.abstract}</p></div>}
+                {acik&&(
+                  <div style={{background:"#f8fafc",borderTop:`1px solid ${G.border}`,padding:"13px 14px"}}>
+                    {a.abstract&&<div style={{background:"#fff",borderRadius:7,padding:"9px 11px",marginBottom:11,border:`1px solid ${G.border}44`}}><div style={{fontSize:10,color:G.gold,fontWeight:700,marginBottom:3}}>ÖZET</div><p style={{fontSize:12.5,color:"#555",lineHeight:1.65,margin:0}}>{a.abstract}</p></div>}
                     {aRev.filter(r=>r.status==="tamamlandi").length>0&&(
-                      <div style={{background:"#fff",borderRadius:8,padding:"12px",marginBottom:12,border:"1px solid #c4b5fd"}}>
-                        <div style={{fontSize:10,fontWeight:700,color:"#6d28d9",marginBottom:10}}>HAKEM DEĞERLENDİRMELERİ</div>
-                        {aRev.filter(r=>r.status==="tamamlandi").map(r=>(
-                          <div key={r.id} style={{background:"#faf5ff",borderRadius:7,padding:"10px",marginBottom:7,border:"1px solid #ede9fe"}}>
-                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-                              <span style={{fontWeight:700,fontSize:12,color:"#4c1d95"}}>{r.reviewer_name}</span>
-                              <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:700,background:r.decision==="kabul"?"#d1fae5":r.decision==="revizyon"?"#ede9fe":"#fee2e2",color:r.decision==="kabul"?"#065f46":r.decision==="revizyon"?"#6d28d9":"#991b1b"}}>{r.decision==="kabul"?"✓ Kabul":r.decision==="revizyon"?"↻ Revizyon":"✗ Red"}</span>
+                      <div style={{background:"#fff",borderRadius:7,padding:"11px",marginBottom:11,border:"1px solid #c4b5fd"}}>
+                        <div style={{fontSize:10,fontWeight:700,color:"#6d28d9",marginBottom:7}}>HAKEM DEĞERLENDİRMELERİ</div>
+                        {aRev.filter(r=>r.status==="tamamlandi").map((r,idx)=>(
+                          <div key={r.id} style={{background:"#faf5ff",borderRadius:6,padding:"8px 10px",marginBottom:6,border:"1px solid #ede9fe"}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                              <span style={{fontWeight:700,fontSize:12,color:"#4c1d95"}}>Hakem {idx+1} — {r.reviewer_name}</span>
+                              <div style={{display:"flex",gap:5,alignItems:"center"}}>
+                                <span style={{fontSize:10,color:G.muted}}>{r.completed_at?.split("T")[0]}</span>
+                                <span style={{fontSize:10,padding:"2px 7px",borderRadius:20,fontWeight:700,background:r.decision==="kabul"?"#d1fae5":r.decision==="revizyon"?"#ede9fe":"#fee2e2",color:r.decision==="kabul"?"#065f46":r.decision==="revizyon"?"#6d28d9":"#991b1b"}}>{r.decision==="kabul"?"✓ Kabul":r.decision==="revizyon"?"↻ Revizyon":"✗ Red"}</span>
+                              </div>
                             </div>
-                            <p style={{fontSize:12,color:"#444",lineHeight:1.65,margin:0,whiteSpace:"pre-line"}}>{r.comments}</p>
+                            {r.editor_notes&&<div style={{background:"#ede9fe",borderRadius:5,padding:"6px 9px",marginBottom:5,fontSize:11,color:"#4c1d95"}}>🔒 <strong>Gizli Not:</strong> {r.editor_notes}</div>}
+                            <p style={{fontSize:12,color:"#444",lineHeight:1.6,margin:0,whiteSpace:"pre-line"}}>{r.comments}</p>
                           </div>
                         ))}
                       </div>
                     )}
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-                      <div style={{background:"#fff",borderRadius:8,padding:"11px",border:`1px solid ${G.border}`}}>
-                        <div style={{fontSize:10,fontWeight:700,color:G.ink,marginBottom:7}}>DURUM GÜNCELLE</div>
-                        <select value={a.status} onChange={e=>durumGuncelle(a.id,e.target.value)} style={{width:"100%",padding:"7px",border:`1px solid ${G.border}`,borderRadius:6,fontSize:12,background:"#fff"}}>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:11}}>
+                      <div style={{background:"#fff",borderRadius:7,padding:"10px 11px",border:`1px solid ${G.border}`}}>
+                        <div style={{fontSize:10,fontWeight:700,color:G.ink,marginBottom:5}}>DURUM GÜNCELLE</div>
+                        <select value={a.status} onChange={e=>durumGuncelle(a.id,e.target.value)} style={{width:"100%",padding:"6px 8px",border:`1px solid ${G.border}`,borderRadius:6,fontSize:12,background:"#fff"}}>
                           {Object.entries(DURUM).map(([k,v])=><option key={k} value={k}>{v.tr}</option>)}
                         </select>
                       </div>
-                      <div style={{background:"#fff",borderRadius:8,padding:"11px",border:`1px solid ${G.border}`}}>
-                        <div style={{fontSize:10,fontWeight:700,color:G.ink,marginBottom:7}}>EYLEMLER</div>
+                      <div style={{background:"#fff",borderRadius:7,padding:"10px 11px",border:`1px solid ${G.border}`}}>
+                        <div style={{fontSize:10,fontWeight:700,color:G.ink,marginBottom:5}}>EYLEMLER</div>
                         <div style={{display:"flex",flexDirection:"column",gap:5}}>
-                          {a.file_url&&<a href={a.file_url} target="_blank" style={{fontSize:11,color:"#fff",background:G.teal,padding:"5px 10px",borderRadius:5,fontWeight:700,textAlign:"center"}}>📄 Makaleyi İndir</a>}
-                          <button onClick={()=>setYazarNotMakale(a)} style={{fontSize:11,color:"#fff",background:"#b45309",border:"none",padding:"5px 10px",borderRadius:5,fontWeight:700,cursor:"pointer"}}>✏ Yazara Not Gönder</button>
+                          {a.file_url&&<a href={a.file_url} target="_blank" style={{fontSize:11,color:"#fff",background:G.teal,padding:"5px 8px",borderRadius:5,fontWeight:700,textAlign:"center",textDecoration:"none"}}>📄 İndir</a>}
+                          <button onClick={()=>setYazarNotMakale(a)} style={{fontSize:11,color:"#fff",background:"#b45309",border:"none",padding:"5px 8px",borderRadius:5,fontWeight:700,cursor:"pointer"}}>✏ Yazara Not</button>
                         </div>
                       </div>
                     </div>
-                    <div style={{background:"#fff",borderRadius:8,padding:"12px",border:`1px solid ${G.border}`}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                        <div style={{fontSize:10,fontWeight:700,color:G.teal,letterSpacing:0.5}}>
-                          HAKEM ATA / YÖNETİM
-                        </div>
-                        <span style={{fontSize:10,color:G.muted}}>
-                          {aRev.filter(r=>r.status==="tamamlandi").length}/{aRev.length} tamamlandı
-                        </span>
+                    <div style={{background:"#fff",borderRadius:7,padding:"11px",border:`1px solid ${G.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
+                        <div style={{fontSize:10,fontWeight:700,color:G.teal}}>HAKEM YÖNETİMİ</div>
+                        <span style={{fontSize:10,color:G.muted}}>{aktifRev.filter(r=>r.status==="tamamlandi").length}/{aktifRev.length} tamamlandı</span>
                       </div>
-
-                      {/* Mevcut hakemler - geri çekme butonu ile */}
-                      {aRev.length > 0 && (
-                        <div style={{marginBottom:10}}>
-                          {aRev.map(r => (
-                            <div key={r.id} style={{
-                              display:"flex",justifyContent:"space-between",alignItems:"center",
-                              padding:"7px 10px",borderRadius:6,marginBottom:5,
-                              background:r.status==="tamamlandi"?"#f0fdf4":r.status==="geri_cekildi"?"#f9fafb":"#fffbeb",
-                              border:`1px solid ${r.status==="tamamlandi"?"#a7f3d0":r.status==="geri_cekildi"?"#e5e7eb":"#fde68a"}`
-                            }}>
-                              <div>
-                                <div style={{fontSize:12,fontWeight:700,color:G.ink}}>{r.reviewer_name}</div>
-                                <div style={{fontSize:10,color:G.muted}}>{r.reviewer_email}</div>
-                              </div>
-                              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                                <span style={{
-                                  fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:700,
-                                  background:r.status==="tamamlandi"?"#d1fae5":r.status==="geri_cekildi"?"#f3f4f6":"#fef3c7",
-                                  color:r.status==="tamamlandi"?"#065f46":r.status==="geri_cekildi"?"#6b7280":"#92400e"
-                                }}>
-                                  {r.status==="tamamlandi"?"✓ Değerlendirdi":r.status==="geri_cekildi"?"✗ Geri Çekildi":"⏳ Bekliyor"}
-                                </span>
-                                {r.status==="beklemede" && (
-                                  <button onClick={async()=>{
-                                    if(!confirm(`${r.reviewer_name} hakemden atama geri çekilsin mi?`))return;
-                                    await supa.from("reviews").update({status:"geri_cekildi"}).eq("id",r.id);
-                                    await yukleReviews();
-                                    // Eğer başka aktif hakem yoksa durumu güncelle
-                                    const aktifKalan = reviews.filter(x=>x.article_id===a.id&&x.id!==r.id&&x.status==="beklemede");
-                                    if(aktifKalan.length===0){
-                                      await supa.from("articles").update({status:"beklemede"}).eq("id",a.id);
-                                      await loadArticles();
-                                    }
-                                    toast_("✓ Hakem ataması geri çekildi.");
-                                  }} style={{
-                                    fontSize:10,padding:"2px 8px",borderRadius:5,cursor:"pointer",
-                                    background:"#fee2e2",color:"#991b1b",border:"1px solid #fca5a5",fontWeight:700
-                                  }}>✕ Geri Çek</button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Yeni hakem ata */}
-                      {hakemler.length === 0 ? (
-                        <p style={{fontSize:12,color:G.muted,fontStyle:"italic",margin:0}}>Sistemde kayıtlı hakem yok.</p>
-                      ) : (
-                        <div>
-                          <div style={{fontSize:10,color:G.muted,marginBottom:5}}>Hakem ekle (birden fazla atayabilirsiniz):</div>
-                          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                            {hakemler.map(h=>{
-                              const mevcut = aRev.find(r=>r.reviewer_email===h.email);
-                              const at = mevcut && mevcut.status!=="geri_cekildi";
-                              return (
-                                <button key={h.id} onClick={()=>!at&&hakemAta(a,h.email)} style={{
-                                  fontSize:11,padding:"5px 12px",borderRadius:6,cursor:at?"default":"pointer",
-                                  background:at?"#f3f4f6":"#fff",color:at?G.muted:G.teal,
-                                  border:`1px solid ${at?G.border:G.teal}`,fontWeight:700,opacity:at?0.7:1
-                                }}>
-                                  {at?"✓ ":""}{h.name}
-                                  {!at && mevcut?.status==="geri_cekildi" && " (tekrar)"}
-                                </button>
-                              );
-                            })}
+                      {aktifRev.map((r,idx)=>(
+                        <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 9px",borderRadius:6,marginBottom:5,background:r.status==="tamamlandi"?"#f0fdf4":"#fffbeb",border:`1px solid ${r.status==="tamamlandi"?"#a7f3d0":"#fde68a"}`}}>
+                          <div>
+                            <span style={{fontWeight:700,fontSize:12,color:G.ink}}>Hakem {idx+1}: {r.reviewer_name}</span>
+                            <span style={{fontSize:10,color:G.muted,marginLeft:6}}>{r.reviewer_email}</span>
                           </div>
-                          <div style={{fontSize:10,color:G.muted,marginTop:6,fontStyle:"italic"}}>
-                            💡 Birden fazla hakeme atayabilirsiniz. Her hakem bağımsız değerlendirme yapar.
+                          <div style={{display:"flex",alignItems:"center",gap:5}}>
+                            <span style={{fontSize:9,padding:"2px 7px",borderRadius:20,fontWeight:700,background:r.status==="tamamlandi"?"#d1fae5":"#fef3c7",color:r.status==="tamamlandi"?"#065f46":"#92400e"}}>{r.status==="tamamlandi"?"✓ Değerlendirdi":"⏳ Bekliyor"}</span>
+                            {r.status==="beklemede"&&<button onClick={()=>hakemGeriCek(r.id,a.id)} style={{fontSize:9,padding:"2px 7px",borderRadius:5,cursor:"pointer",background:"#fee2e2",color:"#991b1b",border:"1px solid #fca5a5",fontWeight:700}}>✕ Geri Çek</button>}
+                          </div>
+                        </div>
+                      ))}
+                      {hakemler.length===0?<p style={{fontSize:11,color:G.muted,fontStyle:"italic",margin:"6px 0 0"}}>Sistemde kayıtlı hakem yok.</p>:(
+                        <div style={{marginTop:7}}>
+                          <div style={{fontSize:9,color:G.muted,marginBottom:5}}>Yeni hakem ekle (birden fazla atanabilir):</div>
+                          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                            {hakemler.map(h=>{
+                              const mev=aktifRev.find(r=>r.reviewer_email===h.email);
+                              return <button key={h.id} onClick={()=>!mev&&hakemAta(a,h.email)} style={{fontSize:11,padding:"5px 9px",borderRadius:6,cursor:mev?"default":"pointer",background:mev?"#f3f4f6":"#fff",color:mev?G.muted:G.teal,border:`1px solid ${mev?G.border:G.teal}`,fontWeight:700,opacity:mev?0.7:1}}>{mev?"✓ ":""}{h.name}</button>;
+                            })}
                           </div>
                         </div>
                       )}
@@ -1279,26 +1262,28 @@ function YonetimSekme({articles, users, toast_, loadArticles}) {
         </div>
       )}
 
-      {sekme==="degerlendirmeler" && (
+      {/* ── DEĞERLENDİRMELER ── */}
+      {sekme==="degerlendirmeler"&&(
         <div>
-          {reviews.length===0?(
-            <div style={{textAlign:"center",padding:36,color:G.muted,fontStyle:"italic",background:G.cream,borderRadius:12,border:`1px solid ${G.border}`}}>Henüz hakem değerlendirmesi yok.</div>
-          ):reviews.map(r=>{
+          {reviews.filter(r=>r.status!=="geri_cekildi").length===0?(
+            <div style={{textAlign:"center",padding:32,color:G.muted,fontStyle:"italic",background:G.cream,borderRadius:12,border:`1px solid ${G.border}`}}>Henüz hakem değerlendirmesi yok.</div>
+          ):reviews.filter(r=>r.status!=="geri_cekildi").map(r=>{
             const art=articles.find(a=>a.id===r.article_id);
             return (
-              <div key={r.id} style={{border:`1px solid ${G.border}`,borderRadius:10,marginBottom:10,overflow:"hidden",borderLeft:`4px solid ${r.status==="tamamlandi"?"#065f46":"#f59e0b"}`}}>
-                <div style={{padding:"12px 15px",background:"#fff"}}>
+              <div key={r.id} style={{border:`1px solid ${G.border}`,borderRadius:10,marginBottom:9,overflow:"hidden",borderLeft:`4px solid ${r.status==="tamamlandi"?"#065f46":"#f59e0b"}`}}>
+                <div style={{padding:"11px 15px",background:"#fff"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
                     <div style={{flex:1}}>
-                      <div style={{fontWeight:700,fontSize:12.5,color:G.ink,marginBottom:2,lineHeight:1.4}}>{art?.title||"Yükleniyor..."}</div>
+                      <div style={{fontWeight:700,fontSize:12.5,color:G.ink,marginBottom:2,lineHeight:1.4}}>{art?.title||"—"}</div>
                       <div style={{fontSize:11,color:G.muted}}>Hakem: <strong>{r.reviewer_name}</strong> · {r.assigned_at?.split("T")[0]}{r.completed_at&&` → ${r.completed_at.split("T")[0]}`}</div>
                     </div>
-                    <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5,flexShrink:0}}>
-                      <span style={{fontSize:10,padding:"3px 10px",borderRadius:20,fontWeight:700,background:r.status==="tamamlandi"?"#d1fae5":"#fef3c7",color:r.status==="tamamlandi"?"#065f46":"#92400e"}}>{r.status==="tamamlandi"?"✓ Tamamlandı":"⏳ Bekliyor"}</span>
-                      {r.decision&&<span style={{fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:700,background:r.decision==="kabul"?"#d1fae5":r.decision==="revizyon"?"#ede9fe":"#fee2e2",color:r.decision==="kabul"?"#065f46":r.decision==="revizyon"?"#6d28d9":"#991b1b"}}>{r.decision==="kabul"?"✓ Kabul":r.decision==="revizyon"?"↻ Revizyon":"✗ Red"}</span>}
+                    <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,flexShrink:0}}>
+                      <span style={{fontSize:10,padding:"3px 9px",borderRadius:20,fontWeight:700,background:r.status==="tamamlandi"?"#d1fae5":"#fef3c7",color:r.status==="tamamlandi"?"#065f46":"#92400e"}}>{r.status==="tamamlandi"?"✓ Tamamlandı":"⏳ Bekliyor"}</span>
+                      {r.decision&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:20,fontWeight:700,background:r.decision==="kabul"?"#d1fae5":r.decision==="revizyon"?"#ede9fe":"#fee2e2",color:r.decision==="kabul"?"#065f46":r.decision==="revizyon"?"#6d28d9":"#991b1b"}}>{r.decision==="kabul"?"✓ Kabul":r.decision==="revizyon"?"↻ Revizyon":"✗ Red"}</span>}
                     </div>
                   </div>
-                  {r.comments&&<div style={{marginTop:10,background:"#f8fafc",borderRadius:7,padding:"10px",border:`1px solid ${G.border}`}}><div style={{fontSize:10,fontWeight:700,color:"#6d28d9",marginBottom:5}}>DEĞERLENDİRME RAPORU</div><p style={{fontSize:12.5,color:"#444",lineHeight:1.65,margin:0,whiteSpace:"pre-line"}}>{r.comments}</p></div>}
+                  {r.editor_notes&&<div style={{marginTop:7,background:"#ede9fe",borderRadius:6,padding:"6px 9px",fontSize:11,color:"#4c1d95"}}>🔒 <strong>Editöre Gizli:</strong> {r.editor_notes}</div>}
+                  {r.comments&&<div style={{marginTop:7,background:"#f8fafc",borderRadius:6,padding:"8px 10px",border:`1px solid ${G.border}`}}><div style={{fontSize:10,fontWeight:700,color:"#6d28d9",marginBottom:4}}>RAPOR</div><p style={{fontSize:12,color:"#444",lineHeight:1.6,margin:0,whiteSpace:"pre-line"}}>{r.comments}</p></div>}
                 </div>
               </div>
             );
@@ -1306,94 +1291,89 @@ function YonetimSekme({articles, users, toast_, loadArticles}) {
         </div>
       )}
 
-      {sekme==="uyeler" && (
+      {/* ── ÜYELER ── */}
+      {sekme==="uyeler"&&(
         <div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:9,marginBottom:14}}>
-            {[
-              {n:users.filter(u=>u.role==="editor").length,     l:"Editör",       c:"#b45309", bg:"#fef3c7"},
-              {n:users.filter(u=>u.role==="hakem"||u.role==="yazar-hakem").length, l:"Hakem",  c:G.teal,    bg:"#ecfdf5"},
-              {n:users.filter(u=>u.role==="yazar"||u.role==="yazar-hakem"||!u.role).length, l:"Yazar", c:"#6d28d9", bg:"#f5f3ff"},
-              {n:users.length, l:"Toplam Üye", c:"#1a1208", bg:"#f5f0e8"},
-            ].map(s=>(
-              <div key={s.l} style={{background:s.bg,borderRadius:8,padding:"11px",textAlign:"center",border:`1px solid ${s.c}22`}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:13}}>
+            {[{n:users.filter(u=>u.role==="editor").length,l:"Editör",c:"#b45309",bg:"#fef3c7"},{n:users.filter(u=>u.role==="hakem"||u.role==="yazar-hakem").length,l:"Hakem",c:G.teal,bg:"#ecfdf5"},{n:users.filter(u=>u.role==="yazar"||u.role==="yazar-hakem"||!u.role).length,l:"Yazar",c:"#6d28d9",bg:"#f5f3ff"},{n:users.length,l:"Toplam",c:"#1a1208",bg:"#f5f0e8"}].map(s=>(
+              <div key={s.l} style={{background:s.bg,borderRadius:8,padding:"9px",textAlign:"center",border:`1px solid ${s.c}22`}}>
                 <div style={{fontSize:22,fontWeight:700,color:s.c}}>{s.n}</div>
-                <div style={{fontSize:11,color:s.c,fontWeight:600}}>{s.l}</div>
+                <div style={{fontSize:10,color:s.c,fontWeight:600}}>{s.l}</div>
               </div>
             ))}
           </div>
-
-          {/* Gruplu liste */}
-          {[
-            {lbl:"HAKEMLER", icon:"⊕", filter:(u)=>u.role==="hakem"||u.role==="yazar-hakem", c:G.teal, bg:"#ecfdf5", bc:"#a7f3d0"},
-            {lbl:"YAZARLAR", icon:"♩", filter:(u)=>u.role==="yazar"||u.role==="yazar-hakem"||(!u.role), c:"#6d28d9", bg:"#f5f3ff", bc:"#c4b5fd"},
-          ].map(grup => {
-            const grupUyeler = users.filter(grup.filter).filter(u=>u.role!=="editor");
-            if (grupUyeler.length === 0) return null;
-            return (
-              <div key={grup.lbl} style={{marginBottom:20}}>
-                <div style={{
-                  display:"flex",alignItems:"center",gap:8,marginBottom:10,
-                  padding:"8px 12px",background:grup.bg,borderRadius:8,border:`1px solid ${grup.bc}`
-                }}>
-                  <span style={{color:grup.c,fontSize:14}}>{grup.icon}</span>
-                  <span style={{fontWeight:700,fontSize:12,color:grup.c,letterSpacing:0.5}}>{grup.lbl}</span>
-                  <span style={{
-                    background:grup.c,color:"#fff",borderRadius:"50%",
-                    width:20,height:20,display:"flex",alignItems:"center",justifyContent:"center",
-                    fontSize:11,fontWeight:700
-                  }}>{grupUyeler.length}</span>
+          {yeniUyeler.length>0&&<div style={{background:"#ecfdf5",border:"1px solid #a7f3d0",borderRadius:8,padding:"9px 13px",marginBottom:12,fontSize:11,color:"#064e3b"}}>🆕 Bu hafta kayıt: <strong>{yeniUyeler.map(u=>u.name).join(", ")}</strong></div>}
+          <div style={{fontSize:11,fontWeight:700,color:G.ink,marginBottom:8}}>TÜM ÜYELER & ROL YÖNETİMİ</div>
+          {users.map(u=>(
+            <div key={u.id} style={{border:`1px solid ${G.border}`,borderRadius:9,padding:"9px 13px",marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fff"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <div style={{width:32,height:32,borderRadius:"50%",flexShrink:0,background:rB(u.role),border:`2px solid ${rR(u.role)}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:13,color:rR(u.role)}}>{u.name?.[0]}</div>
+                <div>
+                  <div style={{display:"flex",alignItems:"center",gap:5}}>
+                    <span style={{fontWeight:700,fontSize:13,color:G.ink}}>{u.name}</span>
+                    {yeniUyeler.some(x=>x.id===u.id)&&<span style={{fontSize:9,background:"#dcfce7",color:"#166534",padding:"1px 5px",borderRadius:20,fontWeight:700}}>YENİ</span>}
+                  </div>
+                  <div style={{fontSize:11,color:G.muted}}>{u.email}</div>
+                  {u.institution&&<div style={{fontSize:10,color:G.muted,fontStyle:"italic"}}>{u.institution}</div>}
+                  {u.orcid&&<div style={{fontSize:10,color:G.teal}}>ORCID: {u.orcid}</div>}
                 </div>
-                {grupUyeler.map(u => {
-                  const isHakem = u.role==="hakem"||u.role==="yazar-hakem";
-                  const isYazar = u.role==="yazar"||u.role==="yazar-hakem"||!u.role;
-                  const rolRenk = u.role==="yazar-hakem" ? "#0891b2" : isHakem ? G.teal : "#6d28d9";
-                  const rolBg   = u.role==="yazar-hakem" ? "#e0f2fe" : isHakem ? "#ecfdf5" : "#f5f3ff";
-                  const rolLbl  = u.role==="yazar-hakem" ? "YAZAR & HAKEM" : isHakem ? "HAKEM" : "YAZAR";
-                  return (
-                    <div key={u.id} style={{border:`1px solid ${G.border}`,borderRadius:9,padding:"11px 15px",marginBottom:7,display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fff"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:11}}>
-                        <div style={{
-                          width:36,height:36,borderRadius:"50%",
-                          background:rolBg,border:`2px solid ${rolRenk}`,
-                          display:"flex",alignItems:"center",justifyContent:"center",
-                          fontWeight:700,fontSize:15,color:rolRenk,flexShrink:0
-                        }}>{u.name?.[0]}</div>
-                        <div>
-                          <div style={{fontWeight:700,fontSize:13,color:G.ink}}>{u.name}</div>
-                          <div style={{fontSize:11,color:G.muted}}>{u.email}</div>
-                          {u.institution && <div style={{fontSize:10,color:G.muted,fontStyle:"italic"}}>{u.institution}</div>}
-                          {u.orcid && <div style={{fontSize:10,color:G.teal}}>ORCID: {u.orcid}</div>}
-                        </div>
-                      </div>
-                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5}}>
-                        <span style={{
-                          fontSize:10,padding:"4px 12px",borderRadius:20,fontWeight:700,
-                          background:rolBg,color:rolRenk,whiteSpace:"nowrap"
-                        }}>{rolLbl}</span>
-                        {u.role==="yazar-hakem" && (
-                          <span style={{fontSize:9,color:"#0891b2"}}>Her iki rolde aktif</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
-            );
-          })}
+              <div style={{display:"flex",alignItems:"center",gap:7}}>
+                <span style={{fontSize:10,padding:"3px 10px",borderRadius:20,fontWeight:700,background:rB(u.role),color:rR(u.role)}}>{rL(u.role||"yazar")}</span>
+                <button onClick={()=>setRolDegistirUye(u)} style={{fontSize:11,padding:"4px 9px",borderRadius:6,cursor:"pointer",background:"#f8fafc",color:G.muted,border:`1px solid ${G.border}`,fontWeight:600}}>Rol ▾</button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {yazarNotMakale && (
+      {/* ── Yazara not modal ── */}
+      {yazarNotMakale&&(
         <div onClick={()=>setYazarNotMakale(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,padding:"26px 30px",width:"100%",maxWidth:460}}>
-            <div style={{fontWeight:700,fontSize:14,color:G.ink,marginBottom:4}}>✏ YAZARA EDİTÖR NOTU</div>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,padding:"24px 28px",width:"100%",maxWidth:450}}>
+            <div style={{fontWeight:700,fontSize:14,color:G.ink,marginBottom:4}}>✏ YAZARA NOT</div>
             <div style={{fontSize:11,color:G.muted,fontStyle:"italic",marginBottom:3}}>{yazarNotMakale.title}</div>
-            <div style={{fontSize:11,color:G.muted,marginBottom:12,padding:"7px 10px",background:"#f8fafc",borderRadius:6,border:`1px solid ${G.border}`}}>Alıcı: <strong>{yazarNotMakale.author}</strong> &lt;{yazarNotMakale.author_email}&gt;</div>
-            <textarea ref={notRef} placeholder="Editör notunuzu yazın..." rows={5} style={{width:"100%",padding:"9px 12px",border:`1.5px solid ${G.border}`,borderRadius:8,fontSize:13,resize:"vertical",boxSizing:"border-box",marginBottom:12,lineHeight:1.7}}/>
-            <div style={{display:"flex",gap:10}}>
-              <button onClick={yazaraNot} style={{flex:1,background:"#b45309",color:"#fff",border:"none",padding:"10px 0",borderRadius:7,fontWeight:700,fontSize:12,cursor:"pointer"}}>✏ NOTU GÖNDER</button>
-              <button onClick={()=>setYazarNotMakale(null)} style={{padding:"10px 18px",background:"none",border:`1px solid ${G.border}`,borderRadius:7,fontSize:12,color:G.muted,cursor:"pointer"}}>İptal</button>
+            <div style={{fontSize:11,color:G.muted,marginBottom:11,padding:"6px 10px",background:"#f8fafc",borderRadius:6,border:`1px solid ${G.border}`}}>Alıcı: <strong>{yazarNotMakale.author}</strong> &lt;{yazarNotMakale.author_email}&gt;</div>
+            <textarea ref={notRef} placeholder="Editör notunuzu yazın..." rows={4} style={{width:"100%",padding:"8px 11px",border:`1.5px solid ${G.border}`,borderRadius:8,fontSize:13,resize:"vertical",boxSizing:"border-box",marginBottom:11,lineHeight:1.7,outline:"none"}}/>
+            <div style={{display:"flex",gap:9}}>
+              <button onClick={yazaraNot} style={{flex:1,background:"#b45309",color:"#fff",border:"none",padding:"9px 0",borderRadius:7,fontWeight:700,fontSize:12,cursor:"pointer"}}>✏ GÖNDER</button>
+              <button onClick={()=>setYazarNotMakale(null)} style={{padding:"9px 16px",background:"none",border:`1px solid ${G.border}`,borderRadius:7,fontSize:12,color:G.muted,cursor:"pointer"}}>İptal</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Rol değiştir modal ── */}
+      {rolDegistirUye&&(
+        <div onClick={()=>setRolDegistirUye(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,padding:"24px 28px",width:"100%",maxWidth:400}}>
+            <div style={{fontWeight:700,fontSize:14,color:G.ink,marginBottom:4}}>ROL DEĞİŞTİR</div>
+            <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:14,padding:"9px 11px",background:"#f8fafc",borderRadius:8,border:`1px solid ${G.border}`}}>
+              <div style={{width:30,height:30,borderRadius:"50%",background:rB(rolDegistirUye.role),border:`2px solid ${rR(rolDegistirUye.role)}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:13,color:rR(rolDegistirUye.role)}}>{rolDegistirUye.name?.[0]}</div>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:700,fontSize:13,color:G.ink}}>{rolDegistirUye.name}</div>
+                <div style={{fontSize:11,color:G.muted}}>{rolDegistirUye.email}</div>
+              </div>
+              <span style={{fontSize:10,padding:"3px 9px",borderRadius:20,fontWeight:700,background:rB(rolDegistirUye.role),color:rR(rolDegistirUye.role)}}>Şu an: {rL(rolDegistirUye.role||"yazar")}</span>
+            </div>
+            <div style={{fontSize:11,fontWeight:700,color:G.muted,marginBottom:9}}>YENİ ROL SEÇ:</div>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {ROL_SEC.map(r=>(
+                <button key={r.v} onClick={()=>rolGuncelle(rolDegistirUye.id,r.v)} style={{
+                  padding:"10px 13px",border:`2px solid ${(rolDegistirUye.role||"yazar")===r.v?r.c:G.border}`,
+                  borderRadius:8,cursor:"pointer",background:(rolDegistirUye.role||"yazar")===r.v?r.bg:"#fff",
+                  display:"flex",alignItems:"center",gap:9,transition:"all 0.15s"
+                }}>
+                  <span style={{width:9,height:9,borderRadius:"50%",background:r.c,flexShrink:0}}/>
+                  <div style={{flex:1,textAlign:"left"}}>
+                    <div style={{fontWeight:700,fontSize:12.5,color:r.c}}>{r.lbl}</div>
+                    <div style={{fontSize:10,color:G.muted}}>{r.desc}</div>
+                  </div>
+                  {(rolDegistirUye.role||"yazar")===r.v&&<span style={{color:r.c,fontSize:13}}>✓</span>}
+                </button>
+              ))}
+            </div>
+            <button onClick={()=>setRolDegistirUye(null)} style={{width:"100%",marginTop:11,padding:"8px",background:"none",border:`1px solid ${G.border}`,borderRadius:7,fontSize:12,color:G.muted,cursor:"pointer"}}>İptal</button>
           </div>
         </div>
       )}
@@ -2021,7 +2001,7 @@ function PanelPage({user, setModal, toast_, lang, articles, users, loadArticles}
 
           {/* YÖNETİM */}
           {sekme==="yonetim" && user?.role==="editor" && (
-            <YonetimSekme articles={articles} users={users} toast_={toast_} loadArticles={loadArticles}/>
+            <YonetimSekme articles={articles} users={users} toast_={toast_} loadArticles={loadArticles} loadUsers={loadUsers}/>
           )}
 
           {/* HAKEM */}
