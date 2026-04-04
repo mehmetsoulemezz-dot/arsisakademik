@@ -45,6 +45,7 @@ const DURUM = {
   baskida:   {tr:"Baskıya Hazır",  en:"Ready",         renk:"#065f46", bg:"#d1fae5"},
   yayinda:   {tr:"Yayınlandı",     en:"Published",     renk:"#065f46", bg:"#d1fae5"},
   reddedildi:{tr:"Reddedildi",     en:"Rejected",      renk:"#991b1b", bg:"#fee2e2"},
+  geri_cekildi:{tr:"Geri Çekildi", en:"Withdrawn",     renk:"#6b7280", bg:"#f3f4f6"},
 };
 
 // ─── STİL YARDIMCILARI ───────────────────────────────────────────────────────
@@ -1193,14 +1194,86 @@ function YonetimSekme({articles, users, toast_, loadArticles}) {
                         </div>
                       </div>
                     </div>
-                    <div style={{background:"#fff",borderRadius:8,padding:"11px",border:`1px solid ${G.border}`}}>
-                      <div style={{fontSize:10,fontWeight:700,color:G.teal,marginBottom:7}}>HAKEM ATA ({aRev.length} atanmış)</div>
-                      {hakemler.length===0?<p style={{fontSize:12,color:G.muted,fontStyle:"italic",margin:0}}>Sistemde hakem yok.</p>:(
-                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                          {hakemler.map(h=>{
-                            const at=aRev.some(r=>r.reviewer_email===h.email);
-                            return <button key={h.id} onClick={()=>!at&&hakemAta(a,h.email)} style={{fontSize:11,padding:"5px 10px",borderRadius:6,cursor:at?"default":"pointer",background:at?"#f3f4f6":"#fff",color:at?G.muted:G.teal,border:`1px solid ${at?G.border:G.teal}`,fontWeight:700,opacity:at?0.7:1}}>{at?"✓ ":""}{h.name}</button>;
-                          })}
+                    <div style={{background:"#fff",borderRadius:8,padding:"12px",border:`1px solid ${G.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <div style={{fontSize:10,fontWeight:700,color:G.teal,letterSpacing:0.5}}>
+                          HAKEM ATA / YÖNETİM
+                        </div>
+                        <span style={{fontSize:10,color:G.muted}}>
+                          {aRev.filter(r=>r.status==="tamamlandi").length}/{aRev.length} tamamlandı
+                        </span>
+                      </div>
+
+                      {/* Mevcut hakemler - geri çekme butonu ile */}
+                      {aRev.length > 0 && (
+                        <div style={{marginBottom:10}}>
+                          {aRev.map(r => (
+                            <div key={r.id} style={{
+                              display:"flex",justifyContent:"space-between",alignItems:"center",
+                              padding:"7px 10px",borderRadius:6,marginBottom:5,
+                              background:r.status==="tamamlandi"?"#f0fdf4":r.status==="geri_cekildi"?"#f9fafb":"#fffbeb",
+                              border:`1px solid ${r.status==="tamamlandi"?"#a7f3d0":r.status==="geri_cekildi"?"#e5e7eb":"#fde68a"}`
+                            }}>
+                              <div>
+                                <div style={{fontSize:12,fontWeight:700,color:G.ink}}>{r.reviewer_name}</div>
+                                <div style={{fontSize:10,color:G.muted}}>{r.reviewer_email}</div>
+                              </div>
+                              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                                <span style={{
+                                  fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:700,
+                                  background:r.status==="tamamlandi"?"#d1fae5":r.status==="geri_cekildi"?"#f3f4f6":"#fef3c7",
+                                  color:r.status==="tamamlandi"?"#065f46":r.status==="geri_cekildi"?"#6b7280":"#92400e"
+                                }}>
+                                  {r.status==="tamamlandi"?"✓ Değerlendirdi":r.status==="geri_cekildi"?"✗ Geri Çekildi":"⏳ Bekliyor"}
+                                </span>
+                                {r.status==="beklemede" && (
+                                  <button onClick={async()=>{
+                                    if(!confirm(`${r.reviewer_name} hakemden atama geri çekilsin mi?`))return;
+                                    await supa.from("reviews").update({status:"geri_cekildi"}).eq("id",r.id);
+                                    await yukleReviews();
+                                    // Eğer başka aktif hakem yoksa durumu güncelle
+                                    const aktifKalan = reviews.filter(x=>x.article_id===a.id&&x.id!==r.id&&x.status==="beklemede");
+                                    if(aktifKalan.length===0){
+                                      await supa.from("articles").update({status:"beklemede"}).eq("id",a.id);
+                                      await loadArticles();
+                                    }
+                                    toast_("✓ Hakem ataması geri çekildi.");
+                                  }} style={{
+                                    fontSize:10,padding:"2px 8px",borderRadius:5,cursor:"pointer",
+                                    background:"#fee2e2",color:"#991b1b",border:"1px solid #fca5a5",fontWeight:700
+                                  }}>✕ Geri Çek</button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Yeni hakem ata */}
+                      {hakemler.length === 0 ? (
+                        <p style={{fontSize:12,color:G.muted,fontStyle:"italic",margin:0}}>Sistemde kayıtlı hakem yok.</p>
+                      ) : (
+                        <div>
+                          <div style={{fontSize:10,color:G.muted,marginBottom:5}}>Hakem ekle (birden fazla atayabilirsiniz):</div>
+                          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                            {hakemler.map(h=>{
+                              const mevcut = aRev.find(r=>r.reviewer_email===h.email);
+                              const at = mevcut && mevcut.status!=="geri_cekildi";
+                              return (
+                                <button key={h.id} onClick={()=>!at&&hakemAta(a,h.email)} style={{
+                                  fontSize:11,padding:"5px 12px",borderRadius:6,cursor:at?"default":"pointer",
+                                  background:at?"#f3f4f6":"#fff",color:at?G.muted:G.teal,
+                                  border:`1px solid ${at?G.border:G.teal}`,fontWeight:700,opacity:at?0.7:1
+                                }}>
+                                  {at?"✓ ":""}{h.name}
+                                  {!at && mevcut?.status==="geri_cekildi" && " (tekrar)"}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <div style={{fontSize:10,color:G.muted,marginTop:6,fontStyle:"italic"}}>
+                            💡 Birden fazla hakeme atayabilirsiniz. Her hakem bağımsız değerlendirme yapar.
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1828,16 +1901,61 @@ function PanelPage({user, setModal, toast_, lang, articles, users, loadArticles}
                 </div>
               ) : myArticles.map(a => {
                 const d = DURUM[a.status]||{};
+                const geriCekilebilir = ["beklemede","hakemde","revizyon"].includes(a.status);
+                const zatenGeriCekildi = a.status === "geri_cekildi";
                 return (
-                  <div key={a.id} style={{border:"1px solid #d4c9b4",borderRadius:10,padding:"16px 20px",marginBottom:12}}>
+                  <div key={a.id} style={{
+                    border:`1px solid ${zatenGeriCekildi?"#e5e7eb":"#d4c9b4"}`,
+                    borderRadius:10,padding:"16px 20px",marginBottom:12,
+                    background:zatenGeriCekildi?"#f9fafb":"#fff",
+                    opacity:zatenGeriCekildi?0.75:1
+                  }}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
                       <h4 style={{fontFamily:"serif",margin:"0 0 5px",fontSize:13.5,color:"#1a1208",flex:1,fontWeight:700}}>{a.title}</h4>
-                      <span style={{background:d.bg,color:d.renk,fontSize:10,padding:"3px 9px",borderRadius:20,fontWeight:700,whiteSpace:"nowrap"}}>
-                        {d.tr||a.status}
+                      <span style={{
+                        background:zatenGeriCekildi?"#f3f4f6":d.bg,
+                        color:zatenGeriCekildi?"#6b7280":d.renk,
+                        fontSize:10,padding:"3px 9px",borderRadius:20,fontWeight:700,whiteSpace:"nowrap"
+                      }}>
+                        {zatenGeriCekildi?"✕ Geri Çekildi":d.tr||a.status}
                       </span>
                     </div>
-                    <p style={{margin:"0 0 6px",fontSize:12,color:"#7a6e5f",fontStyle:"italic"}}>{a.created_at?.split("T")[0]} · {a.field}</p>
+                    <p style={{margin:"0 0 8px",fontSize:12,color:"#7a6e5f",fontStyle:"italic"}}>{a.created_at?.split("T")[0]} · {a.field}</p>
                     <YazarNotlari articleId={a.id}/>
+
+                    {/* Geri çekme butonu */}
+                    {geriCekilebilir && (
+                      <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid #f0ebe0"}}>
+                        <button onClick={async()=>{
+                          if(!confirm("Makalenizi geri çekmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz. Editöre bildirim gönderilecektir."))return;
+                          await supa.from("articles").update({status:"geri_cekildi"}).eq("id",a.id);
+                          // Bekleyen hakem atamalarını da iptal et
+                          await supa.from("reviews").update({status:"geri_cekildi"}).eq("article_id",a.id).eq("status","beklemede");
+                          // Editöre not ekle
+                          await supa.from("article_notes").insert([{
+                            article_id:a.id,
+                            to_email:"editor@arsis.tr",
+                            from_name:user.name,
+                            content:`"${a.title}" başlıklı makale yazar tarafından geri çekilmiştir. (${new Date().toLocaleDateString("tr-TR")})`
+                          }]);
+                          await loadArticles();
+                          toast_("Makaleniz geri çekildi. Editöre bildirim gönderildi.");
+                        }} style={{
+                          background:"none",color:"#991b1b",border:"1px solid #fca5a5",
+                          padding:"5px 14px",borderRadius:6,cursor:"pointer",fontSize:11,fontWeight:700
+                        }}>
+                          ✕ Makaleyi Geri Çek
+                        </button>
+                        <span style={{fontSize:10,color:"#7a6e5f",marginLeft:10}}>
+                          Değerlendirme tamamlanmadan geri çekebilirsiniz.
+                        </span>
+                      </div>
+                    )}
+                    {zatenGeriCekildi && (
+                      <div style={{marginTop:8,fontSize:11,color:"#6b7280",fontStyle:"italic"}}>
+                        Bu makale geri çekilmiştir. Yeniden göndermek için yeni başvuru oluşturunuz.
+                      </div>
+                    )}
                   </div>
                 );
               })}
